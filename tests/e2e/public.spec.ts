@@ -16,8 +16,11 @@ const snapshot = () => {
 };
 
 async function firstParagraph(page: Page) {
-  const p = page.locator("main p, #content p, article p, p").filter({ hasText: /\w{4,}.*\w{4,}.*\w{4,}/ }).first();
-  await p.scrollIntoViewIfNeeded();
+  const p = page.locator("#mw-content-text p:visible, main p:visible, #content p:visible, article p:visible, p:visible")
+    .filter({ hasText: /\w{4,}.*\w{4,}.*\w{4,}/ }).first();
+  // Scroll directly: some public pages animate banners, so waiting for "stable" can hang.
+  await p.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await page.waitForTimeout(400);
   return (await p.boundingBox())!;
 }
 

@@ -4,7 +4,7 @@ Read this first when resuming work. Specs in `specs/` are the source of truth; i
 are recorded in `specs/02-architecture.md` §9.
 
 ## Current state (2026-10-03)
-- **Phase 2 in progress → final verification.** All milestones implemented; online helper deployed.
+- **Phase 2 complete.** All milestones implemented and verified; online helper deployed.
 - Online service: https://prism-helper-677745474657.us-central1.run.app (`/health`, `/demo/`).
 - Release zip: `npm run package` → `release/prism-extension-v0.1.0.zip`.
 - Test commands and evidence locations: see README → For developers.
@@ -26,8 +26,9 @@ are recorded in `specs/02-architecture.md` §9.
 
 ## Acceptance criteria
 Evidence = Playwright test in `tests/e2e/` run against the real unpacked extension in Chrome for Testing
-153 with live Gemini responses, plus screenshots in `evidence/e2e/`. Latest full-suite result:
-`evidence/e2e/results.json` and the summary at the end of this file.
+153 with live Gemini responses, plus screenshots in `evidence/e2e/`. Final full-suite result:
+[`evidence/e2e/final-run-summary.txt`](evidence/e2e/final-run-summary.txt) — 40/41 on the final build; the one
+failure was the public-site test's paragraph picker (an animated Wikipedia element), fixed and re-run green.
 
 | ID | Criterion | Status | Evidence |
 | --- | --- | --- | --- |
@@ -54,3 +55,6 @@ Evidence = Playwright test in `tests/e2e/` run against the real unpacked extensi
 - 2026-10-03 — Phase 2: M0–M9 built and verified; helper deployed to Cloud Run; plan model switched to
   gemini-3.7-flash after latency measurements; public-site checks (timeanddate.com showed a bot check and
   was replaced by weather.gov — Prism never tries to get past bot checks).
+- 2026-10-03 — Reliability: gemini-3.8-flash intermittently returned 504/499 during testing; the helper now
+  falls back 3.8 → 3.7 → 3.5-lite with 15 s per attempt. Stop cancels in-flight actions; Esc race fixed.
+  Final run: 40/41 + fixed re-run; Vitest 12/12; pytest 7/7; contrast 43/43; secret scan clean.
