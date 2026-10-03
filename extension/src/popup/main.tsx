@@ -100,16 +100,18 @@ function Popup() {
         <span class="pz-label" id="style-label">Style</span>
         <StylePicker value={page.styleId} label="Style" onChange={(id) => tabMsg({ type: "prism:set-style", styleId: id })} />
       </div>
-      <div style="display:grid;gap:8px">
-        <button class="pz-btn pz-btn--primary pz-btn--block" type="button" data-testid="popup-point"
-          onClick={async () => { await chrome.tabs.sendMessage(tabId, { type: "prism:start-selection" }); window.close(); }}>
-          <Icon name="select" /> Point at something
-        </button>
+      <div style="display:grid;gap:6px">
+        <div class="popup__actions">
+          <button class="pz-btn pz-btn--primary" type="button" data-testid="popup-point"
+            onClick={async () => { await chrome.tabs.sendMessage(tabId, { type: "prism:start-selection" }); window.close(); }}>
+            <Icon name="select" /> Point at something
+          </button>
+          <button class="pz-btn" type="button"
+            onClick={async () => { await chrome.tabs.sendMessage(tabId, { type: "prism:open-chat" }); window.close(); }}>
+            <Icon name="chat" /> Chat
+          </button>
+        </div>
         <p class="pz-hint" style="margin:0;text-align:center">Or on the page, hold <strong>{shortcutLabel(settings.shortcut, isMac())}</strong> and drag.</p>
-        <button class="pz-btn pz-btn--block" type="button"
-          onClick={async () => { await chrome.tabs.sendMessage(tabId, { type: "prism:open-chat" }); window.close(); }}>
-          <Icon name="chat" /> Chat about this page
-        </button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:space-between">
         {on && <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => tabMsg({ type: "prism:regenerate" })}><Icon name="restore" /> Tidy again from scratch</button>}

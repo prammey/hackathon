@@ -8,7 +8,7 @@ import { getSettings } from "../shared/storage";
 import type { PrismError, Result } from "../shared/types";
 import { z } from "zod";
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 60_000;
 
 export async function helperBase(): Promise<string> {
   const settings = await getSettings();

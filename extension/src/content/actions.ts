@@ -240,13 +240,21 @@ export function checkAction(action: ChatAction): ActionCheck {
   return { ok: true, risk: "routine", description };
 }
 
+/** Bumped when the person presses Stop, so an action that hasn't happened yet never happens. */
+let stopToken = 0;
+export function cancelPendingActions(): void {
+  stopToken++;
+}
+
 export async function executeAction(action: ChatAction): Promise<ActionOutcome> {
+  const token = stopToken;
   let navigating = false;
   const onLeave = () => { navigating = true; };
   addEventListener("pagehide", onLeave, { once: true });
   addEventListener("beforeunload", onLeave, { once: true });
   const startHref = location.href;
   try {
+    if (token !== stopToken) return { ok: false, message: "Stopped by the person before this happened." };
     if (action.name === "navigate") {
       const url = new URL(String(action.args.url), location.href);
       setTimeout(() => { location.href = url.href; }, 50);
@@ -263,6 +271,7 @@ export async function executeAction(action: ChatAction): Promise<ActionOutcome> 
     el.scrollIntoView({ block: "center" });
     flash(el);
     await new Promise((r) => setTimeout(r, 250));
+    if (token !== stopToken) return { ok: false, message: "Stopped by the person before this happened." };
     let ok = true;
     let message = "Done.";
     if (action.name === "click") {

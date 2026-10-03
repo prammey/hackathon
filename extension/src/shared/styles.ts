@@ -233,6 +233,8 @@ ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(${bu
 ${P} :is(button,input[type=submit],input[type=button],input[type=reset])[disabled]{opacity:1!important;filter:none!important;background:${t.surface}!important;color:${t.muted}!important;border-style:dashed!important;cursor:not-allowed!important;box-shadow:none!important}
 ${P} [data-prism-c=field]{font-family:${t.fontBody}!important;font-size:max(1em,17px)!important;color:${t.text}!important;background-color:${t.field}!important;border:${t.controlWidth} solid ${t.control}!important;border-radius:${t.radiusControl}!important;min-height:var(--p-target)!important;padding:.4em .7em!important;box-shadow:${t.fieldShadow}!important;box-sizing:border-box!important}
 ${P} textarea[data-prism-c=field]{min-height:5em!important}
+${P} :is(${button.slice(4, -1)},[data-prism-c=field])[data-prism-tight]{font-size:max(1em,14px)!important;padding:.25em .45em!important;min-height:32px!important;max-width:100%!important}
+${P} [data-prism-c=field]{max-width:100%!important}
 ${P} [data-prism-c=field]::placeholder{color:${t.muted}!important;opacity:1!important}
 ${P} [data-prism-c=field][aria-invalid=true]{border-color:${t.danger}!important;border-width:3px!important}
 ${P} [data-prism-c=check]{accent-color:${t.primary}!important;width:1.35em!important;height:1.35em!important;min-width:1.35em!important;cursor:pointer!important}

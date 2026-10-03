@@ -19,6 +19,8 @@ test("Popup: tidy switch, style picker, auto-tidy checkbox, helper status", asyn
   await popup.locator("[data-style=bold]").click();
   await popup.getByLabel(/automatically every time/).check();
   await popup.screenshot({ path: path.join(EVIDENCE, "popup-02-on.png") });
+  // Chrome caps popups at 600px tall: everything should fit without scrolling.
+  expect(await popup.evaluate(() => document.querySelector("main.popup")!.getBoundingClientRect().height)).toBeLessThanOrEqual(600);
   await waitForStatus(sw, page, ["planned", "cached", "base"]);
   expect(await page.evaluate(() => document.documentElement.getAttribute("data-prism-style"))).toBe("bold");
   // Auto-tidy: a reload is tidied without touching the popup.
@@ -42,6 +44,7 @@ test("Popup on a protected page explains what's going on", async ({ context, ext
 test("Settings: enter About you, saved locally, reflected in storage", async ({ context, extensionId, sw }) => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/options.html`);
+  await expect(page.getByRole("heading", { name: /Prism settings/ })).toBeVisible();
   await page.screenshot({ path: path.join(EVIDENCE, "settings-01-top.png") });
   await page.goto(`chrome-extension://${extensionId}/options.html#about`);
   await page.getByLabel("Your name").fill("Margaret Ellison");

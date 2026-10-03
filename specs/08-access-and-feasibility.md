@@ -35,7 +35,7 @@ Note: the global Playwright package expects Chromium build 1223 but the cache ho
 | Python packages (project venv): `google-genai`, `fastapi`, `uvicorn`, `pydantic`, `pytest`, `httpx` | **Approved** |
 | OFL font files from Google Fonts' official repo | **Approved** |
 | Local commits; GitHub repo `prammey/hackathon` (private, `main`) | **Approved** — remote linked, `gh` signed in as `prammey` |
-| **Hosted helper deploy** (enable Cloud Run, Cloud Build, Artifact Registry APIs; create a service account with only `roles/aiplatform.user`; deploy `prism-helper`; budget alert) | **Needs explicit approval** (deploy + cloud resource changes) — see §4 |
+| **Hosted helper deploy** | **Approved and done** 2026-10-03: Cloud Run `prism-helper` at https://prism-helper-677745474657.us-central1.run.app; service accounts `prism-helper` (roles/aiplatform.user only) and `prism-builder` (roles/run.builder only); budget "Prism helper spend alert" $50/month with 20/50/100% emails |
 
 ## 3. Hosting decision (answered 2026-10-02)
 Preference: judges can use Prism with no complicated setup; fallback is running on this Mac only.
@@ -71,8 +71,7 @@ OpenAI/Claude logos (not used — text labels instead).
   screenshots, form values, region answers or chat. Clear/regenerate controls in settings and popup.
 - **Q2 Hosting — resolved:** hosted helper for judges + local mode, per §3.
 - **Q3 Approvals — resolved** except the cloud deploy below.
-- **Pending:** explicit approval to create the Google Cloud resources and deploy the hosted helper
-  (Milestone M9b), and the explicit Phase 2 go-ahead.
+- **Go-ahead and deploy approval received** 2026-10-02.
 
 ## 5. Assumptions (proceeding with these unless told otherwise)
 - A1. Chromium browsers (Chrome first) are the target; Firefox is a documented follow-up.

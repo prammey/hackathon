@@ -5,7 +5,7 @@ import type { Rect, Settings, StyleId } from "../shared/types";
 import uiCss from "../ui/prism-ui.css";
 import overlayCss from "./overlay.css";
 import { App, type Bus } from "./App";
-import { checkAction, executeAction, observePage } from "./actions";
+import { cancelPendingActions, checkAction, executeAction, observePage } from "./actions";
 import { SelectionController } from "./selection";
 import { loadFonts, TidyEngine } from "./tidy";
 
@@ -99,6 +99,7 @@ function main() {
       case "chat:observe": reply({ text: observePage() }); return false;
       case "chat:check": reply(checkAction(msg.action)); return false;
       case "chat:exec": executeAction(msg.action).then(reply); return true;
+      case "chat:cancel": cancelPendingActions(); reply({ ok: true }); return false;
       default: return false;
     }
   });

@@ -72,16 +72,20 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     return () => offs.forEach((off) => off());
   }, []);
 
+  // Registered once and reading a ref, so Esc works even in the instant after the menu appears.
+  const live = useRef({ menuRect, card, panelOpen });
+  live.current = { menuRect, card, panelOpen };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (menuRect) { e.stopPropagation(); closeMenu(); }
-      else if (card) { e.stopPropagation(); setCard(null); restoreFocus(); }
-      else if (panelOpen) { e.stopPropagation(); setPanelOpen(false); }
+      const now = live.current;
+      if (now.menuRect) { e.stopPropagation(); closeMenu(); }
+      else if (now.card) { e.stopPropagation(); setCard(null); restoreFocus(); }
+      else if (now.panelOpen) { e.stopPropagation(); setPanelOpen(false); }
     };
     addEventListener("keydown", onKey, true);
     return () => removeEventListener("keydown", onKey, true);
-  });
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -203,7 +207,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
           onPoint={() => { setPanelOpen(false); selection.startExplicit(); }}
           onChat={() => openChat(null)} />
       )}
-      <SelectionLayer sel={sel} selection={selection} settings={settings} menuOpen={!!menuRect} />
+      <SelectionLayer sel={sel} selection={selection} settings={settings} menuRect={menuRect} />
       {menuRect && (
         <ActionMenu rect={menuRect} onAction={(a) => (a === "chat" ? openChat(menuRect) : runAssist(a, menuRect))}
           onAdjust={() => { setMenuRect(null); selection.adjust(); }} onClose={closeMenu} />
@@ -297,15 +301,16 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
 
 // ---------- Selection ----------
 
-function SelectionLayer(props: { sel: SelState; selection: SelectionController; settings: Settings | null; menuOpen: boolean }) {
+function SelectionLayer(props: { sel: SelState; selection: SelectionController; settings: Settings | null; menuRect: Rect | null }) {
   const { sel, selection } = props;
   const catcherRef = useRef<HTMLDivElement>(null);
   const active = sel.phase === "armed" || sel.phase === "dragging";
   useEffect(() => {
     if (sel.mode === "keyboard" && sel.phase === "dragging") catcherRef.current?.focus();
   }, [sel.mode, sel.phase]);
-  if (!active && !(props.menuOpen && sel.rect)) return null;
-  const r = sel.rect;
+  if (!active && !props.menuRect) return null;
+  // While the menu is open, highlight the area it's about (from a drag or a right-click).
+  const r = active ? sel.rect : props.menuRect;
   const block = (e: Event) => { e.preventDefault(); e.stopPropagation(); };
   return (
     <>

@@ -7,7 +7,10 @@ a:focus-visible { outline: 3px solid var(--pz-ink); outline-offset: 2px; border-
 
 /* Popup */
 .popup { width: 360px; padding: 12px 14px 14px; display: grid; gap: 10px; }
-.popup .pz-styles { gap: 6px; }
+.popup .pz-styles { gap: 6px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.popup .pz-style { font-size: 14px; }
+.popup__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.popup__actions .pz-btn { padding-inline: 10px; }
 .popup .pz-style { padding: 6px 8px; }
 .popup .pz-style__swatch { height: 14px; }
 .popup .pz-switch { min-height: 50px; }

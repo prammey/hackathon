@@ -1,6 +1,6 @@
 # 02 — Architecture, compatibility, permissions, AI integration, data flows
 
-Status: **Draft for Phase 1 review** · Last updated 2026-10-02
+Status: **Implemented** (Phase 2) · Last updated 2026-10-03 — see *Changes during implementation* at the end
 Sources: Chrome extension docs (developer.chrome.com/docs/extensions), MDN WebExtensions, Playwright
 extension testing docs, Vertex AI docs; plus capability probes run on this machine (see 08 §1).
 Items marked **[verify]** were not confirmed by official docs and get a Phase 2 test.
@@ -192,3 +192,16 @@ prism/
   evidence/                    # screenshots and logs referenced by PROGRESS.md
   scripts/                     # build, package, start helper, secret scan
 ```
+
+
+## 9. Changes during implementation (2026-10-03)
+
+| Area | Spec said | Built | Why |
+| --- | --- | --- | --- |
+| Host access | `optional_host_permissions`, request per site | `host_permissions: ["<all_urls>"]` at install; users can still restrict via Chrome's site access ("On click" / specific sites) | Hold-and-drag and auto re-apply of cached layouts need the content script on every page; per-site prompts can't be triggered from an in-page gesture, and judges need zero-setup. Chrome's built-in site access control preserves user choice. |
+| Plan model | `gemini-3.8-flash` | `gemini-3.7-flash` for page plans; 3.8 Flash for Define/Translate/Fill/Chat; `gemini-3.5-flash-lite` fallback | Measured on the same plan request: 3.8 Flash 13–25 s (one 504), 3.7 Flash ≈5 s with the best plan quality, Flash-Lite 2.6 s. |
+| Timeouts | 20 s / 15 s first byte | 20 s per model attempt, then fallback; extension timeout 45 s | Chat turns are non-streaming (1–3 s typical); SSE streaming was not needed. |
+| Helper hosting | Local only (proposed) | Cloud Run (`us-central1`) + local mode | Decision 2026-10-02: judges should need no setup. |
+| Chat surface | In-page panel | In-page panel (as specified) | — |
+| Fonts | data URLs or web-accessible | `FontFace` API with `web_accessible_resources` + `use_dynamic_url` | Keeps page CSS small; dynamic URLs limit fingerprinting. |
+| Dark headers | (not specified) | Dark, full-width branded strips with a logo keep their colours | Preserves site identity (e.g. GOV.UK header) and avoids white-on-light logos. |

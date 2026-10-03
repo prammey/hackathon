@@ -129,6 +129,7 @@ export async function sendUserMessage(tabId: number, text: string, includeScreen
 export async function stopChat(tabId: number): Promise<void> {
   const state = await loadState(tabId);
   aborters.get(tabId)?.abort();
+  await toTab(tabId, { type: "chat:cancel" });
   if (!state) return;
   state.status = "stopped";
   state.pending = undefined;
@@ -324,6 +325,7 @@ async function handleAction(state: ChatState, action: ChatAction): Promise<boole
     return false;
   }
   const outcome = await execute(state, action, check.description);
+  if ((await loadState(state.tabId))?.status === "stopped") return false;
   addToolResults(state, [{ id: action.id, name: action.name, response: outcomeResponse(outcome) }]);
   await save(state);
   return true;

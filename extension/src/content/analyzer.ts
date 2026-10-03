@@ -8,7 +8,7 @@ import type { Outline, OutlineElement } from "../shared/types";
 export const PRISM_ATTRS = [
   "data-prism-id", "data-prism-c", "data-prism-s", "data-prism-role", "data-prism-emphasis",
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
-  "data-prism-filled",
+  "data-prism-filled", "data-prism-tight",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -73,6 +73,16 @@ function hasBackground(cs: CSSStyleDeclaration): "color" | "image" | null {
   const parts = m[1].split(",").map((s) => parseFloat(s));
   const alpha = parts.length === 4 ? parts[3] : 1;
   return alpha > 0.6 ? "color" : null;
+}
+
+function luminance(color: string): number {
+  const m = color.match(/[\d.]+/g);
+  if (!m) return 1;
+  const [r, g, b] = m.slice(0, 3).map((v) => {
+    const c = Number(v) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
 function controlKind(el: Element, cs: CSSStyleDeclaration): string | null {
@@ -206,6 +216,10 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const kind = controlKind(el, cs);
     if (kind) {
       setAttr(el, "data-prism-c", kind);
+      // Controls squeezed into narrow fixed-width layouts keep a compact size so nothing gets cut off.
+      const holder = el.parentElement?.closest("td,li,div,form,fieldset,p,span") ?? el.parentElement;
+      const holderWidth = holder ? holder.getBoundingClientRect().width : vw;
+      if (holderWidth && holderWidth < 260) setAttr(el, "data-prism-tight", "");
       tagged++;
       const name = accessibleName(el);
       const item: Omit<OutlineElement, "id"> = { tag: tag.toLowerCase(), name: clean(name, 80), box, interactive: true };
@@ -252,6 +266,9 @@ export function analyze(doc: Document = document): AnalyzeResult {
         setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9 && rect.height > docHeight * 0.5) {
         setAttr(el, "data-prism-s", "plain");
+      } else if (rect.width >= vw * 0.9 && rect.height < 260 && luminance(cs.backgroundColor) < 0.2 && el.querySelector("svg,img")) {
+        // A dark branded header strip (logo on dark): keep the site's identity as it is.
+        setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9) {
         setAttr(el, "data-prism-s", "band");
       } else if (area >= 12000) {

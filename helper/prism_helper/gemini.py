@@ -15,8 +15,11 @@ PRIMARY_MODEL = os.environ.get("PRISM_MODEL", "gemini-3.8-flash")
 # Page plans are a labelling task; 3.7 Flash answered in ~5 s with the best plans in our comparison,
 # while 3.8 Flash took 13–25 s (or timed out) on the same structured request.
 PLAN_MODEL = os.environ.get("PRISM_PLAN_MODEL", "gemini-3.7-flash")
+SECOND_MODEL = os.environ.get("PRISM_SECOND_MODEL", "gemini-3.7-flash")
 FALLBACK_MODEL = os.environ.get("PRISM_FALLBACK_MODEL", "gemini-3.5-flash-lite")
-TIMEOUT_MS = int(os.environ.get("PRISM_TIMEOUT_MS", "20000"))
+# Per attempt. 3.8 Flash intermittently returned 504s after ~17 s during testing (2026-10-03), so each
+# model gets a bounded slot and the chain moves on quickly instead of retrying inside the SDK.
+TIMEOUT_MS = int(os.environ.get("PRISM_TIMEOUT_MS", "15000"))
 
 
 class AIUnavailable(Exception):
@@ -33,7 +36,7 @@ def client() -> genai.Client:
       vertexai=True,
       project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
       location=os.environ.get("GOOGLE_CLOUD_LOCATION", "global"),
-      http_options=types.HttpOptions(timeout=TIMEOUT_MS),
+      http_options=types.HttpOptions(timeout=TIMEOUT_MS, retry_options=types.HttpRetryOptions(attempts=1)),
     )
   return _client
 
@@ -57,15 +60,18 @@ def image_part(b64: str, mime: str) -> types.Part:
 
 
 def _retryable(err: Exception) -> bool:
+  """Try the next model for anything temporary (429, 499 cancelled, 5xx, timeouts). Stop only on
+  errors another model can't fix: a malformed request or missing permission."""
   if isinstance(err, errors.APIError):
-    return err.code in (429, 500, 502, 503, 504)
-  return True  # timeouts / network errors
+    return err.code not in (400, 401, 403, 404)
+  return True
 
 
 def generate(contents, system: str, schema: Optional[Type[BaseModel]] = None, tools=None, model: Optional[str] = None):
-  """Returns (response, model_used). Tries the chosen model, then the fallback once."""
+  """Returns (response, model_used). Tries the chosen model, then the next ones in the chain."""
   last_err: Exception | None = None
-  for attempt, model in enumerate((model or PRIMARY_MODEL, FALLBACK_MODEL)):
+  chain = list(dict.fromkeys([model or PRIMARY_MODEL, SECOND_MODEL, FALLBACK_MODEL]))
+  for attempt, model in enumerate(chain):
     started = time.monotonic()
     try:
       resp = client().models.generate_content(

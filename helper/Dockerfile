@@ -5,6 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY prism_helper ./prism_helper
+COPY demo ./demo
 RUN useradd --create-home prism
 USER prism
 CMD exec uvicorn prism_helper.app:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips="*"

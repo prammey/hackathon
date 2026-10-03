@@ -270,6 +270,8 @@ export class TidyEngine {
       if (role === "clutter" && (protectedIds.has(id) || el.contains(analysis.mainEl))) { rejected++; continue; }
       if (isControl && !["primary-action", "secondary-action", "field", "step", "clutter"].includes(role)) continue;
       if (["field", "text", "heading", "step", "media", "table"].includes(role)) continue; // descriptive only
+      // A notice box needs real content: short links or labels styled as callouts get clipped and confuse.
+      if ((role === "notice" || role === "required-notice") && (el.matches("a,button,label,input,select") || ((el as HTMLElement).innerText ?? "").trim().length < 25)) continue;
       el.setAttribute("data-prism-role", role);
     }
     for (const { id, level } of plan.emphasis) {
