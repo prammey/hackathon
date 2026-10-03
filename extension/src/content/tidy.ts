@@ -27,6 +27,7 @@ export interface TidyState {
   clutterShown: boolean;
   contrastFixes: number;
   nextStep: string;
+  nextOptions: string[];
   aiCalls: number;
   cacheHit: boolean;
   lastPlanMs: number;
@@ -40,7 +41,7 @@ const AI_WINDOW_MS = 10 * 60 * 1000;
 export class TidyEngine {
   state: TidyState = {
     status: "off", styleId: "clear", message: "", pagePurpose: "", isOfficial: false, steps: [], folds: [],
-    hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", aiCalls: 0, cacheHit: false, lastPlanMs: 0,
+    hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", nextOptions: [], aiCalls: 0, cacheHit: false, lastPlanMs: 0,
   };
   private analysis: AnalyzeResult | null = null;
   private plan: TidyPlan | null = null;
@@ -122,7 +123,7 @@ export class TidyEngine {
     await chrome.runtime.sendMessage({ type: "css:remove" }).catch(() => {});
     this.plan = null;
     this.analysis = null;
-    this.emit({ status: "off", message, steps: [], folds: [], pagePurpose: "", cacheHit: false, hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "" });
+    this.emit({ status: "off", message, steps: [], folds: [], pagePurpose: "", cacheHit: false, hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", nextOptions: [] });
   }
 
   /** The Style this site will use, known even before tidying is switched on (shown in the popup). */
@@ -236,24 +237,52 @@ export class TidyEngine {
       /^(next|previous|prev|pause|play|accept|accept all|accept necessary|agree|i agree|got it|ok|allow( all)?|decline|reject( all)?)( (image|slide|item|cookies))?$/i.test(((e as HTMLElement).innerText || e.getAttribute("aria-label") || "").trim());
     for (const e of marked) if (isSearch(e) || inNav(e)) { e.setAttribute("data-prism-role", "secondary-action"); e.removeAttribute("data-prism-emphasis"); }
     let el = marked.find((e) => !isSearch(e) && !inNav(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
+    const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue|log ?in|sign in|file|view|download|contact)\b/i;
+    const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
+    const ctas = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
+      .filter((e) => visible(e) && !isSearch(e) && !inNav(e) && cta.test(labelOf(e)) && !e.closest("nav,header,footer,[role=navigation]"));
     if (!el) {
-      const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue)\b/i;
-      const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
-      el = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
-        .find((e) => visible(e) && !isSearch(e) && !inNav(e) && cta.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || "").trim()) && !e.closest("nav,header,footer,[role=navigation]"));
+      el = ctas[0];
       if (el) el.setAttribute("data-prism-emphasis", "primary");
     }
+    // Up to four other likely things to do: the plan's steps, other real actions, obvious buttons.
+    const options: { label: string; el: Element }[] = [];
+    const add = (e: Element | null | undefined, label?: string) => {
+      if (!e || e === el || options.length >= 4 || !visible(e) || isSearch(e) || inNav(e) || options.some((o) => o.el === e)) return;
+      const text = clean(label || labelOf(e), 60);
+      if (!text || options.some((o) => o.label.toLowerCase() === text.toLowerCase())) return;
+      options.push({ label: text, el: e });
+    };
+    for (const step of this.state.steps) add(this.ids.get(step.id) ?? document.querySelector(`[data-prism-id="${CSS.escape(step.id)}"]`), step.label);
+    for (const e of document.querySelectorAll("[data-prism-role=primary-action],[data-prism-role=secondary-action]")) add(e);
+    for (const e of ctas) add(e);
+    const inMain = (e: Element) => !e.closest("nav,header,footer,[role=navigation],aside,[data-prism-role=aside],[data-prism-role=footer]");
+    for (const e of scope.querySelectorAll("[data-prism-c=button],[data-prism-c=button-link]")) if (inMain(e)) add(e);
+    for (const e of scope.querySelectorAll("a[href]")) if (inMain(e) && labelOf(e).split(/\s+/).length >= 2) add(e);
+    this.optionEls = options.map((o) => new WeakRef(o.el));
+    this.emit({ nextOptions: options.map((o) => o.label) });
     // The next step always carries a breathing outline so the eye is drawn to it.
     for (const old of document.querySelectorAll("[data-prism-next]")) if (old !== el) old.removeAttribute("data-prism-next");
     if (el) el.setAttribute("data-prism-next", "");
     this.nextEl = el ? new WeakRef(el) : null;
-    return el ? clean(((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim(), 60) : "";
+    return el ? clean(labelOf(el), 60) : "";
+  }
+
+  private optionEls: WeakRef<Element>[] = [];
+
+  /** Scrolls to one of the "other things you can do" and gives it focus. */
+  showOption(index: number): void {
+    const el = this.optionEls[index]?.deref();
+    if (el) this.reveal(el);
   }
 
   /** Scrolls to the next step and makes it pulse so it's easy to find. */
   showNextStep(): void {
     const el = this.nextEl?.deref();
-    if (!el) return;
+    if (el) this.reveal(el);
+  }
+
+  private reveal(el: Element): void {
     el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
     el.setAttribute("data-prism-step-active", "");
     (el as HTMLElement).focus({ preventScroll: true });
@@ -549,6 +578,11 @@ export class TidyEngine {
 }
 
 // ---------- fonts ----------
+
+/** The words a control shows (or its value / accessible label). */
+function labelOf(el: Element): string {
+  return ((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim();
+}
 
 /** Does this element still show any words outside folded parts? */
 function hasUnfoldedText(root: Element): boolean {

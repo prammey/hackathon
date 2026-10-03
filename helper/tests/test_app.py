@@ -67,3 +67,12 @@ def test_user_text_is_trusted_but_page_state_is_wrapped():
   parts = chat_contents(req)[0].parts
   assert parts[0].text == "What is this?"
   assert parts[1].text.startswith("Current page state:\n<untrusted_page_content>")
+
+
+def test_transcribe_rejects_bad_audio_before_ai():
+  r = client.post("/v1/transcribe", json={"audio": "x" * 50, "mime": "audio/webm"}, headers={"Origin": ORIGIN})
+  assert r.status_code == 422
+  r = client.post("/v1/transcribe", json={"audio": "x" * 200, "mime": "video/mp4"}, headers={"Origin": ORIGIN})
+  assert r.status_code == 422
+  r = client.post("/v1/transcribe", json={"audio": "x" * 3_000_000}, headers={"Origin": ORIGIN})
+  assert r.status_code == 422

@@ -45,9 +45,11 @@ const entries = [
   { in: "src/options/main.tsx", out: "options.js", format: "iife" },
   { in: "src/welcome/main.tsx", out: "welcome.js", format: "iife" },
   { in: "src/options/import-worker.ts", out: "import-worker.js", format: "iife" },
+  { in: "src/offscreen/record.ts", out: "offscreen.js", format: "iife" },
 ];
 
 function copyStatic() {
+  fs.copyFileSync(path.join(ext, "src/pages/offscreen.html"), path.join(out, "offscreen.html"));
   for (const page of ["popup", "options", "welcome"]) {
     // Version the favicon URL so Chrome doesn't keep showing a cached old icon after an update.
     const html = fs.readFileSync(path.join(ext, "src/pages", `${page}.html`), "utf8")
@@ -89,7 +91,7 @@ function manifest() {
     action: { default_popup: "popup.html", default_title: "Prism", default_icon: icons },
     background: { service_worker: "background.js", type: "module" },
     options_ui: { page: "options.html", open_in_tab: true },
-    permissions: ["storage", "unlimitedStorage", "activeTab", "scripting", "contextMenus"],
+    permissions: ["storage", "unlimitedStorage", "activeTab", "scripting", "contextMenus", "offscreen"],
     host_permissions: ["<all_urls>"],
     content_scripts: [
       { matches: ["http://*/*", "https://*/*"], js: ["early.js"], run_at: "document_start" },

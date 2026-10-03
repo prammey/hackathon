@@ -4,7 +4,7 @@ import { useEffect, useState } from "preact/hooks";
 import { getSettings, saveSettings } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { Settings } from "../shared/types";
-import { Brand, Icon, isMac } from "../ui/components";
+import { allowMicrophone, Brand, Icon, isMac } from "../ui/components";
 import { MiniPreview } from "../options/preview";
 
 /** Hard-to-use but important real websites that Prism visibly improves (checked October 2026). */
@@ -27,6 +27,7 @@ const DEMO_SITES = [
 
 function Welcome() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [talkProblem, setTalkProblem] = useState("");
   useEffect(() => { getSettings().then((s) => { setSettings(s); saveSettings({ onboarded: true }); }); }, []);
   if (!settings) return null;
   const key = isMac() ? "Option ⌥" : "Alt";
@@ -104,6 +105,21 @@ function Welcome() {
             <p>The <strong>Next step</strong> bar in the bottom-left corner names it too — press <strong>Show me</strong> and Prism takes you right there.</p>
           </div>
         </div>
+      </section>
+
+      <section class="section" aria-labelledby="talk-h">
+        <h2 id="talk-h">Talk instead of typing</h2>
+        <p>Press <strong>Talk</strong> next to any box — on websites, in Chat, anywhere Prism helps — and say what you want to write.</p>
+        <div class="row">
+          {settings.dictation
+            ? <span class="pz-label" style="color:var(--pz-violet)" data-testid="talk-on"><Icon name="check" /> Talking is turned on</span>
+            : <button class="pz-btn pz-btn--primary" type="button" data-testid="talk-allow" onClick={async () => {
+                const error = await allowMicrophone();
+                if (error) setTalkProblem(error);
+                else setSettings(await saveSettings({ dictation: true }));
+              }}><Icon name="mic" /> Turn on talking</button>}
+        </div>
+        {talkProblem && <p class="pz-hint" role="alert">{talkProblem}</p>}
       </section>
 
       <section class="section" aria-labelledby="you-h">

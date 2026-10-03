@@ -118,3 +118,25 @@ pre, code { color: var(--pz-text); }
 .demo-site__name { font-size: 17px; font-weight: 600; }
 .demo-site__what { font-size: 14px; color: var(--pz-muted); }
 @media (prefers-reduced-motion: reduce) { .demo-site { transition: none; } .demo-site:hover { transform: none; } }
+
+/* Simple settings: one column, big type, the rest behind "More settings" */
+.page--simple { max-width: 820px; font-size: 18px; }
+.simple-settings { display: grid; gap: 44px; }
+.page--simple .pz-field > span:first-child { font-size: 17px; }
+.page--simple .pz-input { font-size: 18px; min-height: 48px; }
+.text-size { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.text-size__label { font-weight: 600; margin-right: 6px; }
+.text-size__btn { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 18px; min-height: 48px; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid var(--pz-line-strong); color: var(--pz-text); background: var(--pz-surface); }
+.text-size__btn[aria-checked=true] { background: var(--pz-violet-strong); border-color: var(--pz-violet-strong); color: #fff; }
+.text-size__btn:focus-visible { outline: 2px solid #C4B5FD; outline-offset: 3px; }
+.more-settings, .more-about { border: 1px solid var(--pz-line); border-radius: var(--pz-radius); background: var(--pz-surface); }
+.more-settings > summary, .more-about > summary { cursor: pointer; list-style: none; padding: 18px 22px; font-weight: 600; font-size: 18px; color: var(--pz-text); display: flex; align-items: center; justify-content: space-between; }
+.more-settings > summary::after, .more-about > summary::after { content: "Show"; font-size: 15px; font-weight: 600; color: var(--pz-violet); }
+.more-settings[open] > summary::after, .more-about[open] > summary::after { content: "Hide"; }
+.more-settings > summary::-webkit-details-marker, .more-about > summary::-webkit-details-marker { display: none; }
+.more-settings__body { display: grid; gap: 44px; padding: 8px 22px 28px; }
+.more-about[open] { display: grid; gap: 14px; padding-bottom: 16px; }
+.more-about > .group { margin: 0 16px; }
+@media (max-width: 600px) { .page--simple .grid2 { grid-template-columns: 1fr; } }
+.talk-try { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.talk-try__heard { font-size: 18px; font-weight: 600; }

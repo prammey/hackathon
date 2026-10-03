@@ -29,7 +29,10 @@ export const test = base.extend<Fixtures>({
       executablePath: chromeBin(),
       headless: process.env.HEADED !== "1",
       viewport: { width: 1280, height: 860 },
-      args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
+      args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`,
+        // Dictation tests: auto-allow the microphone and play a recorded sentence into it.
+        "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
+        `--use-file-for-fake-audio-capture=${path.resolve("tests/fixtures-audio/opening-hours.wav")}`],
     });
     await use(context);
     await context.close();

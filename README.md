@@ -52,6 +52,10 @@ browsers weren't part of automated testing.
 - **Point at something:** hold **Option ⌥/Alt** and drag a box. Or click the Prism button → **Point at
   something** and drag without holding keys. Or right-click → **Ask Prism about this**. Keyboard only:
   **Alt+Shift+P**, then arrow keys and Enter. **Esc** always cancels.
+- **Talk instead of typing:** turn it on once (welcome page or Settings), then press **Talk** next to any
+  box — on websites, in Chat, in the Next step box — and say what you want to write.
+- **Find something on a page:** in Chat, say e.g. "emphasize the link about pro guitarists" — Prism makes
+  it big, bold and highlighted. Or open **Next step → More** and type or say what you want to do next.
 - **Get help with a form:** point at the questions → **Fill out** → tick the answers you want →
   **Put answers in**. Check them, then send the form yourself.
 - **Tell Prism about you:** Settings → **About you** (all optional). To bring in what ChatGPT or Claude

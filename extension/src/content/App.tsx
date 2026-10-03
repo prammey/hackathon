@@ -1,12 +1,14 @@
 /** The in-page Prism UI: page tab + panel, selection layer, action menu, answer cards, chat. */
+import { clearSpotlight, spotlightCount } from "./spotlight";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { ChatState } from "../shared/chat";
 import { getProfile, getSettings, profileText, saveProfile, saveSitePrefs } from "../shared/storage";
 import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
 } from "../shared/types";
-import { Brand, Icon, isMac, Logo, StylePicker, Switch } from "../ui/components";
-import { applyFill, fieldLabel, type FillResult, undoFill } from "./actions";
+import { Brand, Icon, isMac, Logo, MicButton, StylePicker, Switch } from "../ui/components";
+import { applyFill, fieldLabel, type FillResult, setText, undoFill } from "./actions";
+import { isSensitiveField } from "./analyzer";
 import { controlsIn, regionContext } from "./region";
 import { placeNear, type SelState, SelectionController, shortcutLabel } from "./selection";
 import type { TidyEngine, TidyState } from "./tidy";
@@ -37,6 +39,11 @@ function send<T>(message: unknown): Promise<T> {
   return chrome.runtime.sendMessage(message) as Promise<T>;
 }
 
+/** Dictation problems show in Prism's toast. */
+const talkError = (message: string) => dispatchEvent(new CustomEvent("prism:toast", { detail: message }));
+/** Spoken words are added after anything already typed. */
+const addSpoken = (old: string, spoken: string) => (old.trim() ? `${old.trimEnd()} ${spoken}` : spoken);
+
 export function App({ engine, selection, bus, setHidden }: Props) {
   const [tidy, setTidy] = useState<TidyState>(engine.state);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -50,6 +57,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
   const returnFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => engine.onChange(setTidy), [engine]);
+  useEffect(() => {
+    const onToast = (e: Event) => setToast({ text: String((e as CustomEvent).detail), tone: "error" });
+    addEventListener("prism:toast", onToast);
+    return () => removeEventListener("prism:toast", onToast);
+  }, []);
   useEffect(() => selection.onChange(setSel), [selection]);
   useEffect(() => { getSettings().then(setSettings); }, []);
   useEffect(() => selection.onComplete((rect) => {
@@ -209,12 +221,9 @@ export function App({ engine, selection, bus, setHidden }: Props) {
           <span class="tab__status">{!tidyOn ? "Original" : busy ? "Tidying…" : "Tidied"}</span>
         </button>
       )}
-      {showTab && tidyOn && !panelOpen && tidy.nextStep && !menuRect && !card && sel.phase === "idle" && (
-        <div class="nextstep pz-card" role="region" aria-label="Next step" data-testid="prism-next">
-          <span class="nextstep__label">Next step</span>
-          <span class="nextstep__text">{tidy.nextStep}</span>
-          <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>Show me</button>
-        </div>
+      {settings?.dictation && sel.phase === "idle" && <PageTalk />}
+      {showTab && tidyOn && !panelOpen && !menuRect && !card && sel.phase === "idle" && (
+        <NextDock tidy={tidy} engine={engine} onAsk={async (goal) => { await openChat(null); await send({ type: "chat:send", text: goal, includeScreen: false }); }} />
       )}
       {panelOpen && (
         <PagePanel tidy={tidy} engine={engine} settings={settings}
@@ -648,8 +657,9 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
                   aria-label={`Use this answer for ${labelOf(card, f.id)}`} />
                 {isCheckbox(card, f.id)
                   ? <span><strong>{f.checked ? "Tick this box" : "Leave unticked"}</strong></span>
-                  : <input class="pz-input" value={values[f.id]} onInput={(e) => setValues({ ...values, [f.id]: (e.target as HTMLInputElement).value })}
-                      aria-label={`Answer for ${labelOf(card, f.id)}`} />}
+                  : <><input class="pz-input" value={values[f.id]} onInput={(e) => setValues({ ...values, [f.id]: (e.target as HTMLInputElement).value })}
+                      aria-label={`Answer for ${labelOf(card, f.id)}`} />
+                    <MicButton small label="Say it" onError={talkError} onText={(t) => { setValues({ ...values, [f.id]: t }); setChosen({ ...chosen, [f.id]: true }); }} /></>}
               </label>
               {sourceLabel(f) && <span><span class={`source source--${f.source}`}>{sourceLabel(f)}</span>{f.evidence && <span class="pz-hint"> · “{f.evidence}”</span>}</span>}
             </li>
@@ -667,7 +677,8 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
           {card.data.questions.map((q) => (
             <label class="pz-field">
               <span>{q.question}</span>
-              <input class="pz-input" value={answers[q.fieldId] ?? ""} onInput={(e) => setAnswers({ ...answers, [q.fieldId]: (e.target as HTMLInputElement).value })} />
+              <span class="talk-row"><input class="pz-input" value={answers[q.fieldId] ?? ""} onInput={(e) => setAnswers({ ...answers, [q.fieldId]: (e.target as HTMLInputElement).value })} />
+                <MicButton small label="Say it" onError={talkError} onText={(t) => setAnswers({ ...answers, [q.fieldId]: addSpoken(answers[q.fieldId] ?? "", t) })} /></span>
             </label>
           ))}
           <div class="lang-row">
@@ -700,15 +711,114 @@ function isCheckbox(card: Extract<CardState, { kind: "fill"; status: "ready" }>,
 
 // ---------- Chat ----------
 
+const TYPEABLE = "textarea,input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number]";
+
+/** A Talk button beside whichever of the website's own text boxes has focus (never sensitive fields). */
+function PageTalk() {
+  const [target, setTarget] = useState<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const [box, setBox] = useState<DOMRect | null>(null);
+  const busy = useRef(false);
+  useEffect(() => {
+    const onIn = (e: FocusEvent) => {
+      const el = e.target as Element;
+      if (el.closest("prism-root")) return; // Prism's own controls keep the current target
+      const ok = (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && el.matches(TYPEABLE) &&
+        !el.readOnly && !el.disabled && !isSensitiveField(el);
+      if (ok) setTarget(el as HTMLInputElement | HTMLTextAreaElement);
+      else if (!busy.current) setTarget(null);
+    };
+    const onOut = () => setTimeout(() => {
+      if (!busy.current && !(document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement)) setTarget(null);
+    }, 250);
+    document.addEventListener("focusin", onIn, true);
+    document.addEventListener("focusout", onOut, true);
+    return () => { document.removeEventListener("focusin", onIn, true); document.removeEventListener("focusout", onOut, true); };
+  }, []);
+  useEffect(() => {
+    if (!target) { setBox(null); return; }
+    const place = () => setBox(target.getBoundingClientRect());
+    place();
+    addEventListener("scroll", place, true);
+    addEventListener("resize", place);
+    return () => { removeEventListener("scroll", place, true); removeEventListener("resize", place); };
+  }, [target]);
+  if (!target || !box || box.width === 0) return null;
+  const top = Math.min(innerHeight - 52, Math.max(4, box.top + box.height / 2 - 22));
+  const left = Math.min(innerWidth - 150, box.right + 8);
+  return (
+    <div class="page-talk" style={`top:${top}px;left:${left}px`} data-testid="page-talk">
+      <MicButton small onError={talkError} onPhase={(p) => { busy.current = p !== "idle"; }}
+        onText={(t) => { setText(target, addSpoken(target.value, t)); target.focus({ preventScroll: true }); }} />
+    </div>
+  );
+}
+
+/** Bottom-left dock: the main next step, other things to do, and "What do you want to do next?". */
+function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: string) => void }) {
+  const { tidy, engine } = props;
+  const [open, setOpen] = useState(false);
+  const [goal, setGoal] = useState("");
+  function ask(e: Event) {
+    e.preventDefault();
+    const text = goal.trim();
+    if (!text) return;
+    setGoal("");
+    setOpen(false);
+    props.onAsk(text);
+  }
+  return (
+    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label="Next step" data-testid="prism-next">
+      {open && (
+        <div class="nextstep__more" data-testid="next-more">
+          {tidy.nextOptions.length > 0 && (
+            <>
+              <span class="nextstep__label">Other things you can do</span>
+              <ul class="nextstep__options">
+                {tidy.nextOptions.map((label, i) => (
+                  <li><span>{label}</span><button class="pz-btn pz-btn--small" type="button" onClick={() => engine.showOption(i)}>Show me</button></li>
+                ))}
+              </ul>
+            </>
+          )}
+          <form class="nextstep__ask" onSubmit={ask}>
+            <label class="nextstep__label" for="pz-next-goal">What do you want to do next?</label>
+            <div class="nextstep__askrow">
+              <input id="pz-next-goal" class="pz-input" value={goal} placeholder="For example: find the opening hours"
+                onInput={(e) => setGoal((e.target as HTMLInputElement).value)} data-testid="next-goal" />
+              <MicButton small onError={talkError} onText={(t) => setGoal(addSpoken(goal, t))} testId="next-talk" />
+              <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!goal.trim()} data-testid="next-go">Go</button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div class="nextstep__bar">
+        {tidy.nextStep
+          ? <><span class="nextstep__label">Next step</span><span class="nextstep__text">{tidy.nextStep}</span>
+            <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>Show me</button></>
+          : <span class="nextstep__text">What do you want to do next?</span>}
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" aria-expanded={open} onClick={() => setOpen(!open)} data-testid="next-toggle">
+          {open ? "Less" : tidy.nextStep ? "More" : "Ask"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
   const { chat } = props;
   const [text, setText] = useState("");
   const [includeScreen, setIncludeScreen] = useState(false);
   const [helping, setHelping] = useState(false);
   const [helpingText, setHelpingText] = useState("");
+  const [highlights, setHighlights] = useState(spotlightCount());
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    const onChange = () => setHighlights(spotlightCount());
+    addEventListener("prism:spotlight", onChange);
+    return () => removeEventListener("prism:spotlight", onChange);
+  }, []);
   useEffect(() => { logRef.current?.scrollTo({ top: logRef.current.scrollHeight }); }, [chat?.messages.length, chat?.status]);
   const busy = chat && ["thinking", "acting"].includes(chat.status);
   const waitingConfirm = chat?.status === "waiting-confirm" && chat.pending;
@@ -730,6 +840,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
       </div>
       <div class="chat__context">
         <span class="chip"><Icon name="select" /> Talking about: {chat?.regionLabel ?? "This page"}</span>
+        {highlights > 0 && <button class="pz-btn pz-btn--small" type="button" data-testid="clear-highlights" onClick={() => clearSpotlight()}><Icon name="close" /> Clear highlights</button>}
         {chat?.sessionContext
           ? <span class="chip"><Icon name="person" /> Helping someone else <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:session", text: "" })}>Stop</button></span>
           : <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => setHelping(!helping)} aria-expanded={helping}>I'm helping someone else</button>}
@@ -776,6 +887,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) submit(e); }} data-testid="chat-input" />
         <div class="chat__row">
           <label class="toggle"><input type="checkbox" checked={includeScreen} onChange={(e) => setIncludeScreen((e.target as HTMLInputElement).checked)} /> Include the whole screen</label>
+          <MicButton small onError={talkError} onText={(t) => { setText(addSpoken(text, t)); inputRef.current?.focus(); }} testId="chat-talk" />
           <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!text.trim() || !!busy} data-testid="chat-send">Send</button>
         </div>
       </form>

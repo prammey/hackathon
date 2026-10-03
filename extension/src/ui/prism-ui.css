@@ -133,3 +133,10 @@ textarea.pz-input { min-height: 96px; resize: vertical; }
 .pz-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--pz-text); }
 .pz-wordmark { font-family: var(--pz-display); font-style: italic; font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: -0.01em; }
 .pz-logo { width: 28px; height: 28px; flex: none; border-radius: 22%; object-fit: contain; }
+
+/* Talk (dictation) button */
+.pz-mic { white-space: nowrap; flex: none; }
+.pz-mic--listening { background: #DC2626 !important; border-color: #DC2626 !important; color: #fff !important; animation: pz-mic-pulse 1.2s ease-in-out infinite; }
+.pz-mic--writing { opacity: .8; cursor: progress; }
+@keyframes pz-mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, .55); } 50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } }
+@media (prefers-reduced-motion: reduce) { .pz-mic--listening { animation: none; } }

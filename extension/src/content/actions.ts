@@ -6,6 +6,7 @@ import type { ActionCheck, ActionOutcome } from "../shared/chat";
 import type { ChatAction, FieldSuggestion } from "../shared/types";
 import { accessibleName, analyze, clean, isSensitiveField } from "./analyzer";
 import { findById } from "./region";
+import { clearSpotlight, spotlight } from "./spotlight";
 
 const CONSEQUENTIAL = /\b(submit|send|pay|payment|buy|purchase|order|checkout|check out|confirm|delete|remove|cancel|unsubscribe|sign|agree|accept|apply|transfer|book|donate|place|complete|finish|register|log ?out|sign ?out|publish|post|save and continue|continue to payment)\b/i;
 
@@ -185,6 +186,8 @@ function describe(action: ChatAction, el: Element | null): string {
     case "set_checkbox": return `${action.args.checked ? "Tick" : "Untick"} “${name}”`;
     case "scroll": return "Scroll the page";
     case "navigate": return `Open ${String(action.args.url ?? "")}`;
+    case "emphasize": return `Highlight ${clean(String(action.args.note ?? "") || name, 80)}`;
+    case "clear_emphasis": return "Remove the highlights";
     default: return action.name;
   }
 }
@@ -208,6 +211,13 @@ export function checkAction(action: ChatAction): ActionCheck {
     return { ok: true, risk: url.origin === location.origin ? "routine" : "consequential", description: url.origin === location.origin ? description : `${description} (a different website)` };
   }
   if (action.name === "scroll") return { ok: true, risk: "routine", description: "Scroll the page" };
+  // Highlighting only changes how the page looks, so it never needs confirmation.
+  if (action.name === "clear_emphasis") return { ok: true, risk: "routine", description: describe(action, null) };
+  if (action.name === "emphasize") {
+    const found = emphasisTargets(action);
+    if (!found.length) return { ok: false, risk: "routine", description: describe(action, null), reason: "I couldn't find that part of the page." };
+    return { ok: true, risk: "routine", description: describe(action, found[0]) };
+  }
   const el = findById(String(action.args.id ?? ""));
   if (!el) return { ok: false, risk: "routine", description: action.name, reason: "I couldn't find that part of the page any more." };
   const description = describe(action, el);
@@ -240,6 +250,17 @@ export function checkAction(action: ChatAction): ActionCheck {
   return { ok: true, risk: "routine", description };
 }
 
+/** The elements an emphasize action names that exist and aren't hidden inside closed menus. */
+function emphasisTargets(action: ChatAction): Element[] {
+  const ids = Array.isArray(action.args.ids) ? (action.args.ids as unknown[]).map(String).slice(0, 5) : [];
+  return ids.map((id) => findById(id)).filter((el): el is Element => {
+    if (!el) return false;
+    if (el.closest("[data-prism-collapsed]")) return true;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  });
+}
+
 /** Bumped when the person presses Stop, so an action that hasn't happened yet never happens. */
 let stopToken = 0;
 export function cancelPendingActions(): void {
@@ -259,6 +280,17 @@ export async function executeAction(action: ChatAction): Promise<ActionOutcome> 
       const url = new URL(String(action.args.url), location.href);
       setTimeout(() => { location.href = url.href; }, 50);
       return { ok: true, message: `Opening ${url.href}`, navigating: true, url: url.href };
+    }
+    if (action.name === "clear_emphasis") {
+      clearSpotlight();
+      return { ok: true, message: "Highlights removed." };
+    }
+    if (action.name === "emphasize") {
+      const found = emphasisTargets(action);
+      // Something folded away by Prism is unfolded so the highlight can be seen.
+      for (const el of found) el.closest("[data-prism-collapsed]:not([data-prism-open])")?.setAttribute("data-prism-open", "");
+      await spotlight(found);
+      return { ok: found.length > 0, message: found.length ? `Highlighted: ${found.map((e) => clean(accessibleName(e) || (e as HTMLElement).innerText || "", 50)).join(" | ")}` : "Nothing to highlight." };
     }
     if (action.name === "scroll") {
       const target = String(action.args.target ?? "down");

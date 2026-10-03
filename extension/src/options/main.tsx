@@ -7,61 +7,58 @@ import {
 } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { CachedPlan, Person, PersonDetails, Profile, Settings, SitePrefs, StyleId } from "../shared/types";
-import { Brand, Icon, isMac, Notice } from "../ui/components";
+import { allowMicrophone, Brand, Icon, isMac, MicButton, Notice, Switch } from "../ui/components";
 import { ImportSection } from "./imports";
 import { MiniPreview } from "./preview";
 
-const SECTIONS = [
-  ["style", "Style"], ["tidying", "Tidying"], ["pointing", "Pointing at things"], ["about", "About you"],
-  ["import", "Import from ChatGPT or Claude"], ["language", "Language"], ["reading", "Reading & accessibility"],
-  ["privacy", "Privacy & your data"], ["service", "Prism service"],
-] as const;
+// Sections that live inside "More settings": a link straight to one of them opens it.
+const MORE = ["tidying", "pointing", "import", "reading", "privacy", "service", "more"];
 
 export const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Polish", "Ukrainian", "Russian", "Turkish", "Arabic", "Urdu", "Hindi", "Bengali", "Punjabi", "Chinese (Simplified)", "Chinese (Traditional)", "Vietnamese", "Korean", "Japanese", "Tagalog"];
 
 function Settings() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [active, setActive] = useState(location.hash.slice(1) || "style");
+  const [moreOpen, setMoreOpen] = useState(MORE.includes(location.hash.slice(1)));
 
   useEffect(() => {
     getSettings().then(setSettings);
     getProfile().then(setProfile);
-    const onHash = () => setActive(location.hash.slice(1) || "style");
-    addEventListener("hashchange", onHash);
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (visible) setActive(visible.target.id);
-    }, { rootMargin: "-10% 0px -70% 0px" });
-    setTimeout(() => document.querySelectorAll(".section").forEach((s) => observer.observe(s)), 0);
-    if (location.hash) setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView(), 50);
-    return () => { removeEventListener("hashchange", onHash); observer.disconnect(); };
+    const go = () => {
+      const id = location.hash.slice(1);
+      if (MORE.includes(id)) setMoreOpen(true);
+      if (id) setTimeout(() => document.getElementById(id)?.scrollIntoView(), 50);
+    };
+    addEventListener("hashchange", go);
+    go();
+    return () => removeEventListener("hashchange", go);
   }, []);
 
   if (!settings || !profile) return <main class="page"><p>Loading settings…</p></main>;
   const update = async (patch: Partial<Settings>) => setSettings(await saveSettings(patch));
 
   return (
-    <main class="page">
+    <main class="page page--simple">
       <header class="page__head">
         <h1 style="margin:0"><Brand size={40} label="Settings" /></h1>
-        <p class="pz-muted" style="margin:0">Changes save automatically and stay in this browser.</p>
+        <p class="pz-muted" style="margin:0">Most changes save by themselves.</p>
       </header>
-      <div class="settings">
-        <nav class="nav" aria-label="Settings sections">
-          {SECTIONS.map(([id, label]) => <a href={`#${id}`} aria-current={active === id ? "true" : undefined}>{label}</a>)}
-        </nav>
-        <div style="display:grid;gap:48px">
-          <StyleSection settings={settings} update={update} />
-          <TidyingSection settings={settings} update={update} />
-          <PointingSection settings={settings} update={update} />
-          <AboutSection profile={profile} onSaved={setProfile} />
-          <ImportSection profile={profile} onSaved={setProfile} />
-          <LanguageSection settings={settings} update={update} />
-          <ReadingSection settings={settings} update={update} />
-          <PrivacySection onCleared={async () => { setProfile(await getProfile()); setSettings(await getSettings()); }} />
-          <ServiceSection settings={settings} update={update} />
-        </div>
+      <div class="simple-settings">
+        <StyleSection settings={settings} update={update} />
+        <DictationSection settings={settings} update={update} />
+        <LanguageSection settings={settings} update={update} />
+        <AboutSection profile={profile} onSaved={setProfile} />
+        <details id="more" class="more-settings" open={moreOpen} onToggle={(e) => setMoreOpen((e.target as HTMLDetailsElement).open)}>
+          <summary data-testid="more-settings">More settings</summary>
+          <div class="more-settings__body">
+            <TidyingSection settings={settings} update={update} />
+            <PointingSection settings={settings} update={update} />
+            <ReadingSection settings={settings} update={update} />
+            <ImportSection profile={profile} onSaved={setProfile} />
+            <PrivacySection onCleared={async () => { setProfile(await getProfile()); setSettings(await getSettings()); }} />
+            <ServiceSection settings={settings} update={update} />
+          </div>
+        </details>
       </div>
     </main>
   );
@@ -75,8 +72,7 @@ function StyleSection({ settings, update }: { settings: Settings; update: (p: Pa
   const overrides = sites.filter(([, p]) => p.styleId);
   return (
     <section id="style" class="section" aria-labelledby="style-h">
-      <h2 id="style-h">Style</h2>
-      <p>Choose how tidied websites look. You can also change the style for one website from the Prism button.</p>
+      <h2 id="style-h">How pages look</h2>
       <div class="style-cards" role="radiogroup" aria-label="Default style">
         {STYLE_ORDER.map((id) => {
           const t = STYLES[id];
@@ -89,6 +85,13 @@ function StyleSection({ settings, update }: { settings: Settings; update: (p: Pa
             </button>
           );
         })}
+      </div>
+      <div class="text-size" role="radiogroup" aria-label="Text size">
+        <span class="text-size__label">Text size</span>
+        {([1, 1.15, 1.3, 1.5] as const).map((v) => (
+          <button type="button" class="text-size__btn" role="radio" aria-checked={settings.textScale === v} onClick={() => update({ textScale: v })}
+            style={`font-size:${Math.round(16 * v)}px`}>{v === 1 ? "Normal" : v === 1.15 ? "Large" : v === 1.3 ? "Larger" : "Largest"}</button>
+        ))}
       </div>
       {overrides.length > 0 && (
         <div class="group">
@@ -236,10 +239,12 @@ const FIELDS: { key: keyof PersonDetails; label: string; hint?: string; type?: "
   { key: "dateOfBirth", label: "Date of birth", group: "forms", type: "date" },
 ];
 
-function DetailsForm(props: { value: PersonDetails; onChange: (v: PersonDetails) => void; idPrefix: string; groups: string[] }) {
+const BASIC: (keyof PersonDetails)[] = ["name", "formOfAddress", "city"];
+
+function DetailsForm(props: { value: PersonDetails; onChange: (v: PersonDetails) => void; idPrefix: string; groups: string[]; only?: (keyof PersonDetails)[]; skip?: (keyof PersonDetails)[] }) {
   return (
     <div class="grid2">
-      {FIELDS.filter((f) => props.groups.includes(f.group)).map((f) => {
+      {FIELDS.filter((f) => props.groups.includes(f.group) && (!props.only || props.only.includes(f.key)) && !props.skip?.includes(f.key)).map((f) => {
         const id = `${props.idPrefix}-${f.key}`;
         const set = (v: string) => props.onChange({ ...props.value, [f.key]: v });
         return (
@@ -275,18 +280,10 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
   return (
     <section id="about" class="section" aria-labelledby="about-h">
       <h2 id="about-h">About you</h2>
-      <p>Everything here is optional. Prism works without it — but it can explain things in a way that suits you and suggest answers for forms. You can change or delete anything at any time.</p>
-      <Notice>Never put passwords, bank or card numbers, or ID numbers here. Prism won't ask for them and won't type them into websites.</Notice>
-      <div class="group"><h3>How Prism should talk to you</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["talk"]} /></div>
-      <div class="group"><h3>Where you live</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["where"]} /></div>
-      <div class="group"><h3>Your background and goals</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["goals"]} /></div>
+      <p>Optional. It helps Prism talk to you the way you like. Never put passwords or card numbers here.</p>
+      <div class="group"><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["talk", "where"]} only={BASIC} /></div>
       <div class="group">
-        <h3>For filling in forms</h3>
-        <p class="pz-hint" style="margin:0">Only used to suggest answers when you choose <strong>Fill out</strong>. Prism always shows suggestions first and never sends a form.</p>
-        <DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["forms"]} />
-      </div>
-      <div class="group">
-        <h3>Other things Prism knows about you</h3>
+        <h3>Anything else Prism should know</h3>
         {draft.extraFacts.length === 0 && <p class="pz-muted" style="margin:0">Nothing yet. Add a fact below, or import from ChatGPT or Claude.</p>}
         <ul class="facts">
           {draft.extraFacts.map((f) => (
@@ -299,8 +296,19 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         <div class="row">
           <label class="pz-sr" for="new-fact">New fact</label>
           <input id="new-fact" class="pz-input" style="flex:1;min-width:240px" placeholder="e.g. I receive Pension Credit" value={newFact} onInput={(e) => setNewFact((e.target as HTMLInputElement).value)} />
+          <MicButton onText={(t) => setNewFact(t)} />
           <button class="pz-btn" type="button" disabled={!newFact.trim()} onClick={() => { setDraft({ ...draft, extraFacts: [...draft.extraFacts, { id: crypto.randomUUID(), text: newFact.trim(), source: "typed", addedAt: Date.now() }] }); setNewFact(""); }}>Add</button>
         </div>
+      </div>
+      <details class="more-about" open={location.hash === "#about"}>
+      <summary>More about you</summary>
+      <div class="group"><h3>How Prism should talk to you</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["talk"]} skip={BASIC} /></div>
+      <div class="group"><h3>Where you live</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["where"]} skip={BASIC} /></div>
+      <div class="group"><h3>Your background and goals</h3><DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["goals"]} /></div>
+      <div class="group">
+        <h3>For filling in forms</h3>
+        <p class="pz-hint" style="margin:0">Only used to suggest answers when you choose <strong>Fill out</strong>. Prism always shows suggestions first and never sends a form.</p>
+        <DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["forms"]} />
       </div>
       <div class="group">
         <h3>People you help</h3>
@@ -318,10 +326,45 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         ))}
         <div class="row"><button class="pz-btn" type="button" onClick={addPerson}><Icon name="person" /> Add a person</button></div>
       </div>
-      <div class="save-bar">
-        <button class="pz-btn pz-btn--primary" type="button" disabled={!dirty} onClick={() => save()} data-testid="save-profile">Save “About you”</button>
-        {dirty && <button class="pz-btn pz-btn--quiet" type="button" onClick={() => setDraft(profile)}>Undo changes</button>}
-        <span role="status" class="pz-muted">{status || (dirty ? "You have unsaved changes." : "")}</span>
+      </details>
+      {dirty && (
+        <div class="save-bar">
+          <button class="pz-btn pz-btn--primary" type="button" onClick={() => save()} data-testid="save-profile">Save “About you”</button>
+          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => setDraft(profile)}>Undo changes</button>
+        </div>
+      )}
+      <span role="status" class="pz-muted">{status}</span>
+    </section>
+  );
+}
+
+// ---------- Talking instead of typing ----------
+
+function DictationSection({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const [problem, setProblem] = useState("");
+  const [heard, setHeard] = useState("");
+  async function turn(on: boolean) {
+    setProblem("");
+    if (!on) { update({ dictation: false }); return; }
+    const error = await allowMicrophone();
+    if (error) setProblem(error);
+    else update({ dictation: true });
+  }
+  return (
+    <section id="talk" class="section" aria-labelledby="talk-h">
+      <h2 id="talk-h">Talking instead of typing</h2>
+      <p>Press <strong>Talk</strong> next to any box and say what you want to write. Prism writes it down for you.</p>
+      <div class="group">
+        <Switch checked={settings.dictation} onChange={turn} label="Let me talk instead of typing" id="dictation" />
+        {problem && <Notice tone="error">{problem}</Notice>}
+        {settings.dictation && (
+          <div class="talk-try">
+            <span>Try it:</span>
+            <MicButton onText={setHeard} onError={setProblem} testId="settings-talk" />
+            {heard && <span class="talk-try__heard" data-testid="settings-heard">“{heard}”</span>}
+          </div>
+        )}
+        <p class="pz-hint" style="margin:0">Your voice is sent to Google's Gemini AI to be written down, then thrown away.</p>
       </div>
     </section>
   );
@@ -332,15 +375,13 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
 function LanguageSection({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   return (
     <section id="language" class="section" aria-labelledby="lang-h">
-      <h2 id="lang-h">Language</h2>
+      <h2 id="lang-h">Your language</h2>
       <div class="group">
-        <label class="pz-field" for="translate-to"><span>Translate things into</span>
-          <span class="pz-hint">Also the language Prism uses for explanations and chat.</span>
+        <label class="pz-field" for="translate-to"><span>Prism explains and translates into</span>
           <select id="translate-to" class="pz-input" style="max-width:320px" value={settings.translateTo} onChange={(e) => update({ translateTo: (e.target as HTMLSelectElement).value })}>
             {LANGUAGES.map((l) => <option>{l}</option>)}
           </select>
         </label>
-        <p class="pz-hint" style="margin:0">Prism's own buttons and menus are in English in this version.</p>
       </div>
     </section>
   );
@@ -355,16 +396,7 @@ function ReadingSection({ settings, update }: { settings: Settings; update: (p: 
   );
   return (
     <section id="reading" class="section" aria-labelledby="read-h">
-      <h2 id="read-h">Reading & accessibility</h2>
-      <div class="group">
-        <h3>Text size on tidied pages</h3>
-        <div class="row" role="radiogroup" aria-label="Text size">
-          {([1, 1.15, 1.3, 1.5] as const).map((v) => (
-            <label class="pz-choice"><input type="radio" name="size" checked={settings.textScale === v} onChange={() => update({ textScale: v })} />
-              <span style={`font-size:${Math.round(17 * v)}px`}>{v === 1 ? "Normal" : v === 1.15 ? "Large" : v === 1.3 ? "Larger" : "Largest"}</span></label>
-          ))}
-        </div>
-      </div>
+      <h2 id="read-h">Reading</h2>
       <div class="group">
         <h3>Explanations</h3>
         <div class="radio-list" role="radiogroup" aria-label="Explanation detail">

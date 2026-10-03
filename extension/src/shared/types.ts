@@ -16,6 +16,8 @@ export interface Settings {
   helperMode: HelperMode;
   localUrl: string;
   tidyEverywhere: boolean;
+  /** Talking instead of typing: the microphone was allowed once on Prism's own page. */
+  dictation: boolean;
   onboarded: boolean;
   installId: string;
 }

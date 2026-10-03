@@ -1,6 +1,7 @@
 import logoUrl from "./logo-96.png";
 /** Small shared Preact components used by the in-page UI and the extension pages. */
 import type { ComponentChildren } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { StyleId } from "../shared/types";
 
@@ -38,6 +39,7 @@ const paths: Record<string, string> = {
   copy: "M8 8h11v12H8zM5 16V4h11",
   speak: "M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11",
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  mic: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3M8 21h8",
 };
 
 export function Icon({ name, label }: { name: keyof typeof paths | string; label?: string }) {
@@ -96,4 +98,55 @@ export function Notice(props: { tone?: "info" | "error" | "ok" | "warn"; childre
 
 export function isMac(): boolean {
   return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+}
+
+
+export type MicPhase = "idle" | "listening" | "writing";
+
+/**
+ * Talk instead of typing: tap to start listening, tap again to stop; Prism writes the words down and hands
+ * them to `onText`. Recording happens in Prism's own recorder page (see offscreen/record.ts).
+ */
+export function MicButton(props: { onText: (text: string) => void; onError?: (message: string) => void; onPhase?: (phase: MicPhase) => void; label?: string; small?: boolean; testId?: string }) {
+  const [phase, setPhaseState] = useState<MicPhase>("idle");
+  const live = useRef<MicPhase>("idle");
+  const setPhase = (p: MicPhase) => { live.current = p; setPhaseState(p); props.onPhase?.(p); };
+  // If the button goes away mid-recording, stop the microphone.
+  useEffect(() => () => { if (live.current === "listening") chrome.runtime.sendMessage({ type: "dictate:stop" }).catch(() => {}); }, []);
+  async function toggle(e: Event) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (phase === "writing") return;
+    if (phase === "idle") {
+      const r = await chrome.runtime.sendMessage({ type: "dictate:start" }) as { ok: boolean; error?: { message: string } };
+      if (r?.ok) setPhase("listening");
+      else props.onError?.(r?.error?.message ?? "Prism couldn't start listening.");
+      return;
+    }
+    setPhase("writing");
+    const r = await chrome.runtime.sendMessage({ type: "dictate:stop" }) as { ok: boolean; value?: { text: string }; error?: { message: string } };
+    setPhase("idle");
+    if (r?.ok && r.value?.text) props.onText(r.value.text);
+    else props.onError?.(r?.error?.message ?? "Prism didn't catch that. Please try again.");
+  }
+  const text = phase === "listening" ? "Tap to stop" : phase === "writing" ? "Writing it down…" : (props.label ?? "Talk");
+  return (
+    <button type="button" class={`pz-btn pz-mic${props.small ? " pz-btn--small" : ""} pz-mic--${phase}`} onMouseDown={(e) => e.preventDefault()} onClick={toggle}
+      aria-pressed={phase === "listening"} aria-label={phase === "idle" ? `${props.label ?? "Talk"}: say it instead of typing` : text} data-testid={props.testId} data-phase={phase}>
+      <Icon name="mic" /> {text}
+    </button>
+  );
+}
+
+/** Asks for the microphone on Prism's own page; Chrome remembers the answer for every website. */
+export async function allowMicrophone(): Promise<string> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+    return "";
+  } catch (err) {
+    return (err as Error).name === "NotAllowedError"
+      ? "The microphone was blocked. Click the camera/microphone icon in the address bar, choose Allow, then try again."
+      : "Prism couldn't find a microphone on this computer.";
+  }
 }

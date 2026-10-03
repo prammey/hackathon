@@ -24,6 +24,12 @@ DECLARATIONS = [
       {"target": {"type": "string", "description": "An element id, or 'up' or 'down'"}}, ["target"]),
   _fn("navigate", "Open a web address. Prefer clicking links on the page.",
       {"url": {"type": "string"}}, ["url"]),
+  _fn("emphasize", "Make parts of the page stand out so the person can find them easily (bigger, bold, "
+      "highlighted, with a gently breathing outline) and scroll to the first one. Changes only how the page "
+      "looks, nothing else. Use for 'emphasize…', 'highlight…', 'make … bigger', 'where is…', 'show me…'.",
+      {"ids": {"type": "array", "items": _ID, "description": "1 to 5 element ids, most relevant first"},
+       "note": {"type": "string", "description": "What is highlighted, in a few plain words"}}, ["ids", "note"]),
+  _fn("clear_emphasis", "Remove all highlights added with emphasize.", {}, []),
   _fn("read_page", "Get a fresh view of the page state.", {}, []),
   _fn("ask_user", "Ask the person a question when information or a decision is needed.",
       {"question": {"type": "string"}}, ["question"]),

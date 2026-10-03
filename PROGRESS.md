@@ -74,3 +74,11 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
   never the next step, menus keep their own shape, icon-only buttons stay visible, text over photos/video
   stays readable, no boxes-in-boxes in headers, no orphan bullets or picture-only leftovers after folding,
   quieter outlines, dark table rows fixed (contrast flake). Helper redeployed (planner prompt).
+- 2026-10-03 — v0.5.0: dictation everywhere (microphone allowed once on Prism's page; recorded in an
+  offscreen page, written down by Gemini via /v1/transcribe; Talk buttons in Chat, the next-step box, Fill
+  out, Settings and beside any of the website's own text boxes — never password/card/ID fields). Next-step
+  dock gains "More" (up to 4 other things to do, each with Show me) and "What do you want to do next?",
+  which hands the goal to Chat. Chat can now *emphasize* page parts (new emphasize/clear_emphasis tools:
+  bigger, bold, highlighted, breathing outline; works tidied or not; Clear highlights). Settings simplified
+  to four sections (How pages look + text size, Talking instead of typing, Your language, About you basics)
+  with everything else under "More settings". Helper redeployed.

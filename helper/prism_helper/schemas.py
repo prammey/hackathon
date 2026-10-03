@@ -208,3 +208,11 @@ class ProfileCandidate(BaseModel):
 
 class ProfileCandidates(BaseModel):
   facts: list[ProfileCandidate]
+
+
+# ---------- Dictation ----------
+
+class TranscribeRequest(BaseModel):
+  audio: str = Field(min_length=100, max_length=2_800_000)  # base64, about 60 s of speech at most
+  mime: Literal["audio/webm", "audio/ogg", "audio/mp4", "audio/wav"] = "audio/webm"
+  language: str = Field(default="", max_length=40)  # a hint only; the person may speak any language

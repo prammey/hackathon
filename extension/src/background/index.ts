@@ -73,8 +73,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 const appliedCss = new Map<string, string>();
 
-async function applyCss(tabId: number, frameId: number, css: string) {
-  const k = `${tabId}:${frameId}`;
+// Each frame can hold more than one Prism sheet ("page" for tidying, "spotlight" for chat highlights).
+async function applyCss(tabId: number, frameId: number, css: string, key = "page") {
+  const k = `${tabId}:${frameId}:${key}`;
   const previous = appliedCss.get(k);
   if (previous === css) return;
   // Insert the new sheet before removing the old one so there's no flash of the untidied page.
@@ -83,8 +84,8 @@ async function applyCss(tabId: number, frameId: number, css: string) {
   if (previous) await chrome.scripting.removeCSS({ target: { tabId, frameIds: [frameId] }, css: previous, origin: "AUTHOR" }).catch(() => {});
 }
 
-async function removeCss(tabId: number, frameId: number) {
-  const k = `${tabId}:${frameId}`;
+async function removeCss(tabId: number, frameId: number, key = "page") {
+  const k = `${tabId}:${frameId}:${key}`;
   const previous = appliedCss.get(k);
   appliedCss.delete(k);
   if (previous) await chrome.scripting.removeCSS({ target: { tabId, frameIds: [frameId] }, css: previous, origin: "AUTHOR" }).catch(() => {});
@@ -94,6 +95,37 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   for (const k of [...appliedCss.keys()]) if (k.startsWith(`${tabId}:`)) appliedCss.delete(k);
   clearChat(tabId);
 });
+
+// ---------- Dictation ----------
+
+async function ensureRecorder(): Promise<void> {
+  const url = chrome.runtime.getURL("offscreen.html");
+  const existing = await chrome.runtime.getContexts({ contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT], documentUrls: [url] });
+  if (existing.length) return;
+  await chrome.offscreen.createDocument({ url, reasons: [chrome.offscreen.Reason.USER_MEDIA], justification: "Record the person's voice when they choose to talk instead of type." });
+}
+
+const DICTATION_ERRORS: Record<string, string> = {
+  "not-allowed": "Prism isn't allowed to use the microphone yet. Turn on “Talking instead of typing” in Prism's settings.",
+  "no-microphone": "Prism couldn't find a microphone on this computer.",
+  "too-short": "Prism didn't hear anything. Try again and speak after pressing Talk.",
+  "not-recording": "Prism wasn't listening.",
+};
+
+async function dictateStart() {
+  if (!(await getSettings()).dictation) return { ok: false, error: { code: "forbidden", message: DICTATION_ERRORS["not-allowed"] } };
+  await ensureRecorder();
+  const r = await chrome.runtime.sendMessage({ target: "offscreen", type: "rec:start" }) as { ok: boolean; error?: string };
+  return r.ok ? { ok: true } : { ok: false, error: { code: "forbidden", message: DICTATION_ERRORS[r.error ?? ""] ?? "Prism couldn't start listening." } };
+}
+
+async function dictateStop() {
+  const r = await chrome.runtime.sendMessage({ target: "offscreen", type: "rec:stop" }).catch(() => null) as { ok: boolean; audio?: string; mime?: string; error?: string } | null;
+  chrome.offscreen.closeDocument().catch(() => {});
+  if (!r?.ok || !r.audio) return { ok: false, error: { code: "nothing_selected", message: DICTATION_ERRORS[r?.error ?? ""] ?? "Prism didn't hear anything." } };
+  const settings = await getSettings();
+  return callHelper("/v1/transcribe", { audio: r.audio, mime: r.mime, language: settings.translateTo });
+}
 
 // ---------- Message router ----------
 
@@ -106,20 +138,23 @@ const handlers: Record<string, Handler> = {
   },
   // Sent at document_start: a new document has none of the previously inserted CSS.
   "css:reset": (_msg, sender) => {
-    if (sender.tab?.id !== undefined) appliedCss.delete(`${sender.tab.id}:${sender.frameId ?? 0}`);
+    const prefix = `${sender.tab?.id}:${sender.frameId ?? 0}:`;
+    for (const k of [...appliedCss.keys()]) if (k.startsWith(prefix)) appliedCss.delete(k);
     return { ok: true };
   },
   "css:apply": async (msg, sender) => {
     if (sender.tab?.id === undefined) return { ok: false };
-    await applyCss(sender.tab.id, sender.frameId ?? 0, msg.css);
+    await applyCss(sender.tab.id, sender.frameId ?? 0, msg.css, msg.key);
     return { ok: true };
   },
-  "css:remove": async (_msg, sender) => {
+  "css:remove": async (msg, sender) => {
     if (sender.tab?.id === undefined) return { ok: false };
-    await removeCss(sender.tab.id, sender.frameId ?? 0);
+    await removeCss(sender.tab.id, sender.frameId ?? 0, msg.key);
     return { ok: true };
   },
   api: (msg) => callHelper(msg.path, msg.body),
+  "dictate:start": () => dictateStart(),
+  "dictate:stop": () => dictateStop(),
   health: () => helperHealth(),
   stats: () => ({ ...stats }),
   capture: async (msg: { rect: Rect | null; viewportWidth: number }, sender) => {

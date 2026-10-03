@@ -19,7 +19,7 @@ from .gemini import FALLBACK_MODEL, PLAN_MODEL, PRIMARY_MODEL, AIUnavailable, ge
 from .limits import Limiter
 from .schemas import (
   AssistRequest, ChatReply, ChatRequest, DefineAnswer, ExtractRequest, FillAnswer, PlanRequest,
-  ProfileCandidates, TidyPlan, TranslateAnswer,
+  ProfileCandidates, TidyPlan, TranscribeRequest, TranslateAnswer,
 )
 from .tools import CHAT_TOOLS, TOOL_NAMES
 
@@ -31,7 +31,7 @@ ALLOWED_ORIGINS = [f"chrome-extension://{EXTENSION_ID}"] + [
   o for o in os.environ.get("PRISM_EXTRA_ORIGINS", "").split(",") if o
 ]
 HOSTED = os.environ.get("PRISM_MODE", "local") == "hosted"
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 app = FastAPI(title="Prism helper", version=VERSION, docs_url=None, redoc_url=None)
 app.add_middleware(
@@ -241,6 +241,15 @@ def chat(req: ChatRequest):
 
 
 # ---------- Imports ----------
+
+@app.post("/v1/transcribe")
+def transcribe(req: TranscribeRequest):
+  hint = f" They usually speak {req.language}." if req.language else ""
+  contents = [image_part(req.audio, req.mime), "Write down what is said." + hint]
+  resp, model = generate(contents, prompts.TRANSCRIBE_SYSTEM)
+  text = (resp.text or "").strip().strip('"').strip()
+  return {"text": text[:4000], "model": model}
+
 
 @app.post("/v1/import/extract")
 def extract(req: ExtractRequest):
