@@ -43,12 +43,15 @@ export class TidyEngine {
   private observer: MutationObserver | null = null;
   private debounce = 0;
   private routeTimer = 0;
+  private routeDebounce = 0;
   private lastHref = location.href;
   private aiCallTimes: number[] = [];
   private planFingerprint = "";
   private structureChangedAt = 0;
   private settings: Settings | null = null;
   private requestSeq = 0;
+  /** Counters for tests and diagnostics. */
+  debug = { analyzeRuns: 0, routeChanges: 0, planRequests: 0, planReasons: [] as string[] };
 
   onChange(fn: Listener): () => void {
     this.listeners.add(fn);
@@ -79,6 +82,7 @@ export class TidyEngine {
     const beforeWidth = document.documentElement.scrollWidth;
 
     this.analysis = analyze();
+    this.debug.analyzeRuns++;
     this.pageKey = pageKeyFor(location.href);
     await this.applyStyle(styleId, settings);
     this.emit({ status: "base", styleId, message: "Tidied with Prism's basic clean-up.", steps: [], folds: [] });
@@ -177,7 +181,7 @@ export class TidyEngine {
     return this.aiCallTimes.length < AI_BUDGET;
   }
 
-  private async loadPlan(fromScratch: boolean): Promise<void> {
+  private async loadPlan(fromScratch: boolean, reason = "enable"): Promise<void> {
     const analysis = this.analysis;
     if (!analysis) return;
     const seq = ++this.requestSeq;
@@ -202,6 +206,8 @@ export class TidyEngine {
       return;
     }
     this.aiCallTimes.push(Date.now());
+    this.debug.planRequests++;
+    this.debug.planReasons.push(`${reason} ${location.pathname}`);
     this.emit({ status: "planning", message: "Prism is studying the page…", aiCalls: this.state.aiCalls + 1, cacheHit: false });
     const started = performance.now();
     const settings = this.settings!;
@@ -327,9 +333,8 @@ export class TidyEngine {
     this.observer.observe(document.body, { childList: true, subtree: true });
     this.routeTimer = window.setInterval(() => {
       if (location.href !== this.lastHref) {
-        this.lastHref = location.href;
-        clearTimeout(this.debounce);
-        this.debounce = window.setTimeout(() => this.onRouteChange(), 700);
+        clearTimeout(this.routeDebounce);
+        this.routeDebounce = window.setTimeout(() => this.onRouteChange(), 700);
       }
     }, 800);
   }
@@ -338,13 +343,20 @@ export class TidyEngine {
     this.observer?.disconnect();
     this.observer = null;
     clearTimeout(this.debounce);
+    clearTimeout(this.routeDebounce);
     clearInterval(this.routeTimer);
   }
 
   /** New content: re-tag deterministically (no AI) and re-apply known plan roles. */
   private onDomSettled() {
     if (!this.active) return;
+    // A client-side navigation changes the DOM before the URL poll notices; treat it as a route change.
+    if (location.href !== this.lastHref) {
+      this.onRouteChange();
+      return;
+    }
     this.analysis = analyze();
+    this.debug.analyzeRuns++;
     if (this.plan) this.reapplyRoles(this.plan);
     if (this.analysis.structureHash !== this.planFingerprint) {
       if (!this.structureChangedAt) this.structureChangedAt = Date.now();
@@ -352,7 +364,7 @@ export class TidyEngine {
       const changed = this.changeRatio();
       if (changed > 0.25 && Date.now() - this.structureChangedAt > 1500) {
         this.structureChangedAt = 0;
-        this.loadPlan(false);
+        this.loadPlan(false, "structure");
       }
     } else {
       this.structureChangedAt = 0;
@@ -378,13 +390,18 @@ export class TidyEngine {
     for (const { id, level } of plan.emphasis) ids.get(id)?.setAttribute("data-prism-emphasis", level);
   }
 
+  /** Called by both the URL poll and the DOM watcher; whichever arrives first handles the route. */
   private async onRouteChange() {
-    if (!this.active) return;
+    if (!this.active || location.href === this.lastHref) return;
+    this.lastHref = location.href;
+    clearTimeout(this.routeDebounce);
     this.analysis = analyze();
+    this.debug.analyzeRuns++;
+    this.debug.routeChanges++;
     this.pageKey = pageKeyFor(location.href);
     this.clearPlanAttrs();
     this.plan = null;
-    await this.loadPlan(false);
+    await this.loadPlan(false, "route");
   }
 }
 

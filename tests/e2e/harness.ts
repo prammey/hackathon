@@ -111,3 +111,16 @@ export async function dragSelect(page: Page, from: [number, number], to: [number
   await page.mouse.up();
   if (!opts.releaseKeyFirst) await page.keyboard.up(key);
 }
+
+/** Merge settings after the extension finished its first-install setup (avoids an install-time race). */
+export async function setSettings(sw: Worker, patch: Record<string, unknown>) {
+  await sw.evaluate(async (patch) => {
+    for (let i = 0; i < 50; i++) {
+      const { settings } = await chrome.storage.local.get("settings");
+      if (settings?.installId) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const { settings } = await chrome.storage.local.get("settings");
+    await chrome.storage.local.set({ settings: { ...(settings ?? {}), ...patch } });
+  }, patch);
+}

@@ -25,6 +25,10 @@ the page does. You only label existing elements by their id; Prism's own code do
 {UNTRUSTED_NOTE}
 
 Rules:
+- Be brief: the answer must be small. Label at most 80 elements in `roles`, only where the role changes
+  how the element should look (primary-action, secondary-action, notice, required-notice, error, clutter,
+  nav, main, aside, header, footer, form). Do not label ordinary text, headings, fields or images.
+- At most 10 emphasis entries, 8 collapse groups and 8 steps.
 - Use only ids that appear in the outline.
 - roles: label the important elements. primary-action = the single most important button/link for the
   page's main task (at most 2). secondary-action = other real actions. notice = important information

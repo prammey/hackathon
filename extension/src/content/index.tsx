@@ -89,6 +89,12 @@ function main() {
       case "prism:viewport": reply({ width: innerWidth, height: innerHeight }); return false;
       case "prism:hide-ui": setHidden(true).then(() => reply({ ok: true })); return true;
       case "prism:show-ui": setHidden(false).then(() => reply({ ok: true })); return true;
+      case "prism:debug": reply({ ...engine.debug, status: engine.state.status, pageKey: location.href }); return false;
+      case "prism:test-plan":
+        // Test builds only: apply an arbitrary (possibly invalid) plan to check validation.
+        if (!__PRISM_TEST__) { reply({ ok: false }); return false; }
+        reply(engine.applyPlan(msg.plan));
+        return false;
       case "chat:update": bus.emit("chat:update", msg.state); return false;
       case "chat:observe": reply({ text: observePage() }); return false;
       case "chat:check": reply(checkAction(msg.action)); return false;

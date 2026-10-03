@@ -1,7 +1,7 @@
 import { strToU8, zipSync } from "fflate";
 import fs from "node:fs";
 import path from "node:path";
-import { dragSelect, EVIDENCE, expect, FIXTURES, prismReady, shot, tabId, tabMessage, test, waitForStatus } from "./harness";
+import { dragSelect, EVIDENCE, expect, FIXTURES, prismReady, setSettings, shot, tabId, tabMessage, test, waitForStatus } from "./harness";
 
 test("Popup: tidy switch, style picker, auto-tidy checkbox, helper status", async ({ context, sw, extensionId }) => {
   const page = await context.newPage();
@@ -167,11 +167,8 @@ test("Welcome page renders and offers a practice page", async ({ context, extens
 });
 
 test("Online (hosted) Prism service works through the extension", async ({ context, sw }) => {
-  await sw.evaluate(async () => {
-    const { settings } = await chrome.storage.local.get("settings");
-    // The local address points nowhere, so only the online service can answer.
-    await chrome.storage.local.set({ settings: { ...(settings ?? {}), helperMode: "hosted", localUrl: "http://127.0.0.1:9" } });
-  });
+  // The local address points nowhere, so only the online service can answer.
+  await setSettings(sw, { helperMode: "hosted", localUrl: "http://127.0.0.1:9" });
   const page = await context.newPage();
   await page.goto(`${FIXTURES}/cluttered-info/`);
   await prismReady(page);

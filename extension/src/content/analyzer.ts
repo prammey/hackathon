@@ -112,6 +112,11 @@ function isProtectedSelf(el: Element): boolean {
   return ERROR_PATTERN.test(idClass) || CONSENT_PATTERN.test(idClass);
 }
 
+/** Only touch the DOM when a value actually changes, so sites observing their own DOM see no churn. */
+function setAttr(el: Element, name: string, value: string) {
+  if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+}
+
 function stableId(sig: string, seen: Map<string, number>): string {
   const base = `p${hash(sig)}`;
   const n = seen.get(base) ?? 0;
@@ -163,7 +168,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
   const register = (el: Element, item: Omit<OutlineElement, "id">, priority: number, sigExtra = "") => {
     const sig = `${item.tag}|${item.role ?? ""}|${(item.name ?? "").slice(0, 50)}|${anchorOf(el)}|${sigExtra}`;
     const id = stableId(sig, seen);
-    el.setAttribute("data-prism-id", id);
+    setAttr(el, "data-prism-id", id);
     ids.set(id, el);
     outlineEls.push({ el, item: { id, ...item }, priority });
     return id;
@@ -200,7 +205,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
     // Controls
     const kind = controlKind(el, cs);
     if (kind) {
-      el.setAttribute("data-prism-c", kind);
+      setAttr(el, "data-prism-c", kind);
       tagged++;
       const name = accessibleName(el);
       const item: Omit<OutlineElement, "id"> = { tag: tag.toLowerCase(), name: clean(name, 80), box, interactive: true };
@@ -222,7 +227,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
     if (landmark) {
       const mapped = ({ banner: "header", navigation: "nav", complementary: "aside", contentinfo: "footer", search: "form" } as Record<string, string>)[landmark] ?? landmark;
       if (["header", "nav", "footer", "main"].includes(mapped) && !el.hasAttribute("data-prism-role")) {
-        el.setAttribute("data-prism-role", mapped);
+        setAttr(el, "data-prism-role", mapped);
         tagged++;
       }
       skeleton.push(`l:${mapped}`);
@@ -244,15 +249,15 @@ export function analyze(doc: Document = document): AnalyzeResult {
     if (bg && !landmark.startsWith("main") && tag !== "BODY" && tag !== "HTML") {
       const area = rect.width * rect.height;
       if (bg === "image") {
-        el.setAttribute("data-prism-s", "keep");
+        setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9 && rect.height > docHeight * 0.5) {
-        el.setAttribute("data-prism-s", "plain");
+        setAttr(el, "data-prism-s", "plain");
       } else if (rect.width >= vw * 0.9) {
-        el.setAttribute("data-prism-s", "band");
+        setAttr(el, "data-prism-s", "band");
       } else if (area >= 12000) {
-        el.setAttribute("data-prism-s", "card");
+        setAttr(el, "data-prism-s", "card");
       } else {
-        el.setAttribute("data-prism-s", "keep");
+        setAttr(el, "data-prism-s", "keep");
       }
       tagged++;
     }
@@ -260,7 +265,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
     // Clutter heuristics
     const sticky = cs.position === "fixed" || cs.position === "sticky";
     if (AD_PATTERN.test(idClass) && !isProt && !el.querySelector("input,select,textarea,form")) {
-      el.setAttribute("data-prism-role", "clutter");
+      setAttr(el, "data-prism-role", "clutter");
       tagged++;
       register(el, { tag: tag.toLowerCase(), name: clean(el.innerText ?? "", 60), box, hint: "likely-ad" }, 6);
       continue;
@@ -269,7 +274,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
       const src = (el as HTMLIFrameElement).src;
       const ad = /doubleclick|googlesyndication|adservice|amazon-adsystem|taboola|outbrain|criteo/.test(src);
       register(el, { tag: "iframe", name: clean(el.getAttribute("title") ?? "", 60), box, hint: ad ? "ad-frame" : "frame" }, ad ? 6 : 4);
-      if (ad) { el.setAttribute("data-prism-role", "clutter"); tagged++; }
+      if (ad) { setAttr(el, "data-prism-role", "clutter"); tagged++; }
       continue;
     }
     if (sticky && rect.height < 220 && rect.width > vw * 0.5 && !landmark && !CONSENT_PATTERN.test(idClass)) {
@@ -278,7 +283,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
 
     // Notices and errors
     if (roleAttr === "alert" || (ERROR_PATTERN.test(idClass) && clean(el.innerText ?? "").length > 2 && el.children.length < 6)) {
-      if (!el.hasAttribute("data-prism-role")) el.setAttribute("data-prism-role", "error");
+      if (!el.hasAttribute("data-prism-role")) setAttr(el, "data-prism-role", "error");
       tagged++;
       const id = register(el, { tag: tag.toLowerCase(), role: "alert", name: clean(el.innerText ?? "", 140), box, hint: "error" }, 9);
       protectedIds.add(id);
@@ -319,7 +324,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
 
   if (!mainEl && bestArticle) mainEl = bestArticle.el;
   if (mainEl && !mainEl.hasAttribute("data-prism-role")) {
-    mainEl.setAttribute("data-prism-role", "main");
+    setAttr(mainEl, "data-prism-role", "main");
     tagged++;
   }
 

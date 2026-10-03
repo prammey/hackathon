@@ -199,6 +199,7 @@ export function pageCss(styleId: StyleId, settings: Settings, reducedMotion: boo
   const button = `:is([data-prism-c=button],[data-prism-c=button-link])`;
   const linkSel = `a[href]:not([data-prism-c]):not([role=button])${notKeep}`;
   const motion = reducedMotion || settings.reduceMotion === "on";
+  const dur = motion ? "0s" : t.motion;
 
   return `
 ${P}{--p-base:${base}px;--p-target:${target};color-scheme:light!important;background:${t.bg}!important;${motion ? "" : "scroll-behavior:smooth;"}}
@@ -223,7 +224,7 @@ ${P} [data-prism-s=band]{background:${t.band}!important;background-image:none!im
 ${P} [data-prism-s=card]{background:${t.card}!important;background-image:none!important;color:${t.text}!important;border:${t.cardBorder}!important;box-shadow:${t.cardShadow}!important;border-radius:${t.radiusCard}!important}
 ${P} [data-prism-s=plain]{background:${t.surface}!important;background-image:none!important;color:${t.text}!important}
 ${P} :is([data-prism-s=band],[data-prism-s=card],[data-prism-s=plain]) :is(span,div,strong,b,em,small,time)${notKeep}{color:inherit}
-${P} ${button}{font-family:${t.fontBody}!important;font-weight:700!important;font-size:max(1em,16px)!important;line-height:1.2!important;min-height:var(--p-target)!important;padding:.5em 1.05em!important;border-radius:${t.radiusControl}!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;background:${t.buttonBg}!important;background-image:none!important;color:${t.buttonText}!important;box-shadow:${t.buttonShadow}!important;text-decoration:none!important;text-shadow:none!important;cursor:pointer!important;transition:transform ${t.motion},box-shadow ${t.motion},filter ${t.motion}!important;box-sizing:border-box!important}
+${P} ${button}{font-family:${t.fontBody}!important;font-weight:700!important;font-size:max(1em,16px)!important;line-height:1.2!important;min-height:var(--p-target)!important;padding:.5em 1.05em!important;border-radius:${t.radiusControl}!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;background:${t.buttonBg}!important;background-image:none!important;color:${t.buttonText}!important;box-shadow:${t.buttonShadow}!important;text-decoration:none!important;text-shadow:none!important;cursor:pointer!important;transition:transform ${dur},box-shadow ${dur},filter ${dur}!important;box-sizing:border-box!important}
 ${P} ${button} *{color:inherit!important}
 ${P} [data-prism-c=icon-button]{min-width:var(--p-target)!important;min-height:var(--p-target)!important;border-radius:${t.radiusControl}!important;color:${t.text}!important}
 ${P} ${button}:hover{filter:brightness(0.94)!important}
@@ -240,7 +241,7 @@ ${P} [data-prism-role=error]{color:${t.danger}!important;font-weight:700!importa
 ${P} [data-prism-role=error] *{color:inherit!important}
 ${P} [data-prism-emphasis=primary]:not(${button.slice(4, -1)}):not(button):not(input){outline:3px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
 ${P} [data-prism-emphasis=quiet]{opacity:.78!important}
-${P} [data-prism-role=clutter]:not([data-prism-collapsed]){opacity:.5!important;filter:grayscale(.7)!important;transition:opacity ${t.motion}!important}
+${P} [data-prism-role=clutter]:not([data-prism-collapsed]){opacity:.5!important;filter:grayscale(.7)!important;transition:opacity ${dur}!important}
 ${P} [data-prism-role=clutter]:not([data-prism-collapsed]):is(:hover,:focus-within){opacity:1!important;filter:none!important}
 ${P} [data-prism-collapsed]:not([data-prism-open]){display:none!important}
 ${P} [data-prism-step-active]{outline:4px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}

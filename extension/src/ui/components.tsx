@@ -49,8 +49,9 @@ export function Icon({ name, label }: { name: keyof typeof paths | string; label
 
 export function Switch(props: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; disabled?: boolean }) {
   return (
+    // Never disabled while busy: disabling a focused control would drop keyboard focus.
     <button type="button" role="switch" id={props.id} class="pz-switch" aria-checked={props.checked}
-      disabled={props.disabled} onClick={() => props.onChange(!props.checked)}>
+      aria-busy={props.disabled ? "true" : undefined} onClick={() => !props.disabled && props.onChange(!props.checked)}>
       <span>{props.label}</span>
       <span style="display:flex;align-items:center">
         <span class="pz-switch__state" aria-hidden="true">{props.checked ? "On" : "Off"}</span>

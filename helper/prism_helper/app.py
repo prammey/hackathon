@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from google.genai import types
 
 from . import prompts
-from .gemini import FALLBACK_MODEL, PRIMARY_MODEL, AIUnavailable, generate, generate_json, image_part
+from .gemini import FALLBACK_MODEL, PLAN_MODEL, PRIMARY_MODEL, AIUnavailable, generate, generate_json, image_part
 from .limits import Limiter
 from .schemas import (
   AssistRequest, ChatReply, ChatRequest, DefineAnswer, ExtractRequest, FillAnswer, PlanRequest,
@@ -91,7 +91,7 @@ def demo_submit():
 @app.get("/health")
 def health():
   return {"ok": True, "version": VERSION, "mode": "hosted" if HOSTED else "local",
-          "model": PRIMARY_MODEL, "fallback": FALLBACK_MODEL, "requests": stats["requests"]}
+          "model": PRIMARY_MODEL, "planModel": PLAN_MODEL, "fallback": FALLBACK_MODEL, "requests": stats["requests"]}
 
 
 # ---------- Tidy plan ----------
@@ -127,8 +127,12 @@ def bounded_plan(plan: TidyPlan, valid_ids: set[str]) -> TidyPlan:
 @app.post("/v1/plan")
 def plan(req: PlanRequest):
   outline = req.outline.model_dump(exclude_defaults=True)
+  if os.environ.get("PRISM_DEBUG_DUMP"):  # local debugging only; never set on the hosted service
+    with open(os.environ["PRISM_DEBUG_DUMP"], "w") as f:
+      f.write(req.model_dump_json())
   result, model = generate_json(
-    prompts.plan_prompt(outline, req.style, req.clutterLevel, req.language), prompts.PLAN_SYSTEM, TidyPlan
+    prompts.plan_prompt(outline, req.style, req.clutterLevel, req.language), prompts.PLAN_SYSTEM, TidyPlan,
+    model=PLAN_MODEL,
   )
   valid = {e.id for e in req.outline.elements}
   return {"plan": bounded_plan(result, valid).model_dump(), "model": model}
