@@ -1,20 +1,22 @@
+import logoUrl from "./logo-96.png";
 /** Small shared Preact components used by the in-page UI and the extension pages. */
 import type { ComponentChildren } from "preact";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { StyleId } from "../shared/types";
 
-/** Placeholder Prism mark: a prism outline splitting one beam into four soft bands. */
+/** The Prism logo artwork (extension/assets/logo-source.png), embedded so it works on any page. */
 export function Logo({ size = 28, title = "Prism" }: { size?: number; title?: string }) {
+  return <img class="pz-logo" src={logoUrl} width={size} height={size} alt={title} draggable={false} />;
+}
+
+/** Logo + serif-italic wordmark, used everywhere Prism names itself. */
+export function Brand({ size = 28, label }: { size?: number; label?: string }) {
   return (
-    <svg class="pz-logo" width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={title}>
-      <path d="M2 34 L22 31" stroke="#1B1F3B" stroke-width="3.5" stroke-linecap="round" />
-      <path d="M31 8 L54 50 L8 50 Z" fill="#FFFFFF" stroke="#1B1F3B" stroke-width="4.5" stroke-linejoin="round" />
-      <path d="M22 31 L40 33" stroke="#1B1F3B" stroke-width="2" stroke-linecap="round" opacity=".35" />
-      <path d="M43 30 L62 22" stroke="#FF7A59" stroke-width="4" stroke-linecap="round" />
-      <path d="M44 33 L62 30" stroke="#FFC24B" stroke-width="4" stroke-linecap="round" />
-      <path d="M44 36 L62 38" stroke="#2BB3A3" stroke-width="4" stroke-linecap="round" />
-      <path d="M43 39 L62 46" stroke="#3D7BFD" stroke-width="4" stroke-linecap="round" />
-    </svg>
+    <span class="pz-brand">
+      <Logo size={size} />
+      <span class="pz-wordmark" style={`font-size:${Math.round(size * 0.95)}px`}>Prism</span>
+      {label && <span class="pz-muted" style="font-size:15px;font-weight:500;margin-left:2px">{label}</span>}
+    </span>
   );
 }
 

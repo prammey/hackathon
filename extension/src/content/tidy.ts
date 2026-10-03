@@ -10,6 +10,7 @@ import {
 import { FONT_FILES, fontsFor, effectiveTokens, pageCss } from "../shared/styles";
 import type { Result, Settings, StyleId, TidyPlan } from "../shared/types";
 import { analyze, type AnalyzeResult, isPrismNode, stripPrism } from "./analyzer";
+import { analyzeLayout, type LayoutMode, ungroupCanvas } from "./layout";
 
 export type TidyStatus = "off" | "base" | "planning" | "planned" | "cached" | "error";
 
@@ -50,6 +51,8 @@ export class TidyEngine {
   private structureChangedAt = 0;
   private settings: Settings | null = null;
   private requestSeq = 0;
+  private layoutCss = "";
+  layoutMode: LayoutMode = "refine";
   /** Counters for tests and diagnostics. */
   debug = { analyzeRuns: 0, routeChanges: 0, planRequests: 0, planReasons: [] as string[] };
 
@@ -83,6 +86,7 @@ export class TidyEngine {
 
     this.analysis = analyze();
     this.debug.analyzeRuns++;
+    this.detectLayout();
     this.pageKey = pageKeyFor(location.href);
     await this.applyStyle(styleId, settings);
     this.emit({ status: "base", styleId, message: "Tidied with Prism's basic clean-up.", steps: [], folds: [] });
@@ -99,10 +103,13 @@ export class TidyEngine {
   async disable(message = ""): Promise<void> {
     this.stopGovernor();
     this.requestSeq++;
+    ungroupCanvas();
     stripPrism();
     const html = document.documentElement;
     html.removeAttribute("data-prism-on");
     html.removeAttribute("data-prism-style");
+    html.removeAttribute("data-prism-mode");
+    this.layoutCss = "";
     await chrome.runtime.sendMessage({ type: "css:remove" }).catch(() => {});
     this.plan = null;
     this.analysis = null;
@@ -161,7 +168,18 @@ export class TidyEngine {
     html.setAttribute("data-prism-style", styleId);
     loadFonts(fontsFor(effectiveTokens(styleId, settings)));
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    await chrome.runtime.sendMessage({ type: "css:apply", css: pageCss(styleId, settings, reduced) });
+    await chrome.runtime.sendMessage({ type: "css:apply", css: `${pageCss(styleId, settings, reduced)}\n${this.layoutCss}` });
+  }
+
+  /** Chaotic layouts (pinned "canvas" pages, layout tables) get reflowed; tidy sites are only refined. */
+  private detectLayout() {
+    // Detect against the page's own layout: undo any previous grouping/reflow first.
+    ungroupCanvas();
+    document.documentElement.removeAttribute("data-prism-mode");
+    const layout = analyzeLayout();
+    this.layoutMode = layout.mode;
+    this.layoutCss = layout.orderCss;
+    document.documentElement.setAttribute("data-prism-mode", layout.mode);
   }
 
   private healthy(beforeWidth: number): boolean {
@@ -400,6 +418,8 @@ export class TidyEngine {
     this.analysis = analyze();
     this.debug.analyzeRuns++;
     this.debug.routeChanges++;
+    this.detectLayout();
+    if (this.settings) await this.applyStyle(this.state.styleId, this.settings);
     this.pageKey = pageKeyFor(location.href);
     this.clearPlanAttrs();
     this.plan = null;
@@ -415,7 +435,9 @@ export function loadFonts(families: string[]): void {
   for (const family of families) {
     if (loadedFonts.has(family)) continue;
     loadedFonts.add(family);
-    const face = new FontFace(family, `url(${chrome.runtime.getURL(FONT_FILES[family])})`, { weight: "100 900", display: "swap" });
+    const italic = family === "Prism Instrument";
+    const face = new FontFace(family, `url(${chrome.runtime.getURL(FONT_FILES[family])})`,
+      italic ? { style: "italic", weight: "400", display: "swap" } : { weight: "100 900", display: "swap" });
     face.load().then((f) => document.fonts.add(f)).catch(() => loadedFonts.delete(family));
   }
 }
@@ -427,16 +449,14 @@ function renderFold(host: HTMLElement, label: string, count: number, open: boole
   root.innerHTML = "";
   const style = document.createElement("style");
   style.textContent = `
-    :host{display:block!important;margin:8px 0!important;max-width:100%!important}
-    button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 14px;max-width:100%;
-      font:700 15px/1.2 "Prism Atkinson",Verdana,sans-serif;color:#1B1F3B;background:#F3F4FA;border:1.5px solid #C9CBE0;
-      border-radius:999px;cursor:pointer}
-    :host-context(html[data-prism-style=bold]) button{border-radius:0;border:2px solid #0F0F0F;background:#FFFFFF;box-shadow:3px 3px 0 #0F0F0F}
-    :host-context(html[data-prism-style=calm]) button{border-radius:6px;background:transparent}
-    :host-context(html[data-prism-style=soft]) button{background:#E6EBF2;border-color:rgba(111,122,144,.5);box-shadow:-3px -3px 8px rgba(255,255,255,.85),3px 3px 8px rgba(150,164,190,.55)}
-    button:hover{background:#E8E9F6}
-    button:focus-visible{outline:3px solid #1B1F3B;outline-offset:2px}
-    .dot{width:10px;height:10px;flex:none;border-radius:50%;background:#4B3FD1}`;
+    :host{display:block!important;margin:10px 0!important;max-width:100%!important}
+    button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:9px;min-height:38px;padding:8px 16px 8px 12px;max-width:100%;
+      font:600 14px/1.2 "Prism Inter",-apple-system,"Segoe UI",sans-serif;color:#F4F2F9;background:#1C1A23;
+      border:1px solid rgba(167,139,250,.35);border-radius:999px;cursor:pointer;
+      box-shadow:0 6px 18px rgba(19,18,24,.25),0 0 18px rgba(109,74,255,.18);transition:transform .15s,box-shadow .15s}
+    button:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(19,18,24,.3),0 0 24px rgba(109,74,255,.3)}
+    button:focus-visible{outline:2px solid #C4B5FD;outline-offset:3px}
+    .dot{width:8px;height:8px;flex:none;border-radius:50%;background:#A78BFA;box-shadow:0 0 8px rgba(167,139,250,.9)}`;
   const button = document.createElement("button");
   button.type = "button";
   button.setAttribute("aria-expanded", String(open));

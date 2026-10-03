@@ -3,7 +3,7 @@ import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, getSitePrefs, saveSitePrefs } from "../shared/storage";
 import type { Settings, SitePrefs, StyleId } from "../shared/types";
-import { Icon, isMac, Logo, Notice, StylePicker, Switch } from "../ui/components";
+import { Brand, Icon, isMac, Notice, StylePicker, Switch } from "../ui/components";
 import { shortcutLabel } from "../content/selection";
 
 interface PageStatus {
@@ -113,11 +113,13 @@ function Popup() {
         </div>
         <p class="pz-hint" style="margin:0;text-align:center">Or on the page, hold <strong>{shortcutLabel(settings.shortcut, isMac())}</strong> and drag.</p>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:space-between">
-        {on && <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => tabMsg({ type: "prism:regenerate" })}><Icon name="restore" /> Tidy again from scratch</button>}
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => chrome.runtime.openOptionsPage()}><Icon name="settings" /> Settings</button>
+      <div class="popup__foot">
+        <HelperStatus health={health} />
+        <span style="display:flex;gap:2px">
+          {on && <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" title="Tidy again from scratch" aria-label="Tidy again from scratch" onClick={() => tabMsg({ type: "prism:regenerate" })}><Icon name="restore" /></button>}
+          <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => chrome.runtime.openOptionsPage()}><Icon name="settings" /> Settings</button>
+        </span>
       </div>
-      <HelperStatus health={health} />
     </Shell>
   );
 }
@@ -125,7 +127,7 @@ function Popup() {
 function HelperStatus({ health }: { health: { ok: boolean; mode?: string } | null }) {
   if (!health) return null;
   return health.ok
-    ? <p class="pz-hint" style="margin:0;display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#11704F" aria-hidden="true" /> Prism's AI is connected</p>
+    ? <p class="pz-hint" style="margin:0;display:flex;gap:8px;align-items:center"><span class="status-dot" aria-hidden="true" /> AI connected</p>
     : <Notice tone="warn">Prism's AI isn't reachable right now. Tidying still works; explanations need the AI. <a href="options.html#service" target="_blank">Check the connection</a></Notice>;
 }
 
@@ -133,7 +135,7 @@ function Shell(props: { host?: string; children: preact.ComponentChildren }) {
   return (
     <main class="popup">
       <header class="popup__head">
-        <span class="pz-brand"><Logo /> Prism</span>
+        <Brand size={28} />
         {props.host && <span class="pz-muted popup__host" title={props.host}>{props.host}</span>}
       </header>
       {props.children}

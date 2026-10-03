@@ -7,7 +7,8 @@ Use the practice pages on the online service (no setup):
 | --- | --- | --- |
 | 0:00 | The cluttered council page (`/demo/cluttered-info/`) | "Meet Margaret, 74. She needs to apply for a council tax discount. This is what she sees: tiny grey text, adverts, a carousel, and the one deadline that matters buried in the middle." |
 | 0:15 | Click the Prism button → **Tidy this page** | "One switch. Prism reads the page, works out what it's for, and restyles it — bigger text, clear headings, the deadline as a notice, adverts tucked away. The website still works: every link and button is the original." |
-| 0:35 | Prism button → Style: **Bold**, **Calm**, **Soft**, **Clear** | "Four complete design systems, not colour filters. All pass contrast checks." |
+| 0:35 | Prism button → Style: **Neo-Brutalist**, **Modern Minimalist**, **Neumorphism**, **Clean Flat** | "Four complete design systems, not colour filters. All pass contrast checks." |
+| 0:45 | `/demo/canvas-shop/` → **Tidy this page** | "Some sites are pure chaos — every block pinned at random coordinates. Prism rebuilds the layout: each product's picture, name and price become one card, in reading order, with the category list as tidy pills." |
 | 0:50 | Side tab → **Show original page**, then tidy again (instant — cached) | "Always one click back to the original. And Prism remembers the layout, so next time it's instant — no AI call." |
 | 1:00 | Hold **Option** and drag over the "Important" notice → **Define** | "Anything confusing, she just draws a box around it." |
 | 1:15 | `/demo/image-text/` → drag over the Spanish poster → **Translate** | "Even words inside pictures. Names, dates and phone numbers are kept exactly." |

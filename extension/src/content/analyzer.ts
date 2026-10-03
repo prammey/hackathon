@@ -8,7 +8,8 @@ import type { Outline, OutlineElement } from "../shared/types";
 export const PRISM_ATTRS = [
   "data-prism-id", "data-prism-c", "data-prism-s", "data-prism-role", "data-prism-emphasis",
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
-  "data-prism-filled", "data-prism-tight",
+  "data-prism-filled", "data-prism-tight", "data-prism-layout", "data-prism-item", "data-prism-o", "data-prism-pos",
+  "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -33,7 +34,7 @@ export interface AnalyzeResult {
 
 export function isPrismNode(el: Element): boolean {
   const tag = el.tagName;
-  return tag === "PRISM-ROOT" || tag === "PRISM-FOLD";
+  return tag === "PRISM-ROOT" || tag === "PRISM-FOLD" || tag === "PRISM-GROUP" || tag === "PRISM-TEXT";
 }
 
 export function accessibleName(el: Element): string {
@@ -187,6 +188,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
   const walker = doc.createTreeWalker(body, NodeFilter.SHOW_ELEMENT, {
     acceptNode(node) {
       const el = node as Element;
+      if (el.tagName === "PRISM-GROUP") return NodeFilter.FILTER_SKIP; // Prism's card wrapper: walk its contents
       if (SKIP_TAGS.has(el.tagName) || isPrismNode(el)) return NodeFilter.FILTER_REJECT;
       const parent = el.parentElement;
       if (parent && LEAF_TAGS.has(parent.tagName.toUpperCase())) return NodeFilter.FILTER_REJECT;
@@ -381,4 +383,5 @@ export function stripPrism(doc: Document = document): void {
   const selector = PRISM_ATTRS.map((a) => `[${a}]`).join(",");
   for (const el of doc.querySelectorAll(selector)) for (const a of PRISM_ATTRS) el.removeAttribute(a);
   for (const fold of doc.querySelectorAll("prism-fold")) fold.remove();
+  doc.documentElement.removeAttribute("data-prism-mode");
 }

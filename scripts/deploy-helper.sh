@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 P="${GOOGLE_CLOUD_PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 rm -rf helper/demo && mkdir -p helper/demo
-cp -R fixtures/index.html fixtures/cluttered-info fixtures/benefits-form fixtures/dynamic-app fixtures/image-text fixtures/non-english helper/demo/
+cp -R fixtures/index.html fixtures/cluttered-info fixtures/canvas-shop fixtures/benefits-form fixtures/dynamic-app fixtures/image-text fixtures/non-english helper/demo/
 cd helper
 gcloud run deploy prism-helper --source . --project="$P" --region=us-central1 \
   --service-account="prism-helper@$P.iam.gserviceaccount.com" \

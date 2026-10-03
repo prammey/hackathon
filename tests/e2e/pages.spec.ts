@@ -12,7 +12,7 @@ test("Popup: tidy switch, style picker, auto-tidy checkbox, helper status", asyn
   await popup.setViewportSize({ width: 360, height: 640 });
   await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${id}`);
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "false");
-  await expect(popup.getByText("Prism's AI is connected")).toBeVisible();
+  await expect(popup.getByText("AI connected")).toBeVisible();
   await popup.screenshot({ path: path.join(EVIDENCE, "popup-01-off.png") });
   await popup.getByRole("switch", { name: /Tidy this page/ }).click();
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "true");
@@ -44,7 +44,7 @@ test("Popup on a protected page explains what's going on", async ({ context, ext
 test("Settings: enter About you, saved locally, reflected in storage", async ({ context, extensionId, sw }) => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/options.html`);
-  await expect(page.getByRole("heading", { name: /Prism settings/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /Settings/ })).toBeVisible();
   await page.screenshot({ path: path.join(EVIDENCE, "settings-01-top.png") });
   await page.goto(`chrome-extension://${extensionId}/options.html#about`);
   await page.getByLabel("Your name").fill("Margaret Ellison");

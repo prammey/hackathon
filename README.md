@@ -7,12 +7,15 @@ out a task step by step — always asking before anything important happens.
 It's designed first for people who find the web stressful — for example an older adult who is new to
 technology — and to be pleasant for everyone.
 
-![Prism tidying a cluttered council page](evidence/e2e/cluttered-01-clear.png)
+| Before | After (Neo-Brutalist) |
+| --- | --- |
+| ![A chaotic canvas-layout shop](evidence/glowup/canvas-0-original.png) | ![The same page restructured by Prism](evidence/glowup/canvas-1-bold.png) |
 
 | Feature | What it does |
 | --- | --- |
 | **Tidy this page** | Restyles the live page: readable text, clear hierarchy, obvious buttons, clutter tucked away. The website keeps working, and **Show original page** puts it back exactly. Layouts are remembered so the page looks the same next time. |
-| **Four styles** | **Clear** (crisp and simple), **Bold** (neo-brutalist), **Calm** (modern minimalist), **Soft** (neumorphic, with visible edges). |
+| **Four styles** | **Clean Flat**, **Modern Minimalist**, **Neo-Brutalist** and **Neumorphism** — complete design systems, not colour filters. |
+| **Restructures chaotic pages** | On pages built as a pinned "canvas" (like arngren.net) or with layout tables, Prism reflows the pieces into a padded, rounded card grid in reading order, groups each product's picture, name and price, and turns long link lists into pills. |
 | **Point at something** | Hold **Option ⌥** (Mac) or **Alt** (Windows) and drag a box around anything. Choose **Define**, **Translate**, **Fill out** or **Chat**. Works on text *and* words inside pictures. |
 | **Fill out** | Explains each question and suggests answers from what you've told Prism, showing where each answer came from. Puts answers in only when you say so, never sends the form, and can undo. |
 | **Chat** | Ask about the page, or ask Prism to do a task ("report my missed bin"). It works step by step, and stops to ask before sending, submitting, paying, agreeing or deleting. **Stop** is always there. |

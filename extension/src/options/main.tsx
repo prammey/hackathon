@@ -7,7 +7,7 @@ import {
 } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { CachedPlan, Person, PersonDetails, Profile, Settings, SitePrefs, StyleId } from "../shared/types";
-import { Icon, isMac, Logo, Notice } from "../ui/components";
+import { Brand, Icon, isMac, Notice } from "../ui/components";
 import { ImportSection } from "./imports";
 import { MiniPreview } from "./preview";
 
@@ -44,7 +44,7 @@ function Settings() {
   return (
     <main class="page">
       <header class="page__head">
-        <h1 class="pz-brand" style="font-size:30px"><Logo size={40} /> Prism settings</h1>
+        <h1 style="margin:0"><Brand size={40} label="Settings" /></h1>
         <p class="pz-muted" style="margin:0">Changes save automatically and stay in this browser.</p>
       </header>
       <div class="settings">
@@ -315,7 +315,7 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         <h3>People you help</h3>
         <p class="pz-hint" style="margin:0">If you fill in forms for someone else, add them here. In a chat you can say “I'm helping Joan” — Prism will use their details just for that chat and won't change yours.</p>
         {draft.people.map((p, i) => (
-          <div class="group" style="background:var(--pz-mist)">
+          <div class="group">
             <div class="row" style="justify-content:space-between">
               <strong>{p.name || `Person ${i + 1}`}</strong>
               <button class="pz-btn pz-btn--small" type="button" onClick={() => setDraft({ ...draft, people: draft.people.filter((x) => x.id !== p.id) })}>Remove</button>
@@ -327,7 +327,7 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         ))}
         <div class="row"><button class="pz-btn" type="button" onClick={addPerson}><Icon name="person" /> Add a person</button></div>
       </div>
-      <div class="row" style="position:sticky;bottom:0;background:#FFF;padding:12px 0;border-top:1px solid var(--pz-line)">
+      <div class="save-bar">
         <button class="pz-btn pz-btn--primary" type="button" disabled={!dirty} onClick={() => save()} data-testid="save-profile">Save “About you”</button>
         {dirty && <button class="pz-btn pz-btn--quiet" type="button" onClick={() => setDraft(profile)}>Undo changes</button>}
         <span role="status" class="pz-muted">{status || (dirty ? "You have unsaved changes." : "")}</span>
@@ -440,7 +440,7 @@ function PrivacySection({ onCleared }: { onCleared: () => void }) {
                 <button class="pz-btn" type="button" onClick={() => setConfirming(false)}>Cancel</button></span>}
         </div>
         {message && <Notice tone="ok">{message}</Notice>}
-        {view && <pre style="margin:0;max-height:320px;overflow:auto;background:var(--pz-mist);padding:12px;border-radius:8px;font-size:13px">{view}</pre>}
+        {view && <pre style="margin:0;max-height:320px;overflow:auto;background:var(--pz-bg);padding:14px;border-radius:14px;font-size:13px;border:1px solid var(--pz-line)">{view}</pre>}
       </div>
     </section>
   );

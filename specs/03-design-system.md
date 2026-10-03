@@ -1,6 +1,6 @@
 # 03 — Design system: Prism brand and the four Styles
 
-Status: **Draft for Phase 1 review** · Last updated 2026-10-02
+Status: **Implemented**; revised 2026-10-03 (glow-up) — see §7
 Contrast values below were computed with the WCAG 2.x relative-luminance formula by
 `scripts/contrast_check.py` (run in Phase 1; output in 08 §1). Phase 2 re-checks them on real pages.
 
@@ -160,3 +160,15 @@ Character: crisp, simple shapes, clear colours, zero depth; maximal legibility.
 - Errors say what went wrong, what Prism did about it, and the next step, without blame.
 - Never present AI text as the website's or a government's words; answers carry a small
   "Prism's explanation" label.
+
+
+## 7. Revision 2026-10-03 — glow-up (implemented)
+- **Prism UI** is now smoky off-black + purple: bg `#131218`, surfaces `#1C1A23`/`#26232F`, text `#F4F2F9`,
+  muted `#ABA5BC`, accent `#A78BFA`, buttons `#6D4AFF` (white text 5.2:1), radii 14–24 px, soft violet glow.
+  UI text in Inter; the **Prism** wordmark and display headings in **Instrument Serif Italic**.
+- **Style names** use the real aesthetic names: Clean Flat (`clear`), Modern Minimalist (`calm`),
+  Neo-Brutalist (`bold`), Neumorphism (`soft`). Internal ids are unchanged so saved preferences survive.
+- All Styles are rounder (controls 12–16 px, cards 16–26 px; Minimalist uses pill buttons).
+- **Restructure mode** (`html[data-prism-mode=restructure]`) for chaotic pages: canvas blocks and layout
+  tables become a card grid; product fragments are grouped; titles and prices are highlighted.
+- All colour pairs re-verified by `scripts/contrast_check.py`.

@@ -41,7 +41,7 @@ function main() {
   const mount = document.createElement("div");
   shadow.append(mount);
   document.documentElement.append(host);
-  loadFonts(["Prism Atkinson"]);
+  loadFonts(["Prism Inter", "Prism Instrument", "Prism Atkinson"]);
 
   // Keep Prism's root as the last element so it stays on top, even if the page re-renders <html>.
   new MutationObserver(() => {

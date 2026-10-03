@@ -18,7 +18,7 @@ test("Dynamic app: live updates cause no extra AI calls and no runaway re-analys
   expect(await helperCalls()).toBe(callsAfterTidy);
   // New feed items are styled as soon as they appear (they inherit the Style via tags/CSS).
   const newest = await page.evaluate(() => getComputedStyle(document.querySelector(".feed-item")!).fontFamily);
-  expect(newest).toMatch(/Prism Atkinson|Verdana/);
+  expect(newest).toMatch(/Prism Inter/);
   await shot(page, "dynamic-01-after-20s");
 });
 

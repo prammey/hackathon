@@ -5,7 +5,7 @@ import { getProfile, getSettings, profileText, saveProfile, saveSitePrefs } from
 import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
 } from "../shared/types";
-import { Icon, isMac, Logo, StylePicker } from "../ui/components";
+import { Brand, Icon, isMac, Logo, StylePicker } from "../ui/components";
 import { applyFill, fieldLabel, type FillResult, undoFill } from "./actions";
 import { controlsIn, regionContext } from "./region";
 import { placeNear, type SelState, SelectionController, shortcutLabel } from "./selection";
@@ -239,7 +239,7 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
   return (
     <section class="panel pz-card" role="dialog" aria-label="Prism" data-testid="prism-panel">
       <div class="panel__head">
-        <span class="pz-brand"><Logo /> Prism</span>
+        <Brand size={26} />
         <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close Prism panel">
           <Icon name="close" /> Close
         </button>
@@ -344,7 +344,7 @@ function ActionMenu(props: { rect: Rect; onAction: (a: AssistAction | "chat") =>
   const first = useRef<HTMLButtonElement>(null);
   const hasFields = useMemo(() => controlsIn(props.rect).controls.length > 0, [props.rect]);
   useEffect(() => { first.current?.focus(); }, []);
-  const pos = placeNear(props.rect, 300, 220);
+  const pos = placeNear(props.rect, 316, 240); // matches .menu width in overlay.css
   const items: { id: AssistAction | "chat"; label: string; hint: string; icon: string; disabled?: boolean }[] = [
     { id: "define", label: "Define", hint: "What does this mean?", icon: "define" },
     { id: "translate", label: "Translate", hint: "Put it in my language", icon: "translate" },
@@ -397,7 +397,7 @@ function AnswerCard(props: {
   useEffect(() => { closeRef.current?.focus(); }, [card.status]);
   // Short answers sit next to the selection; long ones (forms, many lines) dock to the side, full height.
   const tall = card.status === "ready" && (card.kind === "fill" || (card.kind === "translate" && card.data.lines.length > 3));
-  const pos = placeNear(card.rect, Math.min(440, innerWidth - 24), 360);
+  const pos = placeNear(card.rect, Math.min(450, innerWidth - 28), 360); // matches .answer width
   const docked = tall || innerHeight - pos.y < 300;
   const style = docked ? "" : `left:${pos.x}px;top:${pos.y}px;max-height:${Math.max(240, innerHeight - pos.y - 12)}px`;
   return (
@@ -642,7 +642,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
   return (
     <section class="chat pz-card" role="dialog" aria-label="Chat with Prism" data-testid="prism-chat" data-status={chat?.status ?? "idle"}>
       <div class="chat__head">
-        <span class="pz-brand" style="flex:1"><Logo /> Chat</span>
+        <span style="flex:1"><Brand size={26} label="Chat" /></span>
         <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:clear" }).then(props.onClose)}>New chat</button>
         <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close chat"><Icon name="close" /> Close</button>
       </div>

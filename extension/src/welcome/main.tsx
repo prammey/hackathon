@@ -4,7 +4,7 @@ import { useEffect, useState } from "preact/hooks";
 import { getSettings, saveSettings } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { Settings } from "../shared/types";
-import { Icon, isMac, Logo } from "../ui/components";
+import { Brand, Icon, isMac } from "../ui/components";
 import { MiniPreview } from "../options/preview";
 
 function Welcome() {
@@ -16,8 +16,8 @@ function Welcome() {
   return (
     <main class="page" style="max-width:960px">
       <section class="welcome-hero" aria-labelledby="w-h">
-        <span class="pz-brand"><Logo size={44} /> <span style="font-size:24px">Prism</span></span>
-        <h1 id="w-h">Websites, made calm and clear.</h1>
+        <Brand size={44} />
+        <h1 id="w-h">Websites, made <em>calm</em> and clear.</h1>
         <p>Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.</p>
         <p><strong>You don't need to set anything up.</strong> Everything below is optional.</p>
         {demo && (

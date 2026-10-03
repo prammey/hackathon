@@ -1,6 +1,6 @@
 {
   "name": "prism",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Prism — a browser extension that makes confusing websites beautiful, understandable and easy to use.",
@@ -21,6 +21,7 @@
     "@fontsource-variable/nunito": "^5.3.0",
     "@fontsource-variable/source-serif-4": "^5.3.0",
     "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@playwright/test": "^1.60.0",
     "@types/chrome": "^0.3.4",
     "esbuild": "^0.28.2",

@@ -26,7 +26,7 @@ const common = {
   target: ["chrome121"],
   jsx: "automatic",
   jsxImportSource: "preact",
-  loader: { ".css": "text" },
+  loader: { ".css": "text", ".png": "dataurl" },
   define: {
     __PRISM_VERSION__: JSON.stringify(pkg.version),
     __PRISM_HOSTED_URL__: JSON.stringify(hostedUrl),
@@ -60,6 +60,7 @@ function copyStatic() {
     inter: "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
     nunito: "@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2",
     "atkinson-hyperlegible-next": "@fontsource-variable/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-wght-normal.woff2",
+    "instrument-serif-italic": "@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2",
   };
   for (const [name, file] of Object.entries(fonts)) {
     fs.copyFileSync(path.join(root, "node_modules", file), path.join(out, "fonts", `${name}.woff2`));
