@@ -102,7 +102,11 @@ export class TidyEngine {
       return;
     }
     this.startGovernor();
-    await this.loadPlan(Boolean(opts.fromScratch || site.fromScratch));
+    // The AI layout arrives in the background; callers (like the popup switch) don't wait for it.
+    this.loadPlan(Boolean(opts.fromScratch || site.fromScratch)).catch((err) => {
+      console.warn("Prism: plan failed", err);
+      this.emit({ status: "base", message: "Tidied with Prism's basic clean-up." });
+    });
   }
 
   async disable(message = ""): Promise<void> {
@@ -540,8 +544,7 @@ function renderFold(host: HTMLElement, label: string, count: number, open: boole
   button.setAttribute("aria-expanded", String(open));
   button.innerHTML = `<span class="dot" aria-hidden="true"></span>`;
   button.append(`${open ? "Hide" : "Show"} ${label.toLowerCase()} (${count})`);
-  button.title = "Prism tucked this away to reduce clutter. Nothing was deleted.";
-  button.setAttribute("aria-label", `${open ? "Hide" : "Show"} ${label.toLowerCase()}, ${count} ${count === 1 ? "item" : "items"} tucked away by Prism`);
+  button.setAttribute("aria-label", `${open ? "Hide" : "Show"} ${label.toLowerCase()}, ${count} ${count === 1 ? "item" : "items"}`);
   button.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();

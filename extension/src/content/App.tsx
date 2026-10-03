@@ -260,11 +260,6 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
           {tidy.status === "planning" && <div class="pz-progress" aria-hidden="true" />}
           <p style="margin:0;font-weight:700">{tidy.message}</p>
           {tidy.pagePurpose && <p class="pz-muted" style="margin:0">This page: {tidy.pagePurpose}</p>}
-          {tidy.isOfficial && (
-            <div class="pz-notice official" role="note">
-              <div>This is still the official website. Prism only changed how it looks — the information and buttons are the website's own.</div>
-            </div>
-          )}
         </div>
         <div class="panel__section">
           <button class="pz-btn pz-btn--primary pz-btn--block" type="button" onClick={() => engine.disable("Showing the original page.")} data-testid="show-original">
@@ -436,12 +431,11 @@ function AnswerCard(props: {
           </>
         )}
         {card.status === "error" && <div class="pz-notice pz-notice--error" role="alert"><div>{card.message}</div></div>}
-        {card.status === "ready" && card.kind === "define" && <DefineView data={card.data} usedPicture={card.usedPicture} />}
-        {card.status === "ready" && card.kind === "translate" && <TranslateView data={card.data} usedPicture={card.usedPicture} />}
+        {card.status === "ready" && card.kind === "define" && <DefineView data={card.data} />}
+        {card.status === "ready" && card.kind === "translate" && <TranslateView data={card.data} />}
         {card.status === "ready" && card.kind === "fill" && (
           <FillView card={card} onRetry={props.onRetry} onUpdate={props.onUpdate} />
         )}
-        {card.status === "ready" && <p class="prism-says">Prism's explanation — not the website's own words. Please check anything important.</p>}
       </div>
       <div class="answer__foot">
         {card.status === "error" && <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry()}>Try again</button>}
@@ -487,7 +481,7 @@ function SpeakButton({ text }: { text: string }) {
   );
 }
 
-function DefineView({ data, usedPicture }: { data: DefineAnswer; usedPicture: boolean }) {
+function DefineView({ data }: { data: DefineAnswer }) {
   return (
     <>
       <p class="lead"><Rich text={data.summary} /></p>
@@ -498,16 +492,15 @@ function DefineView({ data, usedPicture }: { data: DefineAnswer; usedPicture: bo
         </dl>
       )}
       {data.whatToDoHere && <div class="todo"><strong>What you can do here: </strong><Rich text={data.whatToDoHere} /></div>}
-      {data.uncertain.length > 0 && <p class="pz-muted">Prism wasn't sure about: {data.uncertain.join("; ")}</p>}
-      {usedPicture && <p class="pz-hint">Prism also looked at a picture of the area you selected.</p>}
+      {data.uncertain.length > 0 && <p class="pz-muted">Unclear: {data.uncertain.join("; ")}</p>}
     </>
   );
 }
 
-function TranslateView({ data, usedPicture }: { data: TranslateAnswer; usedPicture: boolean }) {
+function TranslateView({ data }: { data: TranslateAnswer }) {
   return (
     <>
-      <p class="pz-muted" style="margin:0">From {data.sourceLanguage} into {data.targetLanguage}{usedPicture ? " (including words in pictures)" : ""}</p>
+      <p class="pz-muted" style="margin:0">{data.sourceLanguage} → {data.targetLanguage}</p>
       <ol class="lines">
         {data.lines.map((l) => (
           <li class="line">
@@ -564,9 +557,8 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
     return (
       <>
         <div class="pz-notice pz-notice--ok" role="status" data-testid="fill-result">
-          <div><strong>{r.changed.length} {r.changed.length === 1 ? "answer" : "answers"} put in.</strong> The form has not been sent — check the answers, then send it yourself when you're ready.</div>
+          <div><strong>{r.changed.length} {r.changed.length === 1 ? "answer" : "answers"} filled in.</strong> Not submitted.</div>
         </div>
-        {r.submitsBlocked > 0 && <p class="pz-muted">Prism stopped the form from being sent automatically.</p>}
         <ul class="fields">
           {r.changed.map((c) => <li class="field"><span class="field__name">{c.label}</span><span>{c.value}</span></li>)}
           {r.failed.map((f) => <li class="field"><span class="field__name">{f.label}</span><span class="pz-muted">{f.reason}</span></li>)}
@@ -627,9 +619,8 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
       {suggestions.length > 0 && (
         <div>
           <button class="pz-btn pz-btn--primary" type="button" onClick={apply} disabled={!count} data-testid="fill-apply">
-            Put {count} {count === 1 ? "answer" : "answers"} in
+            Fill in {count} {count === 1 ? "answer" : "answers"}
           </button>
-          <p class="pz-hint" style="margin:6px 0 0">This fills in the form. It will not send it.</p>
         </div>
       )}
     </>
@@ -686,13 +677,12 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
           <label class="pz-field"><span>Who are you helping? Add anything useful.</span>
             <input class="pz-input" value={helpingText} placeholder="My mum, Joan Ellis, 81, lives in Leeds" onInput={(e) => setHelpingText((e.target as HTMLInputElement).value)} />
           </label>
-          <span class="pz-hint">Used just for this chat. Your saved profile won't change.</span>
           <button class="pz-btn pz-btn--small" type="button" onClick={() => { send({ type: "chat:session", text: helpingText }); setHelping(false); }}>Use just for now</button>
         </div>
       )}
       <div class="chat__log" ref={logRef} aria-live="polite" data-testid="chat-log">
         {(!chat || chat.messages.length === 0) && (
-          <p class="pz-muted" style="margin:0">Ask what something means, how it relates to what you're trying to do, or say what you'd like done — for example “Help me fill in this form” or “Find the opening hours”. Prism will ask before anything important, like sending a form.</p>
+          <p class="pz-muted" style="margin:0">Ask about this page, or tell Prism what to do.</p>
         )}
         {chat?.messages.map((m) => {
           if (m.kind === "confirm") return null;
@@ -703,7 +693,6 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
           <div class="confirm" role="alertdialog" aria-label="Prism needs your permission" data-testid="chat-confirm">
             <span class="pz-label">Prism needs your OK</span>
             <span class="confirm__what">{chat!.pending!.description}</span>
-            <span>This might send information or make a change you can't undo. Do you want Prism to do this?</span>
             <div class="confirm__row">
               <button class="pz-btn pz-btn--primary" type="button" data-testid="confirm-yes" onClick={() => send({ type: "chat:confirm", approved: true })}>Yes, do it</button>
               <button class="pz-btn" type="button" data-testid="confirm-no" onClick={() => send({ type: "chat:confirm", approved: false })}>No, stop here</button>

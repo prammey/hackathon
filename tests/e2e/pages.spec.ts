@@ -127,7 +127,7 @@ test("Import: ChatGPT export .zip and Claude export .json are parsed locally (us
   expect(claudeFacts).not.toContain("I'm Claude");
   // Optional AI tidy-up of the extracted excerpt (real Gemini call).
   await page.getByTestId("import-ai").click();
-  await expect(review.getByText(/Prism's AI rewrote these/)).toBeVisible({ timeout: 60_000 });
+  await expect(review.getByText(/Tidied by Prism's AI/)).toBeVisible({ timeout: 60_000 });
   await page.screenshot({ path: path.join(EVIDENCE, "import-03-claude-ai.png") });
   await page.getByTestId("import-save").click();
   const profile = await sw.evaluate(async () => (await chrome.storage.local.get("profile")).profile);
@@ -145,7 +145,7 @@ test("Helping someone else: chat override is temporary and the saved profile is 
   await tabMessage(sw, page, { type: "prism:open-chat" });
   await page.getByTestId("chat-input").fill("I'm helping my mum Joan Patel, she's 81 and lives at 14 Elm Road, Bath BA1 2AB. What should go in the full name box?");
   await page.getByTestId("chat-send").click();
-  await expect(page.locator(".msg--notice").filter({ hasText: /person you're helping/ })).toBeVisible();
+  await expect(page.locator(".msg--notice").filter({ hasText: /Helping someone else/ })).toBeVisible();
   await expect(page.getByTestId("prism-chat")).toHaveAttribute("data-status", /idle|done|waiting-user|waiting-confirm/, { timeout: 120_000 });
   await expect(page.getByTestId("chat-log")).toContainText("Joan");
   await shot(page, "chat-08-helping-someone");

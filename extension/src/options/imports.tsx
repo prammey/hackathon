@@ -49,7 +49,7 @@ export function ImportSection({ onSaved }: { profile: Profile; onSaved: (p: Prof
       if (m.type === "error") { setStage({ kind: "error", message: m.message }); worker.terminate(); }
       if (m.type === "done") {
         worker.terminate();
-        const note = m.mismatch ? `This looks like a ${m.format === "chatgpt" ? "ChatGPT" : "Claude"} export rather than ${NAMES[source]} — that's fine.` : `Read ${m.conversations} conversations. Only your own messages were looked at.`;
+        const note = m.mismatch ? `This looks like a ${m.format === "chatgpt" ? "ChatGPT" : "Claude"} export rather than ${NAMES[source]} — that's fine.` : `Read ${m.conversations} conversations.`;
         review(source, m.candidates, true, note);
       }
     };
@@ -62,7 +62,7 @@ export function ImportSection({ onSaved }: { profile: Profile; onSaved: (p: Prof
     setAiBusy(false);
     if (!result?.ok) { setStage({ ...s, note: result?.error?.message ?? "Prism's AI couldn't help with this right now. You can still save the facts below." }); return; }
     setStage({
-      ...s, note: "Prism's AI rewrote these as short facts. Check each one — you can edit or untick anything.",
+      ...s, note: "Tidied by Prism's AI.",
       items: result.value.facts.map((f) => ({ id: crypto.randomUUID(), text: f.value, origin: `From: “${f.evidence}”`, keep: true, ai: true })),
     });
   }
@@ -84,7 +84,6 @@ export function ImportSection({ onSaved }: { profile: Profile; onSaved: (p: Prof
     <section id="import" class="section" aria-labelledby="import-h">
       <h2 id="import-h">Import from ChatGPT or Claude</h2>
       <p>If you already use ChatGPT or Claude, you can bring in what they know about you. Prism reads it on this computer, shows you everything it found, and saves only what you choose.</p>
-      <p class="disclaimer">Prism isn't affiliated with or endorsed by OpenAI or Anthropic. ChatGPT is a trademark of OpenAI. Claude is a trademark of Anthropic. Prism can't connect to your accounts — you bring the information in yourself.</p>
 
       {(stage.kind === "idle" || stage.kind === "saved" || stage.kind === "error") && (
         <>

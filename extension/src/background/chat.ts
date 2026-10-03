@@ -90,9 +90,7 @@ export async function startChat(tabId: number, opts: {
 export async function setSessionContext(tabId: number, text: string): Promise<void> {
   const state = (await loadState(tabId)) ?? (await startChat(tabId, { regionLabel: "This page", regionText: "" }));
   state.sessionContext = text.slice(0, 2500);
-  state.messages.push(newMessage("notice", text
-    ? "Using these details just for now. Your saved profile is unchanged."
-    : "Back to using your saved profile."));
+  state.messages.push(newMessage("notice", text ? "Helping someone else — using their details for this chat." : "Back to your own details."));
   await save(state);
 }
 
@@ -104,7 +102,7 @@ export async function sendUserMessage(tabId: number, text: string, includeScreen
   const helping = text.match(/\b(i'?m|i am)\s+(helping|filling (this|it) (in|out) for|doing this for)\s+(.{2,120})/i);
   if (helping && !state.sessionContext) {
     state.sessionContext = `The person is helping someone else: ${helping[4]}. Details they mention in this chat are about that person.\nWhat they said: “${text.slice(0, 600)}”`;
-    state.messages.push(newMessage("notice", "Got it — I'll treat details in this chat as being about the person you're helping. Your saved profile won't change."));
+    state.messages.push(newMessage("notice", "Helping someone else — using their details for this chat."));
   }
   state.messages.push(newMessage("user", text));
   let image: string | undefined;
@@ -134,7 +132,7 @@ export async function stopChat(tabId: number): Promise<void> {
   state.status = "stopped";
   state.pending = undefined;
   state.pendingQueue = [];
-  state.messages.push(newMessage("notice", "Stopped. Nothing else will be done."));
+  state.messages.push(newMessage("notice", "Stopped."));
   // The model turn that asked for actions needs matching responses before the next message.
   closeOpenCalls(state, "The person stopped Prism.");
   await save(state);

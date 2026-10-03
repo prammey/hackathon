@@ -31,7 +31,7 @@ ALLOWED_ORIGINS = [f"chrome-extension://{EXTENSION_ID}"] + [
   o for o in os.environ.get("PRISM_EXTRA_ORIGINS", "").split(",") if o
 ]
 HOSTED = os.environ.get("PRISM_MODE", "local") == "hosted"
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 app = FastAPI(title="Prism helper", version=VERSION, docs_url=None, redoc_url=None)
 app.add_middleware(

@@ -55,6 +55,18 @@ function Popup() {
     chrome.runtime.sendMessage({ type: "health" }).then(setHealth);
   }, []);
 
+  // Keep the popup in step with the page while it's open (e.g. when the AI layout finishes).
+  useEffect(() => {
+    if (load.kind !== "ready") return;
+    const timer = setInterval(async () => {
+      try {
+        const next = (await chrome.tabs.sendMessage(load.tabId, { type: "prism:status" })) as PageStatus;
+        if (!busy && next) setLoad((cur) => (cur.kind === "ready" ? { ...cur, page: { ...cur.page, ...next } } : cur));
+      } catch { /* page navigated away */ }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [load.kind === "ready" ? load.tabId : 0, busy]);
+
   if (load.kind === "loading" || !settings) {
     return <Shell><div class="pz-progress" aria-hidden="true" /><p>Opening Prism…</p></Shell>;
   }
@@ -71,11 +83,16 @@ function Popup() {
   const { tabId, page } = load;
   const host = new URL(page.url).host;
   const on = page.status !== "off";
-  const tabMsg = async (message: unknown) => {
+  const tabMsg = async (message: { type: string; on?: boolean; styleId?: StyleId }) => {
+    // Show the change straight away; the page's own answer then confirms it.
+    if (message.type === "prism:toggle") setLoad({ kind: "ready", tabId, page: { ...page, status: message.on ? "base" : "off" } });
+    if (message.type === "prism:set-style" && message.styleId) setLoad({ kind: "ready", tabId, page: { ...page, styleId: message.styleId } });
     setBusy(true);
     try {
       const next = (await chrome.tabs.sendMessage(tabId, message)) as PageStatus | undefined;
       if (next && "status" in next) setLoad({ kind: "ready", tabId, page: { ...page, ...next } });
+    } catch {
+      setLoad({ kind: "ready", tabId, page });
     } finally {
       setBusy(false);
     }

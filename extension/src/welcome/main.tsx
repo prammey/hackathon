@@ -19,11 +19,10 @@ function Welcome() {
         <Brand size={44} />
         <h1 id="w-h">Websites, made <em>calm</em> and clear.</h1>
         <p>Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.</p>
-        <p><strong>You don't need to set anything up.</strong> Everything below is optional.</p>
+        <p>No setup needed.</p>
         {demo && (
           <div class="row">
             <a class="pz-btn pz-btn--primary" href={demo} target="_blank" rel="noopener" data-testid="try-demo"><Icon name="sparkle" /> Try it on a practice page</a>
-            <span class="pz-hint">A made-up council page, safe to experiment on.</span>
           </div>
         )}
       </section>

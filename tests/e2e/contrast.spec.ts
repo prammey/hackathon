@@ -1,7 +1,8 @@
 // Every visible piece of text on a tidied page must meet WCAG AA against what's actually behind it.
 import type { Page } from "@playwright/test";
 import path from "node:path";
-import { expect, FIXTURES, setSettings, test, tidy } from "./harness";
+import { expect, FIXTURES, prismReady, setSettings, tabId, test, tidy } from "./harness";
+import { pixelContrast } from "./pixels";
 
 const STYLES = ["clear", "calm", "bold", "soft"] as const;
 
@@ -103,3 +104,69 @@ test("Public: ilsos.gov passes the whole-page contrast audit in every Style", as
   }
   expect(failures, failures.join("\n")).toEqual([]);
 });
+
+for (let run = 1; run <= 3; run++) {
+  test(`Public: berkshirehathaway.com is fully readable in every Style (run ${run})`, async ({ context, sw }) => {
+    const failures: string[] = [];
+    for (const style of STYLES) {
+      await setSettings(sw, { styleId: style });
+      const page = await context.newPage();
+      try { await page.goto("https://www.berkshirehathaway.com/", { waitUntil: "load", timeout: 45_000 }); }
+      catch { test.skip(true, "berkshirehathaway.com not reachable"); }
+      await tidy(sw, page, { allowBase: true });
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: path.resolve(`evidence/glowup/berkshire-${style}-run${run}.png`) });
+      const r = await auditAll(page);
+      failures.push(...r.fails.map((f) => `${style}: ${f}`));
+      await page.close();
+    }
+    expect(failures, failures.join("\n")).toEqual([]);
+  });
+}
+
+test("Popup switch turns on immediately and reflects the page (berkshirehathaway.com)", async ({ context, sw, extensionId }) => {
+  const page = await context.newPage();
+  try { await page.goto("https://www.berkshirehathaway.com/", { waitUntil: "load", timeout: 45_000 }); }
+  catch { test.skip(true, "not reachable"); }
+  await prismReady(page);
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${await tabId(sw, page)}`);
+  const sw1 = popup.getByRole("switch", { name: /Tidy this page/ });
+  await expect(sw1).toHaveAttribute("aria-checked", "false");
+  await sw1.click();
+  await expect(sw1).toHaveAttribute("aria-checked", "true", { timeout: 1500 });
+  // Reopening the popup agrees with the page.
+  await popup.reload();
+  await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "true");
+  await popup.getByRole("switch", { name: /Tidy this page/ }).click();
+  await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "false", { timeout: 1500 });
+  expect(await page.evaluate(() => document.documentElement.hasAttribute("data-prism-on"))).toBe(false);
+});
+
+for (let run = 1; run <= 3; run++) {
+  test(`Visited links stay readable on berkshirehathaway.com (pixel check, run ${run})`, async ({ context, sw }) => {
+    const page = await context.newPage();
+    try {
+      for (const u of ["message.html", "reports.html", "letters/letters.html"]) await page.goto(`https://www.berkshirehathaway.com/${u}`, { timeout: 30_000 });
+      await page.goto("https://www.berkshirehathaway.com/", { waitUntil: "load", timeout: 30_000 });
+    } catch { test.skip(true, "berkshirehathaway.com not reachable"); }
+    const failures: string[] = [];
+    for (const style of STYLES) {
+      await setSettings(sw, { styleId: style });
+      await page.reload();
+      await tidy(sw, page, { allowBase: true });
+      // Make the visited links the page's main actions, as the AI did in the reported case.
+      await page.evaluate(() => {
+        for (const a of document.querySelectorAll("a")) if (/Message from Warren|Annual & Interim|Warren Buffett.s Letters/.test(a.textContent ?? "")) a.setAttribute("data-prism-emphasis", "primary");
+      });
+      await page.waitForTimeout(1200);
+      for (const name of ["A Message from Warren", "Annual & Interim Reports", "Warren Buffett", "Link to SEC Filings"]) {
+        const link = page.locator("a", { hasText: name }).first();
+        const r = await pixelContrast(context, link);
+        if (r.ratio < 4.5) failures.push(`${style} "${name}": ${r.ratio} (${r.fg} on ${r.bg})`);
+      }
+      await page.screenshot({ path: path.resolve(`evidence/glowup/visited-${style}-run${run}.png`) });
+    }
+    expect(failures, failures.join("\n")).toEqual([]);
+  });
+}

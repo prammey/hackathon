@@ -245,7 +245,8 @@ ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[hr
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button])::after{content:"→";font-size:1.05em;transition:transform ${dur}}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button]):hover::after{transform:translateX(4px)}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,input,[role=button]) *{color:inherit!important;-webkit-text-fill-color:inherit!important}
-${P} [data-prism-role=secondary-action]:is(a[href],button,[role=button]):not([data-prism-c=icon-button]){display:inline-flex!important;align-items:center!important;min-height:44px!important;padding:.5em 1.1em!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;border-radius:${t.radiusControl}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;color:${t.buttonText}!important;font-weight:650!important;text-decoration:none!important;font-size:max(1em,16px)!important}
+${P} [data-prism-role=secondary-action]:is(a[href],button,[role=button]):not([data-prism-c=icon-button]):not([data-prism-emphasis=primary]){display:inline-flex!important;align-items:center!important;min-height:44px!important;padding:.5em 1.1em!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;border-radius:${t.radiusControl}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;color:${t.buttonText}!important;font-weight:650!important;text-decoration:none!important;font-size:max(1em,16px)!important}
+${visitedCss(t, P, linkSel)}
 @keyframes prism-breathe{0%,100%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 0 ${t.primary}40}50%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 10px ${t.primary}00}}
 ${P} :is(button,input[type=submit],input[type=button],input[type=reset])[disabled]{opacity:1!important;filter:none!important;background:${t.surface}!important;color:${t.muted}!important;border-style:dashed!important;cursor:not-allowed!important;box-shadow:none!important}
 ${P} [data-prism-c=field]{font-family:${t.fontBody}!important;font-size:max(1em,17px)!important;color:${t.text}!important;background-color:${t.field}!important;border:${t.controlWidth} solid ${t.control}!important;border-radius:${t.radiusControl}!important;min-height:var(--p-target)!important;padding:.4em .7em!important;box-shadow:${t.fieldShadow}!important;box-sizing:border-box!important}
@@ -320,4 +321,24 @@ ${R} table[data-prism-layout=table-grid]>tbody{display:grid!important;grid-templ
 ${R} table[data-prism-layout=table-grid]>tbody>tr{display:contents!important}
 ${R} ${cells}{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:10px!important;padding:20px!important;width:auto!important;height:auto!important;${card}}
 `;
+}
+
+/**
+ * Browsers paint visited links using only colour rules that themselves match :visited (a privacy
+ * protection), so every link treatment needs a :visited twin or a visited link can end up with white
+ * text on a white button. These rules make visited links look exactly like unvisited ones.
+ */
+function visitedCss(t: StyleTokens, P: string, linkSel: string): string {
+  const hero = `a[href]:is([data-prism-role=primary-action],[data-prism-emphasis=primary])`;
+  const secondary = `a[href][data-prism-role=secondary-action]:not([data-prism-emphasis=primary])`;
+  const btn = `a[href][data-prism-c=button-link]:not([data-prism-role=primary-action]):not([data-prism-emphasis=primary])`;
+  const plainLink = linkSel.replace("a[href]", "a[href]:visited");
+  return `
+${P} ${plainLink}{color:${t.link}!important}
+${P} ${btn}:visited{color:${t.buttonText}!important;background-color:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border-color:${t.buttonBorder}!important}
+${P} ${secondary}:visited{color:${t.buttonText}!important;background-color:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border-color:${t.buttonBorder}!important}
+${P} ${hero}:visited{color:${t.onPrimary}!important;background-color:${t.primary}!important;border-color:${t.primaryBorder}!important;outline-color:${t.primary}!important}
+${P} a[href][data-prism-fix=dark]:visited{color:${t.text}!important}
+${P} a[href][data-prism-fix=light]:visited{color:#FFFFFF!important}
+${P}[data-prism-mode=restructure] :is([data-prism-layout=canvas]>[data-prism-item],table[data-prism-layout=table-grid]>tbody>tr>td) a[href]:visited{color:${t.link}!important}`;
 }

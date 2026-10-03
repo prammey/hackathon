@@ -75,10 +75,11 @@ function main() {
       case "prism:ping": reply({ ok: true }); return false;
       case "prism:status": reply({ ...engine.state, url: location.href, origin: location.origin }); return false;
       case "prism:toggle":
-        (msg.on ? engine.enable() : engine.disable("Showing the original page.")).then(() => reply(engine.state));
+        // Always answer with the real state, even if something went wrong, so the popup never gets stuck.
+        (msg.on ? engine.enable() : engine.disable("Showing the original page.")).catch((err) => console.warn("Prism:", err)).finally(() => reply(engine.state));
         return true;
-      case "prism:set-style": engine.setStyle(msg.styleId as StyleId).then(() => reply(engine.state)); return true;
-      case "prism:regenerate": engine.regenerate().then(() => reply(engine.state)); return true;
+      case "prism:set-style": engine.setStyle(msg.styleId as StyleId).catch(() => {}).finally(() => reply(engine.state)); return true;
+      case "prism:regenerate": engine.regenerate().catch(() => {}).finally(() => reply(engine.state)); return true;
       case "prism:start-selection":
         if (msg.mode === "keyboard") selection.startKeyboard(); else selection.startExplicit();
         reply({ ok: true });

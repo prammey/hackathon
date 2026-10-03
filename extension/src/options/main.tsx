@@ -474,7 +474,7 @@ function ServiceSection({ settings, update }: { settings: Settings; update: (p: 
             : <span style="color:var(--pz-danger);font-weight:700">Not connected to {health.base}</span>}
         </div>
       </div>
-      <p class="pz-hint">Prism {__PRISM_VERSION__}. Prism is an independent project and is not affiliated with Google, OpenAI or Anthropic.</p>
+      <p class="pz-hint">Prism {__PRISM_VERSION__}</p>
     </section>
   );
 }

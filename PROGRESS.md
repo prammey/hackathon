@@ -64,3 +64,6 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
   bar; word-level selection with surrounding context (Define/Chat explain exactly the selected words);
   markdown-free answers. Fixed id instability that caused extra AI plans on live pages. Regression: 40 passed,
   2 skipped (ilsos.gov and arngren.net unreachable from this network).
+- 2026-10-03 — v0.3.1: removed disclaimer copy; visited-link colour rules (white-on-white on berkshirehathaway.com
+  reproduced, fixed, verified 12/12 runs incl. pixel checks); main action always wins over secondary styling;
+  popup switch updates instantly and stays in sync. Full suite: 57 passed, 2 skipped (unreachable sites).
