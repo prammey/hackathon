@@ -147,7 +147,7 @@ the settings expose **Clear saved layouts** and a per-site **Always tidy from sc
   → Saved layouts: list by site, delete one, delete all.
 
 ## 5. Per-site preferences
-`site:<origin>` → `{ tidy: 'off' | 'on-click' | 'always', styleId?, clutterLevel?, fromScratch? }`.
+`site:<origin>` → `{ tidy: 'off' | 'on-click' | 'always', styleId?, fromScratch? }`.
 Popup shows these for the current site with plain words: "On this site: Tidy automatically every time".
 
 ## 6. Testing hooks (Phase 2)

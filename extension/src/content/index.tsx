@@ -62,10 +62,11 @@ function main() {
     bus.emit("settings", s);
   };
   getSettings().then(applySettings);
+  engine.initStyle();
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.settings) {
-      getSettings().then((s) => { applySettings(s); engine.refreshSettings(); });
+      getSettings().then((s) => { applySettings(s); engine.refreshSettings(); engine.initStyle(); });
     }
   });
 

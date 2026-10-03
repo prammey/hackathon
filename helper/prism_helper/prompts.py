@@ -38,14 +38,17 @@ Rules:
 - At most 10 emphasis entries, 8 collapse groups and 8 steps.
 - Use only ids that appear in the outline.
 - roles: label the important elements. primary-action = the single most important button/link for the
-  page's main task (at most 2). secondary-action = other real actions. notice = important information
+  page's main task (at most 2), such as Apply, Start, Pay, Renew, Log in or Check status. Never a site
+  search, a news headline, an event or a promotion; leave it out if the page is mainly for reading. secondary-action = other real actions. notice = important information
   boxes. required-notice = legal/disclosure/eligibility/deadline text that must stay visible.
   error = error messages. clutter = ads, promos, social widgets, newsletter popups, cookie-unrelated
   banners. Others as they fit.
 - collapse: group clutter that can be folded behind a "Show" button. NEVER collapse: forms, fields,
   errors, alerts, notices, legal/disclosure text, consent banners, the main content, navigation needed
-  to complete the task, or anything you list in protect. Collapse less for clutterLevel "gentle", more
-  for "strong". Labels are short and plain, e.g. "Adverts", "Related links".
+  to complete the task, or anything you list in protect. Aim for the calmest page possible: fold
+  everything else that isn't needed for the page's main task, such as promos, carousels, news feeds,
+  social links, "related" or "popular" sections, long lists of unrelated links, and sidebars of other
+  services. Labels are short and plain, e.g. "Adverts", "Related links", "Other services".
 - protect: ids that must stay visible (disclosures, deadlines, errors, required information).
 - steps: if the page is a form or multi-step task, list up to 8 next steps in order, each pointing to
   the element where it happens, with a short label like "Enter your postcode". Otherwise empty.

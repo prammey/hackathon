@@ -10,6 +10,7 @@ export const PRISM_ATTRS = [
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
   "data-prism-filled", "data-prism-tight", "data-prism-layout", "data-prism-item", "data-prism-o", "data-prism-pos",
   "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden", "data-prism-fix", "data-prism-fixbox",
+  "data-prism-pad", "data-prism-next",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -86,6 +87,19 @@ function luminance(color: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** Text you can actually see (screen-reader-only labels are clipped to a pixel or two). */
+function hasVisibleText(el: Element): boolean {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.textContent?.trim()) continue;
+    range.selectNodeContents(node);
+    const r = range.getBoundingClientRect();
+    if (r.width > 4 && r.height > 4) return true;
+  }
+  return false;
+}
+
 function controlKind(el: Element, cs: CSSStyleDeclaration): string | null {
   const tag = el.tagName;
   if (tag === "INPUT") {
@@ -98,6 +112,12 @@ function controlKind(el: Element, cs: CSSStyleDeclaration): string | null {
   if (tag === "SELECT" || tag === "TEXTAREA") return "field";
   const role = el.getAttribute("role");
   if (tag === "BUTTON" || role === "button") {
+    // Its picture is a background image, so restyling would wipe the icon. A light (usually white) icon
+    // gets a dark backing, because Prism lightens the bar it sat on; a dark icon keeps the site's look.
+    if (cs.backgroundImage.includes("url(")) {
+      const [r, g, b] = (cs.color.match(/\d+/g) ?? ["0", "0", "0"]).map(Number);
+      return !hasVisibleText(el) && (r + g + b) / 3 > 180 ? "bg-icon" : null;
+    }
     const text = clean((el as HTMLElement).innerText ?? "", 80);
     return text.length > 0 ? "button" : "icon-button";
   }
@@ -225,7 +245,10 @@ export function analyze(doc: Document = document): AnalyzeResult {
       // Controls squeezed into narrow fixed-width layouts keep a compact size so nothing gets cut off.
       const holder = el.parentElement?.closest("td,li,div,form,fieldset,p,span") ?? el.parentElement;
       const holderWidth = holder ? holder.getBoundingClientRect().width : vw;
-      if (holderWidth && holderWidth < 260) setAttr(el, "data-prism-tight", "");
+      const inBar = el.closest("header,nav,[role=banner],[role=navigation],[role=toolbar],[role=menubar]");
+      const parentCs = el.parentElement ? getComputedStyle(el.parentElement) : null;
+      const inRow = parentCs && parentCs.display.includes("flex") && !parentCs.flexDirection.startsWith("column") && parentCs.flexWrap === "nowrap";
+      if ((holderWidth && holderWidth < 260) || inBar || inRow) setAttr(el, "data-prism-tight", "");
       tagged++;
       const name = accessibleName(el);
       const item: Omit<OutlineElement, "id"> = { tag: tag.toLowerCase(), name: clean(name, 80), box, interactive: true };
@@ -268,7 +291,10 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const bg = hasBackground(cs);
     if (bg && !landmark.startsWith("main") && tag !== "BODY" && tag !== "HTML" && !["TD", "TH", "TR", "THEAD", "TBODY", "TFOOT"].includes(tag)) {
       const area = rect.width * rect.height;
-      if (bg === "image") {
+      // Pieces of a strip kept in the site's colours stay as they are too; carding them makes boxes-in-boxes.
+      // A see-through colour layer is a designed overlay (usually over a photo): repainting it washes the photo out.
+      const alpha = Number(cs.backgroundColor.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1);
+      if (bg === "image" || alpha < 0.95 || el.parentElement?.closest("[data-prism-s=keep]")) {
         setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9 && rect.height > docHeight * 0.5) {
         setAttr(el, "data-prism-s", "plain");
@@ -277,8 +303,11 @@ export function analyze(doc: Document = document): AnalyzeResult {
         setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9) {
         setAttr(el, "data-prism-s", "band");
-      } else if (area >= 12000) {
+      } else if (area >= 12000 && rect.height >= 64 && !el.closest("header,[role=banner],nav,[role=navigation]") && !el.querySelector("nav,[role=navigation]")) {
         setAttr(el, "data-prism-s", "card");
+        // A box whose contents touch its edges gets breathing room once Prism adds a border.
+        const pad = Math.min(parseFloat(cs.paddingTop), parseFloat(cs.paddingRight), parseFloat(cs.paddingBottom), parseFloat(cs.paddingLeft));
+        if (pad < 10) setAttr(el, "data-prism-pad", "");
       } else {
         setAttr(el, "data-prism-s", "keep");
       }

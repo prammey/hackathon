@@ -133,15 +133,6 @@ function TidyingSection({ settings, update }: { settings: Settings; update: (p: 
         </div>
       </div>
       <div class="group">
-        <h3>How much clutter should Prism tuck away?</h3>
-        <div class="radio-list" role="radiogroup" aria-label="Clutter">
-          {([["gentle", "A little", "Only obvious adverts and pop-up promotions."], ["standard", "A fair amount", "Adverts, promotions, and long lists of unrelated links."], ["strong", "As much as is safe", "Anything that isn't needed for the page's main task. Important information is never hidden."]] as const).map(([v, label, hint]) => (
-            <label class="pz-choice"><input type="radio" name="clutter" checked={settings.clutterLevel === v} onChange={() => update({ clutterLevel: v })} />
-              <span><strong>{label}</strong><br /><span class="pz-hint">{hint}</span></span></label>
-          ))}
-        </div>
-      </div>
-      <div class="group">
         <h3>Saved layouts</h3>
         <p style="margin:0">So a page looks the same each time, Prism remembers how it tidied it ({plans.length} {plans.length === 1 ? "page" : "pages"}). It never saves what you typed into forms, or pictures of pages.</p>
         {plans.length > 0 && (

@@ -42,6 +42,12 @@ function backgroundOf(el: Element, cache: Map<Element, RGBA | null>): RGBA | nul
   let result: RGBA | null;
   if (cs.backgroundImage && cs.backgroundImage.includes("url(")) {
     result = null; // text over a photo: can't measure, leave it (the Style keeps those as-is)
+  } else if (cs.backgroundImage.includes("gradient(")) {
+    // A gradient band (common in site headers) counts as the average of its colour stops.
+    const stops = [...cs.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0])!).filter((c) => c.a > 0.05);
+    result = stops.length
+      ? { r: stops.reduce((s, c) => s + c.r, 0) / stops.length, g: stops.reduce((s, c) => s + c.g, 0) / stops.length, b: stops.reduce((s, c) => s + c.b, 0) / stops.length, a: 1 }
+      : null;
   } else {
     const own = parse(cs.backgroundColor);
     const parentEl = el.parentElement ?? (el === document.body ? document.documentElement : null);
@@ -52,6 +58,22 @@ function backgroundOf(el: Element, cache: Map<Element, RGBA | null>): RGBA | nul
   }
   cache.set(el, result);
   return result;
+}
+
+/** Is a picture or video (not an ancestor's background) what's actually behind this text on screen? */
+function overMedia(el: Element, r: DOMRect): boolean {
+  const x = r.left + Math.min(r.width / 2, 40);
+  const y = r.top + r.height / 2;
+  if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) return false;
+  const own = parse(getComputedStyle(el).backgroundColor);
+  if (own && own.a > 0.5) return false; // it brings its own solid background
+  for (const hit of document.elementsFromPoint(x, y)) {
+    if (hit === el || el.contains(hit) || hit.tagName === "PRISM-ROOT") continue;
+    if (hit.matches("img,video,canvas,picture,iframe")) return true;
+    const bg = parse(getComputedStyle(hit).backgroundColor);
+    if (bg && bg.a > 0.5) return false;
+  }
+  return false;
 }
 
 function hasOwnText(el: Element): boolean {
@@ -68,6 +90,9 @@ export function repairContrast(): RepairStats {
   const cache = new Map<Element, RGBA | null>();
   const fixes: [Element, string][] = [];
   const boxes: Element[] = [];
+  // Large on-screen pictures and videos: text drawn over them is checked against what's really behind it.
+  const media = [...document.querySelectorAll("img,video,canvas")].map((m) => m.getBoundingClientRect())
+    .filter((r) => r.width * r.height > 40000 && r.bottom > 0 && r.top < innerHeight);
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
     acceptNode(node) {
       const el = node as Element;
@@ -95,6 +120,12 @@ export function repairContrast(): RepairStats {
     }
 
     if (!hasOwnText(el) && !el.matches("input,select,textarea,button")) continue;
+    const cx = rect.left + Math.min(rect.width / 2, 40), cy = rect.top + rect.height / 2;
+    if (media.some((m) => cx >= m.left && cx <= m.right && cy >= m.top && cy <= m.bottom) && overMedia(el, rect)) {
+      stats.checked++;
+      fixes.push([el, "media"]);
+      continue;
+    }
     const fg = parse(cs.color);
     const bg = backgroundOf(el, cache);
     if (!fg || !bg) continue;
@@ -116,4 +147,32 @@ export function repairContrast(): RepairStats {
 
 export function clearContrastFixes(): void {
   for (const el of document.querySelectorAll(`[${FIX}],[${FIXBOX}]`)) { el.removeAttribute(FIX); el.removeAttribute(FIXBOX); }
+}
+
+/**
+ * After styling, a control that grew can overlap its neighbours (common in cramped headers). Any
+ * overlapping controls are made compact; repeats until nothing overlaps (max 3 passes).
+ */
+export function repairOverlaps(): number {
+  let fixed = 0;
+  for (let pass = 0; pass < 3; pass++) {
+    const controls = [...document.querySelectorAll<HTMLElement>("[data-prism-c]:not([data-prism-tight])")];
+    const tight = new Set<HTMLElement>();
+    const boxes = controls.map((el) => ({ el, r: el.getBoundingClientRect() })).filter((b) => b.r.width && b.r.height);
+    const neighbours = [...document.querySelectorAll<HTMLElement>("[data-prism-c],img,svg,label,a[href],h1,h2,h3")]
+      .map((el) => ({ el, r: el.getBoundingClientRect() })).filter((b) => b.r.width && b.r.height);
+    for (const a of boxes) {
+      for (const b of neighbours) {
+        if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+        const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+        const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+        if (w > 2 && h > 2) { tight.add(a.el); if (b.el.hasAttribute("data-prism-c")) tight.add(b.el); }
+      }
+    }
+    if (!tight.size) break;
+    for (const el of tight) el.setAttribute("data-prism-tight", "");
+    fixed += tight.size;
+    void document.body.offsetHeight; // re-layout before the next pass
+  }
+  return fixed;
 }

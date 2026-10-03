@@ -7,6 +7,24 @@ import type { Settings } from "../shared/types";
 import { Brand, Icon, isMac } from "../ui/components";
 import { MiniPreview } from "../options/preview";
 
+/** Hard-to-use but important real websites that Prism visibly improves (checked October 2026). */
+const DEMO_SITES = [
+  { name: "Illinois Human Services", what: "Cash, food and medical help", kind: "Benefits", url: "https://www.dhs.state.il.us/page.aspx?item=29719" },
+  { name: "Mississippi Medicaid", what: "Apply for Medicaid", kind: "Healthcare", url: "https://medicaid.ms.gov/" },
+  { name: "Cook County Circuit Court Clerk", what: "Court services and records", kind: "Courts", url: "https://www.cookcountyclerkofcourt.org/" },
+  { name: "California EDD", what: "Unemployment benefits", kind: "Benefits", url: "https://edd.ca.gov/en/unemployment/" },
+  { name: "Indian Health Service", what: "Federal health program", kind: "Healthcare", url: "https://www.ihs.gov/" },
+  { name: "TRICARE", what: "Military health insurance", kind: "Insurance", url: "https://www.tricare.mil/" },
+  { name: "TreasuryDirect", what: "Savings bonds", kind: "Banking", url: "https://www.treasurydirect.gov/" },
+  { name: "Indiana Family & Social Services", what: "Medicaid, SNAP and family help", kind: "Benefits", url: "https://www.in.gov/fssa/" },
+  { name: "Maine Health & Human Services", what: "SNAP, MaineCare and certificates", kind: "Benefits", url: "https://www.maine.gov/dhhs/" },
+  { name: "Tennessee Courts", what: "Court dockets, forms and opinions", kind: "Courts", url: "https://www.tncourts.gov/" },
+  { name: "HelpWithMyBank.gov", what: "Help with a bank problem", kind: "Banking", url: "https://www.helpwithmybank.gov/" },
+  { name: "Social Security rules (POMS)", what: "How benefit claims are decided", kind: "Social Security", url: "https://secure.ssa.gov/poms.nsf/home!readform" },
+  { name: "OPM Retirement Center", what: "Federal retirement", kind: "Retirement", url: "https://www.opm.gov/retirement-center/" },
+  { name: "Social Security Actuarial Services", what: "Benefit calculators and data", kind: "Social Security", url: "https://www.ssa.gov/oact/" },
+];
+
 function Welcome() {
   const [settings, setSettings] = useState<Settings | null>(null);
   useEffect(() => { getSettings().then((s) => { setSettings(s); saveSettings({ onboarded: true }); }); }, []);
@@ -27,6 +45,20 @@ function Welcome() {
         )}
       </section>
 
+      <section class="section" aria-labelledby="try-h">
+        <h2 id="try-h">Try it on real websites</h2>
+        <p>Important websites that are hard to use. Open one, then click the Prism button and turn on <strong>Tidy this page</strong>.</p>
+        <ul class="demo-sites" data-testid="demo-sites">
+          {DEMO_SITES.map((site) => (
+            <li><a class="demo-site" href={site.url} target="_blank" rel="noopener">
+              <span class="demo-site__kind">{site.kind}</span>
+              <span class="demo-site__name">{site.name}</span>
+              <span class="demo-site__what">{site.what}</span>
+            </a></li>
+          ))}
+        </ul>
+      </section>
+
       <section class="section" aria-labelledby="how-h">
         <h2 id="how-h">How to use Prism</h2>
         <div class="steps-big">
@@ -37,7 +69,8 @@ function Welcome() {
             <span>Hold <strong>{key}</strong> and drag a box around something confusing. Choose <strong>Define</strong>, <strong>Translate</strong>, <strong>Fill out</strong> or <strong>Chat</strong>.</span>
             <span class="pz-hint">Or use the Prism button → Point at something.</span></div>
           <div class="step-card"><span class="step-num">3</span><b>Go back any time</b>
-            <span>Press <strong>Show original page</strong> to see the website exactly as it was. Nothing on the website is deleted.</span></div>
+            <span><strong>Refresh</strong> <span class="kbd-icon" role="img" aria-label="refresh button"><Icon name="restore" /></span> the page, or switch off <strong>Tidy this page</strong>, to see the website exactly as it was.</span>
+            <span class="pz-hint">Nothing on the website is deleted.</span></div>
         </div>
       </section>
 
@@ -52,6 +85,24 @@ function Welcome() {
               <span class="style-card__tag">{STYLES[id].tagline}</span>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="next-h">
+        <h2 id="next-h">Never lose your place</h2>
+        <div class="feature">
+          <div class="feature__demo" aria-hidden="true">
+            <div class="demo-page">
+              <span class="demo-line" /><span class="demo-line demo-line--short" />
+              <span class="demo-cta">Start your application →</span>
+              <span class="demo-line" />
+            </div>
+            <div class="demo-dock"><span class="demo-dock__label">NEXT STEP</span><span>Start your application</span><span class="demo-dock__btn">Show me</span></div>
+          </div>
+          <div class="feature__text">
+            <p><strong>Prism always shows you what to do next.</strong> On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.</p>
+            <p>The <strong>Next step</strong> bar in the bottom-left corner names it too — press <strong>Show me</strong> and Prism takes you right there.</p>
+          </div>
         </div>
       </section>
 

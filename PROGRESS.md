@@ -67,3 +67,10 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
 - 2026-10-03 — v0.3.1: removed disclaimer copy; visited-link colour rules (white-on-white on berkshirehathaway.com
   reproduced, fixed, verified 12/12 runs incl. pixel checks); main action always wins over secondary styling;
   popup switch updates instantly and stays in sync. Full suite: 57 passed, 2 skipped (unreachable sites).
+- 2026-10-03 — v0.4.0: next step always has a breathing ring (no click needed); welcome page gains the
+  Refresh hint, a "Never lose your place" section and 14 real demo websites (screened from 85+ important,
+  hard-to-use sites with before/after screenshots). Clutter setting removed: Prism always tidies as calmly as
+  is safe. Real-site fixes: logos no longer blow up, searches/slideshow arrows/cookie buttons/menu items are
+  never the next step, menus keep their own shape, icon-only buttons stay visible, text over photos/video
+  stays readable, no boxes-in-boxes in headers, no orphan bullets or picture-only leftovers after folding,
+  quieter outlines, dark table rows fixed (contrast flake). Helper redeployed (planner prompt).

@@ -166,6 +166,15 @@ test("Welcome page renders and offers a practice page", async ({ context, extens
   await page.goto(`chrome-extension://${extensionId}/welcome.html`);
   await expect(page.getByRole("heading", { name: "Websites, made calm and clear." })).toBeVisible();
   await expect(page.getByTestId("try-demo")).toHaveAttribute("href", /\/demo\/cluttered-info\/$/);
+  await expect(page.getByText("Nothing on the website is deleted.")).toBeVisible();
+  await expect(page.getByRole("img", { name: "refresh button" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Never lose your place" })).toBeVisible();
+  const sites = page.getByTestId("demo-sites").getByRole("link");
+  await expect(sites).toHaveCount(14);
+  for (const link of await sites.all()) {
+    await expect(link).toHaveAttribute("href", /^https:\/\//);
+    await expect(link).toHaveAttribute("target", "_blank");
+  }
   await page.screenshot({ path: path.join(EVIDENCE, "welcome-01.png"), fullPage: true });
 });
 
@@ -182,4 +191,23 @@ test("Online (hosted) Prism service works through the extension", async ({ conte
   await expect(card).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   await shot(page, "hosted-01-define");
 
+});
+
+test("Choosing a Style before tidying is remembered and applied when tidying turns on", async ({ context, sw, extensionId }) => {
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/cluttered-info/`);
+  await prismReady(page);
+  const id = await tabId(sw, page);
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${id}`);
+  await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "false");
+  await popup.locator("[data-style=bold]").click();
+  await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
+  await popup.waitForTimeout(1500); // survives the popup's status refresh
+  await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => document.documentElement.hasAttribute("data-prism-on"))).toBe(false);
+  await popup.reload();
+  await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
+  await popup.getByRole("switch", { name: /Tidy this page/ }).click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-prism-style"))).toBe("bold");
 });

@@ -32,6 +32,10 @@ export interface StyleTokens {
   controlWidth: string;
   field: string;
   fieldShadow: string;
+  /** Typing fields get their own outline so they never look like buttons. */
+  fieldBorder: string;
+  fieldBorderWidth: string;
+  fieldRadius: string;
   primary: string;
   onPrimary: string;
   primaryBorder: string;
@@ -86,9 +90,10 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     bg: "#F6F7FB", band: "#FFFFFF", bandBorder: "1px solid #E4E8F0",
     surface: "#FFFFFF", card: "#FFFFFF", cardBorder: "1px solid #E4E8F0", cardShadow: "0 1px 2px rgba(16,24,40,0.05), 0 4px 16px rgba(16,24,40,0.05)",
     text: "#0F172A", muted: "#475569", divider: "#E4E8F0", control: "#7C8899", controlWidth: "1.5px",
+    fieldBorder: "#4F7BEA", fieldBorderWidth: "2px", fieldRadius: "12px",
     field: "#FFFFFF", fieldShadow: "none",
     primary: "#2754E6", onPrimary: "#FFFFFF", primaryBorder: "#2754E6", primaryShadow: "0 4px 12px rgba(39,84,230,0.25)",
-    buttonBg: "#FFFFFF", buttonText: "#1E40C8", buttonBorder: "#C7D2FE", buttonShadow: "none",
+    buttonBg: "#EEF2FF", buttonText: "#1E40C8", buttonBorder: "#D9E0FE", buttonShadow: "0 1px 2px rgba(16,24,40,0.08), 0 4px 10px rgba(39,84,230,0.14)",
     pressTransform: "translateY(1px)", pressShadow: "none",
     link: "#1E40C8", linkThickness: "1.5px",
     danger: "#C0262D", success: "#0E7A4E",
@@ -110,6 +115,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     bg: "#FBF6EC", band: "#FFFFFF", bandBorder: "2.5px solid #1A1A1A",
     surface: "#FFFFFF", card: "#FFFFFF", cardBorder: "2.5px solid #1A1A1A", cardShadow: "4px 4px 0 #1A1A1A",
     text: "#1A1A1A", muted: "#3D3D3D", divider: "#1A1A1A", control: "#1A1A1A", controlWidth: "2.5px",
+    fieldBorder: "#3730C9", fieldBorderWidth: "2.5px", fieldRadius: "12px",
     field: "#FFFFFF", fieldShadow: "none",
     primary: "#4F46E5", onPrimary: "#FFFFFF", primaryBorder: "#1A1A1A", primaryShadow: "3px 3px 0 #1A1A1A",
     buttonBg: "#FFE9A8", buttonText: "#1A1A1A", buttonBorder: "#1A1A1A", buttonShadow: "3px 3px 0 #1A1A1A",
@@ -132,9 +138,10 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     bg: "#FAFAF7", band: "#FAFAF7", bandBorder: "1px solid #E8E8E2",
     surface: "#FFFFFF", card: "#FFFFFF", cardBorder: "1px solid #ECECE6", cardShadow: "0 1px 0 rgba(0,0,0,0.02), 0 12px 32px rgba(17,17,17,0.04)",
     text: "#18181B", muted: "#55565C", divider: "#E8E8E2", control: "#8A8B91", controlWidth: "1px",
+    fieldBorder: "#3D4F8F", fieldBorderWidth: "1.5px", fieldRadius: "12px",
     field: "#FFFFFF", fieldShadow: "none",
     primary: "#18181B", onPrimary: "#FFFFFF", primaryBorder: "#18181B", primaryShadow: "none",
-    buttonBg: "transparent", buttonText: "#18181B", buttonBorder: "#8A8B91", buttonShadow: "none",
+    buttonBg: "#EFEFEA", buttonText: "#18181B", buttonBorder: "#E2E2DA", buttonShadow: "0 1px 2px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.07)",
     pressTransform: "none", pressShadow: "none",
     link: "#18181B", linkThickness: "1px",
     danger: "#A8261B", success: "#1E6B3D",
@@ -155,6 +162,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     surface: "#E8ECF4", card: "#E8ECF4", cardBorder: "1px solid rgba(255,255,255,0.65)",
     cardShadow: "-8px -8px 18px rgba(255,255,255,0.9), 8px 8px 20px rgba(146,160,188,0.55)",
     text: "#1D2433", muted: "#465068", divider: "#C6CEDC", control: "#6F7A90", controlWidth: "1.5px",
+    fieldBorder: "#4153DD", fieldBorderWidth: "1.5px", fieldRadius: "16px",
     field: "#E8ECF4",
     fieldShadow: "inset 4px 4px 9px rgba(146,160,188,0.55), inset -4px -4px 9px rgba(255,255,255,0.95)",
     primary: "#4153DD", onPrimary: "#FFFFFF", primaryBorder: "#3646C7",
@@ -204,7 +212,10 @@ export function pageCss(styleId: StyleId, settings: Settings, reducedMotion: boo
   const notKeep = ":not([data-prism-s=keep] *)";
   const text = `:is(p,li,dd,dt,td,th,blockquote,figcaption,label,legend,summary,caption)${notKeep}`;
   const heading = `:is(h1,h2,h3,h4,h5,h6,[role=heading])${notKeep}`;
-  const button = `:is([data-prism-c=button],[data-prism-c=button-link])`;
+  // Menu bars keep their own control shapes: chips there split dropdowns into pieces.
+  const buttonList = "[data-prism-c=button],[data-prism-c=button-link]";
+  const inNav = ":is(nav,[role=navigation],[role=menubar],[data-prism-role=nav]) *";
+  const button = `:is(${buttonList}):not(${inNav})`;
   const linkSel = `a[href]:not([data-prism-c]):not([role=button]):not([data-prism-role=primary-action]):not([data-prism-role=secondary-action]):not([data-prism-emphasis=primary])${notKeep}`;
   const motion = reducedMotion || settings.reduceMotion === "on";
   const dur = motion ? "0s" : t.motion;
@@ -232,26 +243,37 @@ ${P} :is([data-prism-role=notice],[data-prism-role=required-notice],[data-prism-
 ${P} [data-prism-s=band]{background:${t.band}!important;background-image:none!important;color:${t.text}!important;border-bottom:${t.bandBorder}!important;box-shadow:none!important}
 ${P} [data-prism-s=card]{background:${t.card}!important;background-image:none!important;color:${t.text}!important;border:${t.cardBorder}!important;box-shadow:${t.cardShadow}!important;border-radius:${t.radiusCard}!important}
 ${P} [data-prism-s=plain]{background:${t.surface}!important;background-image:none!important;color:${t.text}!important}
+${P} [data-prism-s=card]{box-sizing:border-box!important;max-width:100%!important}
+${P} [data-prism-s=card][data-prism-pad]{padding:14px 16px!important}
+${P} :is([data-prism-s=card],[data-prism-s=band],[data-prism-role=notice],[data-prism-role=required-notice],[data-prism-c=button-link]) :is(img,video,iframe,picture,canvas,object,embed){max-width:100%!important;object-fit:contain!important;box-sizing:border-box!important}
+${P} [data-prism-s=card] > :is(img,picture,video):first-child{border-radius:calc(${t.radiusCard} - 6px)!important}
 ${P} :is([data-prism-s=band],[data-prism-s=card],[data-prism-s=plain]) :is(span,div,strong,b,em,small,time)${notKeep}{color:inherit}
 ${P} ${button}{font-family:${t.fontBody}!important;font-weight:700!important;font-size:max(1em,16px)!important;line-height:1.2!important;min-height:var(--p-target)!important;padding:.5em 1.05em!important;border-radius:${t.radiusControl}!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;background:${t.buttonBg}!important;background-image:none!important;color:${t.buttonText}!important;box-shadow:${t.buttonShadow}!important;text-decoration:none!important;text-shadow:none!important;cursor:pointer!important;transition:transform ${dur},box-shadow ${dur},filter ${dur}!important;box-sizing:border-box!important}
 ${P} ${button} *{color:inherit!important}
 ${P} :is([data-prism-c=button-link],[data-prism-tight]){box-shadow:none!important}
 ${P} :is(p,li,td,label,span,small) > [data-prism-c=button-link]{padding:.15em .5em!important;min-height:0!important}
-${P} [data-prism-c=icon-button]{min-width:var(--p-target)!important;min-height:var(--p-target)!important;border-radius:${t.radiusControl}!important;color:${t.buttonText}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border:1px solid ${t.buttonBorder}!important}
-${P} [data-prism-c=icon-button] *{color:inherit!important}
+${P} [data-prism-c=icon-button]:not(${inNav}){min-width:var(--p-target)!important;min-height:var(--p-target)!important;border-radius:${t.radiusControl}!important;color:${t.buttonText}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border:1px solid ${t.buttonBorder}!important}
+${P} [data-prism-c=icon-button]:not(${inNav}) *{color:inherit!important}
 ${P} ${button}:hover{filter:brightness(0.94)!important}
 ${P} ${button}:active{transform:${t.pressTransform}!important;box-shadow:${t.pressShadow}!important}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,input[type=submit],input[type=button],[role=button]){display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:.55em!important;background:${t.primary}!important;background-image:none!important;color:${t.onPrimary}!important;-webkit-text-fill-color:${t.onPrimary}!important;border:${t.controlWidth} solid ${t.primaryBorder}!important;box-shadow:${t.primaryShadow}${motionOk ? `,0 0 0 0 ${t.primary}55` : ""}!important;font-family:${t.fontHeading}!important;font-size:max(20px,1.2em)!important;font-weight:700!important;line-height:1.2!important;min-height:56px!important;padding:.8em 1.6em!important;border-radius:${t.radiusControl}!important;text-decoration:none!important;margin-block:.4em!important;cursor:pointer!important;${motionOk ? "animation:prism-breathe 2.6s ease-in-out infinite!important;" : ""}}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button])::after{content:"→";font-size:1.05em;transition:transform ${dur}}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button]):hover::after{transform:translateX(4px)}
 ${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,input,[role=button]) *{color:inherit!important;-webkit-text-fill-color:inherit!important}
-${P} [data-prism-role=secondary-action]:is(a[href],button,[role=button]):not([data-prism-c=icon-button]):not([data-prism-emphasis=primary]){display:inline-flex!important;align-items:center!important;min-height:44px!important;padding:.5em 1.1em!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;border-radius:${t.radiusControl}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;color:${t.buttonText}!important;font-weight:650!important;text-decoration:none!important;font-size:max(1em,16px)!important}
+${P} [data-prism-role=secondary-action]:is(a[href],button,[role=button]):not([data-prism-c=icon-button]):not([data-prism-c=bg-icon]):not([data-prism-emphasis=primary]):not(${inNav}){display:inline-flex!important;align-items:center!important;min-height:44px!important;padding:.5em 1.1em!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;border-radius:${t.radiusControl}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;color:${t.buttonText}!important;font-weight:650!important;text-decoration:none!important;font-size:max(1em,16px)!important}
 ${visitedCss(t, P, linkSel)}
+${P} [data-prism-c=bg-icon]{background-color:${t.primary}!important;border-radius:${t.radiusControl}!important;min-width:44px!important;min-height:44px!important}
+${P} [data-prism-next]{outline:3px solid ${t.primary}!important;outline-offset:5px!important;${motionOk ? "animation:prism-ring 1.8s ease-in-out infinite!important;" : ""}}
+${P} [data-prism-next][data-prism-next]:is([data-prism-role=primary-action],[data-prism-emphasis=primary]){${motionOk ? "animation:prism-ring 1.8s ease-in-out infinite,prism-breathe 2.6s ease-in-out infinite!important;" : ""}}
+@keyframes prism-ring{0%,100%{outline-offset:4px;outline-color:${t.primary}}50%{outline-offset:10px;outline-color:${t.primary}66}}
 @keyframes prism-breathe{0%,100%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 0 ${t.primary}40}50%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 10px ${t.primary}00}}
 ${P} :is(button,input[type=submit],input[type=button],input[type=reset])[disabled]{opacity:1!important;filter:none!important;background:${t.surface}!important;color:${t.muted}!important;border-style:dashed!important;cursor:not-allowed!important;box-shadow:none!important}
-${P} [data-prism-c=field]{font-family:${t.fontBody}!important;font-size:max(1em,17px)!important;color:${t.text}!important;background-color:${t.field}!important;border:${t.controlWidth} solid ${t.control}!important;border-radius:${t.radiusControl}!important;min-height:var(--p-target)!important;padding:.4em .7em!important;box-shadow:${t.fieldShadow}!important;box-sizing:border-box!important}
-${P} textarea[data-prism-c=field],${P} select[data-prism-c=field][multiple]{min-height:5em!important;border-radius:min(${t.radiusControl},18px)!important}
-${P} :is(${button.slice(4, -1)},[data-prism-c=field])[data-prism-tight]{font-size:max(1em,14px)!important;padding:.25em .45em!important;min-height:32px!important;max-width:100%!important}
+${P} [data-prism-c=field]{font-family:${t.fontBody}!important;font-size:max(1em,17px)!important;color:${t.text}!important;background-color:${t.field}!important;border:${t.fieldBorderWidth} solid ${t.fieldBorder}!important;border-radius:${t.fieldRadius}!important;min-height:var(--p-target)!important;padding-block:.4em!important;padding-inline:.75em!important;box-shadow:${t.fieldShadow}!important;box-sizing:border-box!important;cursor:text!important}
+${P} select[data-prism-c=field]{padding-right:2.2em!important;cursor:pointer!important}
+${P} [data-prism-c=field]:focus{border-color:${t.primary}!important;box-shadow:${t.fieldShadow === "none" ? "" : `${t.fieldShadow},`}0 0 0 4px ${t.primary}33!important;outline:none!important}
+${P} textarea[data-prism-c=field],${P} select[data-prism-c=field][multiple]{min-height:5em!important;border-radius:min(${t.fieldRadius},18px)!important}
+${P} :is(${buttonList},[data-prism-c=field],[data-prism-c=icon-button])[data-prism-tight]{font-size:max(1em,14px)!important;padding-block:.25em!important;padding-inline:.6em!important;min-height:32px!important;min-width:0!important;max-width:100%!important;line-height:1.2!important}
+${P} select[data-prism-c=field][data-prism-tight]{padding-right:2em!important}
 ${P} [data-prism-c=field]{max-width:100%!important}
 ${P} [data-prism-c=field]::placeholder{color:${t.muted}!important;opacity:1!important}
 ${P} [data-prism-c=field][aria-invalid=true]{border-color:${t.danger}!important;border-width:3px!important}
@@ -259,20 +281,21 @@ ${P} [data-prism-c=check]{accent-color:${t.primary}!important;width:1.35em!impor
 ${P} :is([data-prism-role=notice],[data-prism-role=required-notice]){background:${t.noticeBg}!important;background-image:none!important;color:${t.text}!important;border:${t.noticeBorder}!important;border-left:${t.noticeLeft}!important;border-radius:calc(${t.radiusCard} - 4px)!important;box-shadow:${t.noticeShadow}!important;padding:1em 1.2em!important}
 ${P} [data-prism-role=error]{color:${t.danger}!important;font-weight:700!important;border-left:5px solid ${t.danger}!important;padding-left:.7em!important}
 ${P} [data-prism-role=error] *{color:inherit!important}
-${P} [data-prism-emphasis=primary]:not(${button.slice(4, -1)}):not(button):not(input):not(a[href]):not([role=button]){outline:3px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
 ${P} [data-prism-emphasis=quiet]{font-size:.94em!important}
 ${P} [data-prism-role=clutter]:not([data-prism-open]){display:none!important}
 ${P} [data-prism-collapsed]:not([data-prism-open]){display:none!important}
 ${P} [data-prism-step-active]{outline:4px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
 ${P} :is(main,[data-prism-role=main],article) table${notKeep}{border-collapse:collapse!important;background:${t.surface}!important}
-${P} :is(main,[data-prism-role=main],article) :is(td,th)${notKeep}{padding:.5em .75em!important;border:1px solid ${t.divider}!important;text-align:start!important}
+${P} :is(main,[data-prism-role=main],article) :is(td,th)${notKeep}{padding:.5em .75em!important;border:1px solid ${t.divider}!important;text-align:start!important;background-color:transparent!important}
 ${P} :is(main,[data-prism-role=main],article) th${notKeep}{background:${t.card}!important;font-weight:700!important}
-${P} :is(main,[data-prism-role=main],article) img{max-width:100%!important;height:auto!important}
+${P} :is(main,[data-prism-role=main],article) img{max-width:100%!important;object-fit:contain!important}
+${P} :is(main,[data-prism-role=main],article,[data-prism-s=card],[data-prism-s=band]) :is(img,video)[height]{height:auto!important}
 ${P} hr{border:0!important;border-top:${t.id === "bold" ? "3px solid #0F0F0F" : `1px solid ${t.divider}`}!important}
 ${P} :focus-visible{outline:${t.focusOutline}!important;outline-offset:3px!important;box-shadow:${t.focusShadow}!important}
 ${P} [data-prism-fix=dark][data-prism-fix]{color:${t.text}!important;-webkit-text-fill-color:${t.text}!important;text-shadow:none!important;opacity:1!important}
 ${P} [data-prism-fix=light][data-prism-fix]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;text-shadow:none!important;opacity:1!important}
-${P} [data-prism-fixbox][data-prism-fixbox]{outline:2px solid ${t.divider === "#111111" ? "#111111" : t.control}!important;outline-offset:-2px!important;border-radius:${t.radiusControl === "999px" ? "14px" : t.radiusControl}!important}
+${P} [data-prism-fix=media][data-prism-fix]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 12px rgba(0,0,0,.5)!important;opacity:1!important}
+${P} [data-prism-fixbox][data-prism-fixbox]{outline:1px solid ${t.divider}!important;outline-offset:-1px!important;border-radius:${t.radiusControl === "999px" ? "14px" : t.radiusControl}!important}
 ${restructureCss(t, P + "[data-prism-mode=restructure]", dur)}
 ${motion ? `${P} *,${P} *::before,${P} *::after{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important;scroll-behavior:auto!important}` : ""}
 `;
@@ -339,6 +362,6 @@ ${P} ${btn}:visited{color:${t.buttonText}!important;background-color:${t.buttonB
 ${P} ${secondary}:visited{color:${t.buttonText}!important;background-color:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border-color:${t.buttonBorder}!important}
 ${P} ${hero}:visited{color:${t.onPrimary}!important;background-color:${t.primary}!important;border-color:${t.primaryBorder}!important;outline-color:${t.primary}!important}
 ${P} a[href][data-prism-fix=dark]:visited{color:${t.text}!important}
-${P} a[href][data-prism-fix=light]:visited{color:#FFFFFF!important}
+${P} a[href]:is([data-prism-fix=light],[data-prism-fix=media]):visited{color:#FFFFFF!important}
 ${P}[data-prism-mode=restructure] :is([data-prism-layout=canvas]>[data-prism-item],table[data-prism-layout=table-grid]>tbody>tr>td) a[href]:visited{color:${t.link}!important}`;
 }

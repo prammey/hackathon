@@ -4,7 +4,6 @@ export type HelperMode = "hosted" | "local";
 
 export interface Settings {
   styleId: StyleId;
-  clutterLevel: "gentle" | "standard" | "strong";
   textScale: 1 | 1.15 | 1.3 | 1.5;
   extraLegible: boolean;
   strongContrast: boolean;

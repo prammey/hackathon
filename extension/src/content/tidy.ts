@@ -11,7 +11,7 @@ import { FONT_FILES, fontsFor, effectiveTokens, pageCss } from "../shared/styles
 import type { Result, Settings, StyleId, TidyPlan } from "../shared/types";
 import { analyze, type AnalyzeResult, clean, isPrismNode, stripPrism } from "./analyzer";
 import { analyzeLayout, type LayoutMode, ungroupCanvas } from "./layout";
-import { repairContrast } from "./contrast";
+import { repairContrast, repairOverlaps } from "./contrast";
 
 export type TidyStatus = "off" | "base" | "planning" | "planned" | "cached" | "error";
 
@@ -125,9 +125,20 @@ export class TidyEngine {
     this.emit({ status: "off", message, steps: [], folds: [], pagePurpose: "", cacheHit: false, hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "" });
   }
 
+  /** The Style this site will use, known even before tidying is switched on (shown in the popup). */
+  async initStyle(): Promise<void> {
+    if (this.active) return;
+    const [settings, site] = await Promise.all([getSettings(), getSitePrefs(location.origin)]);
+    this.emit({ styleId: site.styleId ?? settings.styleId });
+  }
+
   async setStyle(styleId: StyleId): Promise<void> {
     await saveSitePrefs(location.origin, { styleId });
-    if (!this.active) return;
+    if (!this.active) {
+      // Remembered now, applied when tidying is switched on.
+      this.emit({ styleId });
+      return;
+    }
     // Plans are style-independent, so switching Style never needs another AI call.
     await this.applyStyle(styleId, this.settings ?? (await getSettings()));
     this.emit({ styleId });
@@ -198,9 +209,12 @@ export class TidyEngine {
     this.lastRepair = Date.now();
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     if (!document.documentElement.hasAttribute("data-prism-on")) return;
+    // The hero choice restyles elements, so it goes before contrast is measured.
+    const nextStep = this.choosePrimary();
+    repairOverlaps();
     const fixed = repairContrast();
     const hidden = document.querySelectorAll("[data-prism-role=clutter]").length;
-    this.emit({ contrastFixes: fixed.fixed + fixed.boxes, hiddenClutter: hidden, nextStep: this.choosePrimary() });
+    this.emit({ contrastFixes: fixed.fixed + fixed.boxes, hiddenClutter: hidden, nextStep });
   }
 
   private nextEl: WeakRef<Element> | null = null;
@@ -211,15 +225,27 @@ export class TidyEngine {
    */
   private choosePrimary(): string {
     const visible = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest("[data-prism-collapsed]:not([data-prism-open]),[data-prism-role=clutter]"); };
-    let el = [...document.querySelectorAll("[data-prism-role=primary-action],[data-prism-emphasis=primary]")]
-      .find((e) => e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
+    // A site search is never "the next step": demote it if the plan marked it as the main action.
+    const isSearch = (e: Element) => !!e.closest("[role=search],form:has(input[type=search]),form:has(input[name=q]),form:has(input[name*=search i])") ||
+      /^(search|go|submit search)\b/i.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || e.getAttribute("aria-label") || "").trim());
+    const marked = [...document.querySelectorAll("[data-prism-role=primary-action],[data-prism-emphasis=primary]")];
+    // A menu item made into a hero button breaks the menu bar; slideshow arrows and cookie buttons aren't the task. All are demoted.
+    const inNav = (e: Element) => !!e.closest("nav,[role=navigation],[role=menubar],[data-prism-role=nav]") ||
+      !!e.closest("[class*=carousel i],[class*=slick i],[class*=swiper i],[class*=slider i],[aria-roledescription=carousel]") ||
+      !!e.closest("[class*=cookie i],[id*=cookie i],[class*=consent i],[id*=consent i],[aria-label*=cookie i]") ||
+      /^(next|previous|prev|pause|play|accept|accept all|accept necessary|agree|i agree|got it|ok|allow( all)?|decline|reject( all)?)( (image|slide|item|cookies))?$/i.test(((e as HTMLElement).innerText || e.getAttribute("aria-label") || "").trim());
+    for (const e of marked) if (isSearch(e) || inNav(e)) { e.setAttribute("data-prism-role", "secondary-action"); e.removeAttribute("data-prism-emphasis"); }
+    let el = marked.find((e) => !isSearch(e) && !inNav(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
     if (!el) {
       const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue)\b/i;
       const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
       el = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
-        .find((e) => visible(e) && cta.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || "").trim()) && !e.closest("nav,header,footer,[role=navigation]"));
+        .find((e) => visible(e) && !isSearch(e) && !inNav(e) && cta.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || "").trim()) && !e.closest("nav,header,footer,[role=navigation]"));
       if (el) el.setAttribute("data-prism-emphasis", "primary");
     }
+    // The next step always carries a breathing outline so the eye is drawn to it.
+    for (const old of document.querySelectorAll("[data-prism-next]")) if (old !== el) old.removeAttribute("data-prism-next");
+    if (el) el.setAttribute("data-prism-next", "");
     this.nextEl = el ? new WeakRef(el) : null;
     return el ? clean(((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim(), 60) : "";
   }
@@ -263,7 +289,7 @@ export class TidyEngine {
 
   private prefsHash(): string {
     const s = this.settings!;
-    return hash(`${s.clutterLevel}|${s.translateTo}`);
+    return hash(`strong|${s.translateTo}`);
   }
 
   private budgetLeft(): boolean {
@@ -304,7 +330,7 @@ export class TidyEngine {
     const settings = this.settings!;
     const result = (await chrome.runtime.sendMessage({
       type: "api", path: "/v1/plan",
-      body: { outline: analysis.outline, style: this.state.styleId, clutterLevel: settings.clutterLevel, language: settings.translateTo },
+      body: { outline: analysis.outline, style: this.state.styleId, clutterLevel: "strong", language: settings.translateTo },
     })) as Result<{ plan: TidyPlan }>;
     if (seq !== this.requestSeq || !this.active) return; // superseded or turned off meanwhile
     if (!result?.ok) {
@@ -391,11 +417,23 @@ export class TidyEngine {
           if (mainText && (collapsedText + textLen) / mainText > 0.4) { rejected++; continue; }
           collapsedText += textLen;
         }
-        members.push(el);
+        members.push(liftToWrapper(el));
       }
       if (!members.length) return;
-      members.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
       for (const el of members) el.setAttribute("data-prism-collapsed", gid);
+      // A box left with only pictures once its words are folded (a tile's photo) folds with them.
+      for (const el of [...members]) {
+        let box: Element | null = null;
+        for (let up = el.parentElement, depth = 0; up && depth < 4; up = up.parentElement, depth++) {
+          if (up === document.body || up === analysis.mainEl || (analysis.mainEl && up.contains(analysis.mainEl)) ||
+            up.matches("main,form,[role=main]") || up.querySelector("input:not([type=hidden]),select,textarea") || hasUnfoldedText(up)) break;
+          box = up;
+        }
+        if (box && !box.hasAttribute("data-prism-collapsed")) { box.setAttribute("data-prism-collapsed", gid); members.push(box); }
+      }
+      members.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+      const outer = members.filter((m) => !members.some((o) => o !== m && o.contains(m)));
+      members.splice(0, members.length, ...outer);
       const label = group.label || "More";
       const host = document.createElement("prism-fold");
       host.setAttribute("data-gid", gid);
@@ -511,6 +549,25 @@ export class TidyEngine {
 }
 
 // ---------- fonts ----------
+
+/** Does this element still show any words outside folded parts? */
+function hasUnfoldedText(root: Element): boolean {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.textContent?.trim()) continue;
+    if (node.parentElement?.closest("[data-prism-collapsed],script,style,noscript,template,[aria-hidden=true],prism-fold")) continue;
+    return true;
+  }
+  return false;
+}
+
+/** A folded link that is all its list item holds takes the item with it, so no empty bullet is left behind. */
+function liftToWrapper(el: Element): Element {
+  let target = el;
+  const text = (el as HTMLElement).innerText?.trim() ?? "";
+  while (target.parentElement?.matches("li,dt,dd,p") && (target.parentElement.innerText?.trim() ?? "") === text) target = target.parentElement;
+  return target;
+}
 
 const loadedFonts = new Set<string>();
 

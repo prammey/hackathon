@@ -5,7 +5,7 @@ import { getProfile, getSettings, profileText, saveProfile, saveSitePrefs } from
 import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
 } from "../shared/types";
-import { Brand, Icon, isMac, Logo, StylePicker } from "../ui/components";
+import { Brand, Icon, isMac, Logo, StylePicker, Switch } from "../ui/components";
 import { applyFill, fieldLabel, type FillResult, undoFill } from "./actions";
 import { controlsIn, regionContext } from "./region";
 import { placeNear, type SelState, SelectionController, shortcutLabel } from "./selection";
@@ -193,7 +193,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
   }, [shape]);
 
   const busy = tidy.status === "planning";
-  const showTab = tidy.status !== "off" && !chatOpen;
+  const tidyOn = tidy.status !== "off";
+  // Once the page has been tidied, the widget stays so tidying can be switched back on from the page.
+  const [widget, setWidget] = useState(false);
+  useEffect(() => { if (tidyOn) setWidget(true); }, [tidyOn]);
+  const showTab = widget && !chatOpen;
 
   return (
     <div class="layer">
@@ -201,11 +205,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
         <button class="tab" type="button" aria-label={`Prism: ${tidy.message || "page tidied"}. Open Prism panel`} onClick={() => setPanelOpen(true)}
           data-testid="prism-tab">
           <Logo size={30} />
-          <span class={`tab__dot${busy ? " tab__dot--busy" : ""}`} aria-hidden="true" />
-          <span class="tab__status">{busy ? "Tidying…" : "Tidied"}</span>
+          <span class={`tab__dot${busy ? " tab__dot--busy" : ""}${tidyOn ? "" : " tab__dot--off"}`} aria-hidden="true" />
+          <span class="tab__status">{!tidyOn ? "Original" : busy ? "Tidying…" : "Tidied"}</span>
         </button>
       )}
-      {showTab && !panelOpen && tidy.nextStep && !menuRect && !card && sel.phase === "idle" && (
+      {showTab && tidyOn && !panelOpen && tidy.nextStep && !menuRect && !card && sel.phase === "idle" && (
         <div class="nextstep pz-card" role="region" aria-label="Next step" data-testid="prism-next">
           <span class="nextstep__label">Next step</span>
           <span class="nextstep__text">{tidy.nextStep}</span>
@@ -258,23 +262,22 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
       <div class="panel__body">
         <div class="panel__section" aria-live="polite">
           {tidy.status === "planning" && <div class="pz-progress" aria-hidden="true" />}
-          <p style="margin:0;font-weight:700">{tidy.message}</p>
-          {tidy.pagePurpose && <p class="pz-muted" style="margin:0">This page: {tidy.pagePurpose}</p>}
+          <Switch checked={tidy.status !== "off"} label="Tidy this page" id="panel-tidy-switch"
+            onChange={(on) => (on ? engine.enable() : engine.disable("Showing the original page."))} />
+          {tidy.status !== "off" && <p style="margin:0;font-weight:600">{tidy.message}</p>}
+          {tidy.status !== "off" && tidy.pagePurpose && <p class="pz-muted" style="margin:0">This page: {tidy.pagePurpose}</p>}
         </div>
         <div class="panel__section">
-          <button class="pz-btn pz-btn--primary pz-btn--block" type="button" onClick={() => engine.disable("Showing the original page.")} data-testid="show-original">
-            <Icon name="eye" /> Show original page
-          </button>
           <button class="pz-btn pz-btn--block" type="button" onClick={props.onPoint}>
             <Icon name="select" /> Point at something
           </button>
           <p class="pz-hint" style="margin:0">Or hold <strong>{shortcutLabel(props.settings?.shortcut ?? "alt", mac)}</strong> and drag over anything on the page.</p>
           <button class="pz-btn pz-btn--block" type="button" onClick={props.onChat}><Icon name="chat" /> Chat about this page</button>
         </div>
-        <div class="panel__section">
+        {tidy.status !== "off" && <div class="panel__section">
           <span class="pz-label">Style for this website</span>
           <StylePicker value={tidy.styleId} onChange={(id: StyleId) => engine.setStyle(id)} />
-        </div>
+        </div>}
         {tidy.steps.length > 0 && (
           <div class="panel__section">
             <span class="pz-label">Next steps on this page</span>
@@ -407,18 +410,77 @@ function AnswerCard(props: {
 }) {
   const { card } = props;
   const closeRef = useRef<HTMLButtonElement>(null);
+  const boxRef = useRef<HTMLElement>(null);
   const [lang, setLang] = useState<string>("");
+  // Once the person drags the window, it stays where they put it (until a new selection).
+  const [moved, setMoved] = useState<{ x: number; y: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h?: number } | null>(null);
   useEffect(() => { closeRef.current?.focus(); }, [card.status]);
+  useEffect(() => { setMoved(null); setSize(null); }, [card.rect]);
   // Short answers sit next to the selection; long ones (forms, many lines) dock to the side, full height.
   const tall = card.status === "ready" && (card.kind === "fill" || (card.kind === "translate" && card.data.lines.length > 3));
   const pos = placeNear(card.rect, Math.min(450, innerWidth - 28), 360); // matches .answer width
-  const docked = tall || innerHeight - pos.y < 300;
-  const style = docked ? "" : `left:${pos.x}px;top:${pos.y}px;max-height:${Math.max(240, innerHeight - pos.y - 12)}px`;
+  const docked = !moved && (tall || innerHeight - pos.y < 300);
+  // A moved window is at most 70% of the screen tall (scrolls inside) unless the person resized it.
+  const sizeCss = `${size ? `width:${size.w}px;` : ""}${size?.h ? `height:${size.h}px;` : "max-height:70vh;"}`;
+  const style = moved
+    ? `left:${moved.x}px;top:${moved.y}px;${sizeCss}`
+    : docked ? "" : `left:${pos.x}px;top:${pos.y}px;max-height:${Math.max(240, innerHeight - pos.y - 12)}px`;
+
+  const clampTo = (x: number, y: number) => {
+    const r = boxRef.current!.getBoundingClientRect();
+    // Keep the whole window (including its resize corner) on screen.
+    return { x: Math.min(Math.max(8, x), innerWidth - Math.min(r.width, innerWidth) - 8), y: Math.min(Math.max(8, y), Math.max(8, innerHeight - r.height - 8)) };
+  };
+  const startDrag = (e: PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button,select,input,a")) return;
+    const box = boxRef.current!;
+    const r = box.getBoundingClientRect();
+    // Leaving the docked layout: fix the current size so the window doesn't jump.
+    if (!size) setSize({ w: r.width, h: docked ? Math.min(r.height, Math.round(innerHeight * 0.7)) : undefined });
+    const dx = e.clientX - r.left, dy = e.clientY - r.top;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => setMoved(clampTo(ev.clientX - dx, ev.clientY - dy));
+    const up = () => { removeEventListener("pointermove", move); removeEventListener("pointerup", up); };
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up);
+    setMoved({ x: r.left, y: r.top });
+    e.preventDefault();
+  };
+  const startResize = (e: PointerEvent) => {
+    const box = boxRef.current!;
+    const r = box.getBoundingClientRect();
+    if (!moved) setMoved({ x: r.left, y: r.top });
+    const sx = e.clientX, sy = e.clientY;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => setSize({
+      w: Math.min(innerWidth - r.left - 8, Math.max(300, r.width + ev.clientX - sx)),
+      h: Math.min(innerHeight - r.top - 8, Math.max(180, r.height + ev.clientY - sy)),
+    });
+    const up = () => { removeEventListener("pointermove", move); removeEventListener("pointerup", up); };
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const nudge = (e: KeyboardEvent) => {
+    const step = e.shiftKey ? 64 : 24;
+    const d: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    if (!d[e.key]) return;
+    e.preventDefault();
+    const r = boxRef.current!.getBoundingClientRect();
+    if (!size) setSize({ w: r.width });
+    setMoved(clampTo(r.left + d[e.key][0], r.top + d[e.key][1]));
+  };
   return (
-    <section class={`answer pz-card${docked ? " answer--docked" : ""}`} role="dialog" aria-label={TITLES[card.kind]} style={style} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
-      <div class="answer__head">
+    <section ref={boxRef} class={`answer pz-card${docked ? " answer--docked" : ""}${moved ? " answer--moved" : ""}`} role="dialog" aria-label={TITLES[card.kind]} style={style} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
+      <div class="answer__head answer__grip" onPointerDown={startDrag} title="Drag to move">
+        <button class="answer__move" type="button" aria-label="Move window (use arrow keys)" onKeyDown={nudge} data-testid="card-move">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="4" r="1.3" /><circle cx="11" cy="4" r="1.3" /><circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" /><circle cx="5" cy="12" r="1.3" /><circle cx="11" cy="12" r="1.3" /></g></svg>
+        </button>
         <Logo size={24} />
         <h2 class="answer__title">{TITLES[card.kind]}</h2>
+        <span class="answer__resize" onPointerDown={startResize} title="Drag to resize" aria-hidden="true" data-testid="card-resize" />
         <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close">
           <Icon name="close" /> Close
         </button>

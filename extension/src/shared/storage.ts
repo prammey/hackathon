@@ -2,7 +2,6 @@ import type { CachedPlan, Person, Profile, Settings, SitePrefs } from "./types";
 
 export const DEFAULT_SETTINGS: Settings = {
   styleId: "clear",
-  clutterLevel: "standard",
   textScale: 1,
   extraLegible: false,
   strongContrast: false,

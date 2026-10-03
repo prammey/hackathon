@@ -18,20 +18,22 @@ PAIRS = {
     ("text on bg", "#0F172A", "#F6F7FB", 4.5), ("muted on card", "#475569", "#FFFFFF", 4.5), ("white on primary", "#FFFFFF", "#2754E6", 4.5),
     ("link on card", "#1E40C8", "#FFFFFF", 4.5), ("link on bg", "#1E40C8", "#F6F7FB", 4.5), ("control border", "#7C8899", "#FFFFFF", 3.0),
     ("price", "#1E40C8", "#EEF2FF", 4.5), ("danger", "#C0262D", "#FFFFFF", 4.5),
+    ("field border", "#4F7BEA", "#FFFFFF", 3.0), ("button text on fill", "#1E40C8", "#EEF2FF", 4.5),
   ],
   "Neo-Brutalist": [
     ("text on bg", "#1A1A1A", "#FBF6EC", 4.5), ("text on button", "#1A1A1A", "#FFE9A8", 4.5), ("text on pink notice", "#1A1A1A", "#FDE2EC", 4.5),
     ("white on primary", "#FFFFFF", "#4F46E5", 4.5), ("link on card", "#3730C9", "#FFFFFF", 4.5), ("link on bg", "#3730C9", "#FBF6EC", 4.5),
-    ("price on mint", "#1A1A1A", "#C8F0DC", 4.5),
+    ("price on mint", "#1A1A1A", "#C8F0DC", 4.5), ("field border", "#3730C9", "#FFFFFF", 3.0),
   ],
   "Modern Minimalist": [
     ("text on bg", "#18181B", "#FAFAF7", 4.5), ("muted on card", "#55565C", "#FFFFFF", 4.5), ("white on primary", "#FFFFFF", "#18181B", 4.5),
     ("control border", "#8A8B91", "#FFFFFF", 3.0), ("notice text", "#18181B", "#F3F3EE", 4.5), ("price", "#18181B", "#F0F0EA", 4.5),
+    ("field border", "#3D4F8F", "#FFFFFF", 3.0), ("button text on fill", "#18181B", "#EFEFEA", 4.5),
   ],
   "Neumorphism": [
     ("text on bg", "#1D2433", "#E8ECF4", 4.5), ("muted on bg", "#465068", "#E8ECF4", 4.5), ("white on primary", "#FFFFFF", "#4153DD", 4.5),
     ("link on bg", "#3646C7", "#E8ECF4", 4.5), ("control border", "#6F7A90", "#E8ECF4", 3.0), ("button border", "#8D97AC", "#E8ECF4", 2.0),
-    ("price", "#2A38B0", "#DCE2FB", 4.5),
+    ("price", "#2A38B0", "#DCE2FB", 4.5), ("field border", "#4153DD", "#E8ECF4", 3.0),
   ],
 }
 

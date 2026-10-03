@@ -61,6 +61,28 @@ browsers weren't part of automated testing.
 - **Go back to the original:** Prism button → turn off **Tidy this page**, or the **Show original page**
   button on Prism's side tab. **Tidy again from scratch** makes a fresh layout.
 
+## Try it on real websites
+
+Important websites that are hard to use, and look clearly better with Prism (screened from 85+ candidates,
+October 2026). The same list is on Prism's welcome page.
+
+| Website | What it's for | Kind |
+|---|---|---|
+| [Illinois Human Services](https://www.dhs.state.il.us/page.aspx?item=29719) | Cash, food and medical help | Benefits |
+| [Mississippi Medicaid](https://medicaid.ms.gov/) | Apply for Medicaid | Healthcare |
+| [Cook County Circuit Court Clerk](https://www.cookcountyclerkofcourt.org/) | Court services and records | Courts |
+| [California EDD](https://edd.ca.gov/en/unemployment/) | Unemployment benefits | Benefits |
+| [Indian Health Service](https://www.ihs.gov/) | Federal health program | Healthcare |
+| [TRICARE](https://www.tricare.mil/) | Military health insurance | Insurance |
+| [TreasuryDirect](https://www.treasurydirect.gov/) | Savings bonds | Banking |
+| [Indiana Family & Social Services](https://www.in.gov/fssa/) | Medicaid, SNAP and family help | Benefits |
+| [Maine Health & Human Services](https://www.maine.gov/dhhs/) | SNAP, MaineCare and certificates | Benefits |
+| [Tennessee Courts](https://www.tncourts.gov/) | Court dockets, forms and opinions | Courts |
+| [HelpWithMyBank.gov](https://www.helpwithmybank.gov/) | Help with a bank problem | Banking |
+| [Social Security rules (POMS)](https://secure.ssa.gov/poms.nsf/home!readform) | How benefit claims are decided | Social Security |
+| [OPM Retirement Center](https://www.opm.gov/retirement-center/) | Federal retirement | Retirement |
+| [Social Security Actuarial Services](https://www.ssa.gov/oact/) | Benefit calculators and data | Social Security |
+
 ## Privacy
 
 - Settings, About you, people you help and saved layouts stay in your browser (`chrome.storage.local`).

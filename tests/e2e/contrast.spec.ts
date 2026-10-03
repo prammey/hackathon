@@ -18,6 +18,8 @@ async function auditAll(page: Page) {
       for (let e = el; e; e = e.parentElement) {
         const cs = getComputedStyle(e);
         if (cs.backgroundImage.includes("url(")) return null;
+        const stops = cs.backgroundImage.match(/rgba?\([^)]+\)/g);
+        if (stops) return parse(stops[0]); // gradient band: its first colour
         const c = parse(cs.backgroundColor);
         if (c.a > 0.5) return c;
       }

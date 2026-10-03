@@ -94,8 +94,8 @@ paths, both complete:
 
 ## 5. Settings page structure
 1. **Style** — four large previews (live mini-page in each style); default style; per-site overrides list.
-2. **Tidying** — when to tidy (only when I click / always on these sites / everywhere), clutter level
-   (gentle / standard / strong), Saved layouts (list, clear one, clear all), Always tidy from scratch.
+2. **Tidying** — when to tidy (only when I click / always on these sites / everywhere), Saved layouts (list, clear one, clear all), Always tidy from scratch. Prism always tucks away as
+   much clutter as is safe (no clutter-level setting), for the calmest page.
 3. **Pointing** — shortcut choice with live test area ("Try it here"), the keyboard command shortcut
    (with link to the browser's shortcuts page), selection-mode help.
 4. **About you** — profile form, people I help, import (paste/file), review & edit.
