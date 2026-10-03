@@ -11,11 +11,12 @@ import { MiniPreview } from "../options/preview";
 const DEMO_SITES = [
   { name: "Illinois Human Services", what: "Cash, food and medical help", kind: "Benefits", url: "https://www.dhs.state.il.us/page.aspx?item=29719" },
   { name: "Mississippi Medicaid", what: "Apply for Medicaid", kind: "Healthcare", url: "https://medicaid.ms.gov/" },
+  { name: "craigslist", what: "Local classifieds, jobs and housing", kind: "Classifieds", url: "https://www.craigslist.org/" },
+  { name: "Berkshire Hathaway", what: "Company reports and letters", kind: "Investing", url: "https://www.berkshirehathaway.com/" },
   { name: "Cook County Court Clerk", what: "Court services and records", kind: "Courts", url: "https://www.cookcountyclerkofcourt.org/" },
   { name: "California EDD", what: "Unemployment benefits", kind: "Benefits", url: "https://edd.ca.gov/en/unemployment/" },
   { name: "Indian Health Service", what: "Federal health program", kind: "Healthcare", url: "https://www.ihs.gov/" },
   { name: "TRICARE", what: "Military health insurance", kind: "Insurance", url: "https://www.tricare.mil/" },
-  { name: "TreasuryDirect", what: "Savings bonds", kind: "Banking", url: "https://www.treasurydirect.gov/" },
   { name: "Indiana FSSA", what: "Medicaid, SNAP and family help", kind: "Benefits", url: "https://www.in.gov/fssa/" },
   { name: "Maine DHHS", what: "SNAP, MaineCare and certificates", kind: "Benefits", url: "https://www.maine.gov/dhhs/" },
   { name: "Tennessee Courts", what: "Court dockets, forms and opinions", kind: "Courts", url: "https://www.tncourts.gov/" },
@@ -31,7 +32,6 @@ function Welcome() {
   useEffect(() => { getSettings().then((s) => { setSettings(s); saveSettings({ onboarded: true }); }); }, []);
   if (!settings) return null;
   const key = isMac() ? "Option ⌥" : "Alt";
-  const demo = __PRISM_HOSTED_URL__ ? `${__PRISM_HOSTED_URL__}/demo/cluttered-info/` : "";
   return (
     <main class="page" style="max-width:960px">
       <section class="welcome-hero" aria-labelledby="w-h">
@@ -39,21 +39,15 @@ function Welcome() {
         <h1 id="w-h">Websites, made <em>calm</em> and clear.</h1>
         <p>Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.</p>
         <p>No setup needed.</p>
-        {demo && (
-          <div class="row">
-            <a class="pz-btn pz-btn--primary" href={demo} target="_blank" rel="noopener" data-testid="try-demo"><Icon name="sparkle" /> Try it on a practice page</a>
-          </div>
-        )}
-      </section>
-
-      <section class="section" aria-labelledby="try-h">
-        <h2 id="try-h">Try it on real websites</h2>
-        <p>Important websites that are hard to use. Open one, then click the Prism button and turn on <strong>Tidy this page</strong>.</p>
-        <ul class="demo-sites" data-testid="demo-sites">
-          {DEMO_SITES.map((site) => (
-            <li><a class="demo-site" href={site.url} target="_blank" rel="noopener" title={site.what}>{site.name}<span class="demo-site__kind">{site.kind}</span></a></li>
-          ))}
-        </ul>
+        <div class="practice" aria-labelledby="try-h">
+          <h2 id="try-h" class="practice__title"><Icon name="sparkle" /> Practice websites</h2>
+          <p class="practice__hint">Open one, then click the Prism button and turn on <strong>Tidy this page</strong>.</p>
+          <ul class="demo-sites" data-testid="demo-sites">
+            {DEMO_SITES.map((site) => (
+              <li><a class="demo-site" href={site.url} target="_blank" rel="noopener" title={`${site.kind}: ${site.what}`}>{site.name}</a></li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section class="section" aria-labelledby="how-h">

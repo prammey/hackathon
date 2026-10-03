@@ -109,10 +109,11 @@ pre, code { color: var(--pz-text); }
   .welcome-hero h1 { font-size: 44px; }
 }
 
-.demo-sites { list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 10px; border: 1px solid var(--pz-line); border-radius: var(--pz-radius-sm); background: var(--pz-surface); }
+.demo-sites { list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 10px; border-radius: var(--pz-radius-sm); background: rgba(19, 18, 24, 0.55); }
 @media (max-width: 700px) { .demo-sites { grid-template-columns: 1fr; } }
 .demo-site { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 10px; border-radius: 10px; color: var(--pz-text); text-decoration: none; font-size: 15px; font-weight: 500; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.demo-site:hover { background: var(--pz-surface-2); color: var(--pz-violet); }
+.demo-site:hover { background: var(--pz-violet-strong); color: #fff; }
+.demo-site:hover .demo-site__kind { color: #E9E3FF; }
 .demo-site:focus-visible { outline: 2px solid #C4B5FD; outline-offset: 1px; }
 .demo-site__kind { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--pz-muted); }
 
@@ -137,3 +138,8 @@ pre, code { color: var(--pz-text); }
 @media (max-width: 600px) { .page--simple .grid2 { grid-template-columns: 1fr; } }
 .talk-try { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .talk-try__heard { font-size: 18px; font-weight: 600; }
+
+/* Practice websites panel inside the welcome hero */
+.practice { display: grid; gap: 10px; padding: 18px; border-radius: 22px; background: linear-gradient(160deg, rgba(109, 74, 255, 0.38), rgba(109, 74, 255, 0.16)); border: 1px solid rgba(167, 139, 250, 0.55); box-shadow: 0 12px 40px rgba(109, 74, 255, 0.28); }
+.practice__title { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--pz-font); font-style: normal; font-size: 18px; font-weight: 700; color: #fff; }
+.welcome-hero .practice__hint { font-size: 15px; color: #E3DDF5; }

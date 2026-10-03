@@ -68,17 +68,18 @@ browsers weren't part of automated testing.
 ## Try it on real websites
 
 Important websites that are hard to use, and look clearly better with Prism (screened from 85+ candidates,
-October 2026). The same list is on Prism's welcome page.
+October 2026). The same list is the purple Practice websites panel on Prism's welcome page.
 
 | Website | What it's for | Kind |
 |---|---|---|
 | [Illinois Human Services](https://www.dhs.state.il.us/page.aspx?item=29719) | Cash, food and medical help | Benefits |
 | [Mississippi Medicaid](https://medicaid.ms.gov/) | Apply for Medicaid | Healthcare |
+| [craigslist](https://www.craigslist.org/) | Local classifieds, jobs and housing | Classifieds |
+| [Berkshire Hathaway](https://www.berkshirehathaway.com/) | Company reports and letters | Investing |
 | [Cook County Circuit Court Clerk](https://www.cookcountyclerkofcourt.org/) | Court services and records | Courts |
 | [California EDD](https://edd.ca.gov/en/unemployment/) | Unemployment benefits | Benefits |
 | [Indian Health Service](https://www.ihs.gov/) | Federal health program | Healthcare |
 | [TRICARE](https://www.tricare.mil/) | Military health insurance | Insurance |
-| [TreasuryDirect](https://www.treasurydirect.gov/) | Savings bonds | Banking |
 | [Indiana Family & Social Services](https://www.in.gov/fssa/) | Medicaid, SNAP and family help | Benefits |
 | [Maine Health & Human Services](https://www.maine.gov/dhhs/) | SNAP, MaineCare and certificates | Benefits |
 | [Tennessee Courts](https://www.tncourts.gov/) | Court dockets, forms and opinions | Courts |

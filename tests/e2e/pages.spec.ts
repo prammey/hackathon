@@ -165,12 +165,14 @@ test("Welcome page renders and offers a practice page", async ({ context, extens
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/welcome.html`);
   await expect(page.getByRole("heading", { name: "Websites, made calm and clear." })).toBeVisible();
-  await expect(page.getByTestId("try-demo")).toHaveAttribute("href", /\/demo\/cluttered-info\/$/);
   await expect(page.getByText("Nothing on the website is deleted.")).toBeVisible();
   await expect(page.getByRole("img", { name: "refresh button" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Never lose your place" })).toBeVisible();
+  await expect(page.getByTestId("try-demo")).toHaveCount(0);
   const sites = page.getByTestId("demo-sites").getByRole("link");
-  await expect(sites).toHaveCount(14);
+  for (const name of ["Illinois Human Services", "Mississippi Medicaid", "craigslist", "Berkshire Hathaway"]) await expect(sites.filter({ hasText: name })).toHaveCount(1);
+  await expect(sites.filter({ hasText: "TreasuryDirect" })).toHaveCount(0);
+  await expect(sites).toHaveCount(15);
   for (const link of await sites.all()) {
     await expect(link).toHaveAttribute("href", /^https:\/\//);
     await expect(link).toHaveAttribute("target", "_blank");
