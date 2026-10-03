@@ -1,55 +1,22 @@
-# Prerequisites
-*.d
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*credentials*.json
+service-account*.json
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Build / dependencies
+node_modules/
+extension/dist/
+release/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+test-results/
+playwright-report/
 
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
-# debug information files
-*.dwo
+# OS / editor
+.DS_Store
+.vscode/
