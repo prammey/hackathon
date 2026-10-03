@@ -49,7 +49,10 @@ const entries = [
 
 function copyStatic() {
   for (const page of ["popup", "options", "welcome"]) {
-    fs.copyFileSync(path.join(ext, "src/pages", `${page}.html`), path.join(out, `${page}.html`));
+    // Version the favicon URL so Chrome doesn't keep showing a cached old icon after an update.
+    const html = fs.readFileSync(path.join(ext, "src/pages", `${page}.html`), "utf8")
+      .replace(/href="icons\/(icon-\d+\.png)"/g, `href="icons/$1?v=${pkg.version}"`);
+    fs.writeFileSync(path.join(out, `${page}.html`), html);
   }
   const css = fs.readFileSync(path.join(ext, "src/ui/prism-ui.css"), "utf8") + "\n" +
     fs.readFileSync(path.join(ext, "src/ui/pages.css"), "utf8");
