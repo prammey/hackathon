@@ -184,7 +184,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
   },
 };
 
-export const STYLE_ORDER: StyleId[] = ["clear", "calm", "bold", "soft"];
+export const STYLE_ORDER: StyleId[] = ["soft", "clear", "calm", "bold"];
 
 export function effectiveTokens(styleId: StyleId, settings: Pick<Settings, "extraLegible" | "strongContrast">): StyleTokens {
   const base = { ...STYLES[styleId] };

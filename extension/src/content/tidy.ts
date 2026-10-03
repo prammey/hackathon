@@ -40,7 +40,7 @@ const AI_WINDOW_MS = 10 * 60 * 1000;
 
 export class TidyEngine {
   state: TidyState = {
-    status: "off", styleId: "clear", message: "", pagePurpose: "", isOfficial: false, steps: [], folds: [],
+    status: "off", styleId: "soft", message: "", pagePurpose: "", isOfficial: false, steps: [], folds: [],
     hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", nextOptions: [], aiCalls: 0, cacheHit: false, lastPlanMs: 0,
   };
   private analysis: AnalyzeResult | null = null;
@@ -84,18 +84,28 @@ export class TidyEngine {
     return this.plan;
   }
 
-  async enable(opts: { fromScratch?: boolean } = {}): Promise<void> {
+  private enabling: Promise<void> | null = null;
+
+  /** Turning tidying on twice at once (e.g. two popup clicks) runs it only once. */
+  enable(opts: { fromScratch?: boolean } = {}): Promise<void> {
+    if (this.enabling) return this.enabling;
+    this.enabling = this.doEnable(opts).finally(() => { this.enabling = null; });
+    return this.enabling;
+  }
+
+  private async doEnable(opts: { fromScratch?: boolean }): Promise<void> {
     const settings = (this.settings = await getSettings());
     const site = await getSitePrefs(location.origin);
-    const styleId = site.styleId ?? settings.styleId;
+    // A Style picked on this page wins over the stored one (another tab may be saving site choices too).
+    const styleId = this.pickedStyle ?? site.styleId ?? settings.styleId;
     const beforeWidth = document.documentElement.scrollWidth;
 
     this.analysis = analyze();
     this.debug.analyzeRuns++;
     this.detectLayout();
     this.pageKey = pageKeyFor(location.href);
-    await this.applyStyle(styleId, settings);
-    this.emit({ status: "base", styleId, message: "Tidied with Prism's basic clean-up.", steps: [], folds: [] });
+    await this.applyStyle(this.pickedStyle ?? styleId, settings);
+    this.emit({ status: "base", styleId: this.pickedStyle ?? styleId, message: "Tidied with Prism's basic clean-up.", steps: [], folds: [] });
 
     if (!this.healthy(beforeWidth)) {
       await this.disable("Prism couldn't tidy this page safely, so it's showing the original.");
@@ -133,8 +143,13 @@ export class TidyEngine {
     this.emit({ styleId: site.styleId ?? settings.styleId });
   }
 
+  private pickedStyle: StyleId | null = null;
+
   async setStyle(styleId: StyleId): Promise<void> {
+    this.pickedStyle = styleId;
     await saveSitePrefs(location.origin, { styleId });
+    // Tidying is still switching on: let it finish, then this choice is applied below.
+    if (this.enabling) await this.enabling.catch(() => {});
     if (!this.active) {
       // Remembered now, applied when tidying is switched on.
       this.emit({ styleId });
