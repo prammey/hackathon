@@ -1,4 +1,5 @@
-// Builds the extension and zips extension/dist into release/prism-extension-v<version>.zip
+// Builds the extension and zips it for judges and the website: release/prism-extension-v<version>.zip
+// opens to Prism/ with "HOW TO INSTALL.txt" and the prism-extension/ folder Chrome loads.
 import { execSync } from "node:child_process";
 import { zipSync } from "fflate";
 import fs from "node:fs";
@@ -13,10 +14,11 @@ const walk = (dir, prefix = "") => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const rel = prefix ? `${prefix}/${e.name}` : e.name;
     if (e.isDirectory()) walk(path.join(dir, e.name), rel);
-    else files[`prism/${rel}`] = new Uint8Array(fs.readFileSync(path.join(dir, e.name)));
+    else files[`Prism/prism-extension/${rel}`] = new Uint8Array(fs.readFileSync(path.join(dir, e.name)));
   }
 };
 walk(dist);
+files["Prism/HOW TO INSTALL.txt"] = new Uint8Array(fs.readFileSync(path.join(root, "extension/HOW-TO-INSTALL.txt")));
 const { version } = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 fs.mkdirSync(path.join(root, "release"), { recursive: true });
 const out = path.join(root, "release", `prism-extension-v${version}.zip`);

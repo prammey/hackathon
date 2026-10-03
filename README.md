@@ -30,11 +30,11 @@ technology — and to be pleasant for everyone.
 Prism isn't in the Chrome Web Store yet, so you add it the way developers do. It's safe and easy to
 remove later.
 
-1. **Download** `prism-extension-v0.1.0.zip` (from the project's releases, or build it — see below) and
-   **unzip** it. You'll get a folder called `prism`.
+1. **Download** `Prism.zip` from https://prism-helper.vercel.app (or build it — see below) and **unzip** it.
+   You'll get a folder called `Prism` with `HOW TO INSTALL.txt` and a `prism-extension` folder.
 2. In Google Chrome, go to **`chrome://extensions`** (type it in the address bar and press Enter).
 3. Turn on **Developer mode** (switch at the top right).
-4. Click **Load unpacked** and choose the `prism` folder.
+4. Click **Load unpacked** and choose the `prism-extension` folder.
 5. A welcome page opens. Click the jigsaw-piece icon in the toolbar and **pin Prism** so its button is
    always visible.
 

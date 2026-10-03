@@ -1,0 +1,8 @@
+Prism: install in under a minute (Google Chrome)
+
+1. Open Chrome and go to:  chrome://extensions
+2. Turn on "Developer mode" (top-right corner).
+3. Click "Load unpacked" and choose the "prism-extension" folder next to this file.
+4. Pin Prism (jigsaw-piece icon), open any website, click Prism and turn on "Tidy this page".
+
+Practice websites: https://prism-helper.vercel.app
