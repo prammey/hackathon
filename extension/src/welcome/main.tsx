@@ -11,18 +11,18 @@ import { MiniPreview } from "../options/preview";
 const DEMO_SITES = [
   { name: "Illinois Human Services", what: "Cash, food and medical help", kind: "Benefits", url: "https://www.dhs.state.il.us/page.aspx?item=29719" },
   { name: "Mississippi Medicaid", what: "Apply for Medicaid", kind: "Healthcare", url: "https://medicaid.ms.gov/" },
-  { name: "Cook County Circuit Court Clerk", what: "Court services and records", kind: "Courts", url: "https://www.cookcountyclerkofcourt.org/" },
+  { name: "Cook County Court Clerk", what: "Court services and records", kind: "Courts", url: "https://www.cookcountyclerkofcourt.org/" },
   { name: "California EDD", what: "Unemployment benefits", kind: "Benefits", url: "https://edd.ca.gov/en/unemployment/" },
   { name: "Indian Health Service", what: "Federal health program", kind: "Healthcare", url: "https://www.ihs.gov/" },
   { name: "TRICARE", what: "Military health insurance", kind: "Insurance", url: "https://www.tricare.mil/" },
   { name: "TreasuryDirect", what: "Savings bonds", kind: "Banking", url: "https://www.treasurydirect.gov/" },
-  { name: "Indiana Family & Social Services", what: "Medicaid, SNAP and family help", kind: "Benefits", url: "https://www.in.gov/fssa/" },
-  { name: "Maine Health & Human Services", what: "SNAP, MaineCare and certificates", kind: "Benefits", url: "https://www.maine.gov/dhhs/" },
+  { name: "Indiana FSSA", what: "Medicaid, SNAP and family help", kind: "Benefits", url: "https://www.in.gov/fssa/" },
+  { name: "Maine DHHS", what: "SNAP, MaineCare and certificates", kind: "Benefits", url: "https://www.maine.gov/dhhs/" },
   { name: "Tennessee Courts", what: "Court dockets, forms and opinions", kind: "Courts", url: "https://www.tncourts.gov/" },
   { name: "HelpWithMyBank.gov", what: "Help with a bank problem", kind: "Banking", url: "https://www.helpwithmybank.gov/" },
-  { name: "Social Security rules (POMS)", what: "How benefit claims are decided", kind: "Social Security", url: "https://secure.ssa.gov/poms.nsf/home!readform" },
+  { name: "Social Security POMS", what: "How benefit claims are decided", kind: "Social Security", url: "https://secure.ssa.gov/poms.nsf/home!readform" },
   { name: "OPM Retirement Center", what: "Federal retirement", kind: "Retirement", url: "https://www.opm.gov/retirement-center/" },
-  { name: "Social Security Actuarial Services", what: "Benefit calculators and data", kind: "Social Security", url: "https://www.ssa.gov/oact/" },
+  { name: "Social Security Actuaries", what: "Benefit calculators and data", kind: "Social Security", url: "https://www.ssa.gov/oact/" },
 ];
 
 function Welcome() {
@@ -51,11 +51,7 @@ function Welcome() {
         <p>Important websites that are hard to use. Open one, then click the Prism button and turn on <strong>Tidy this page</strong>.</p>
         <ul class="demo-sites" data-testid="demo-sites">
           {DEMO_SITES.map((site) => (
-            <li><a class="demo-site" href={site.url} target="_blank" rel="noopener">
-              <span class="demo-site__kind">{site.kind}</span>
-              <span class="demo-site__name">{site.name}</span>
-              <span class="demo-site__what">{site.what}</span>
-            </a></li>
+            <li><a class="demo-site" href={site.url} target="_blank" rel="noopener" title={site.what}>{site.name}<span class="demo-site__kind">{site.kind}</span></a></li>
           ))}
         </ul>
       </section>
