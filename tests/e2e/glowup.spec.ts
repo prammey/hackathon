@@ -105,3 +105,28 @@ test("Canvas-layout shop (local fixture): fragments grouped into product cards; 
   await page.waitForTimeout(400);
   expect(await page.evaluate(snapshot)).toBe(before);
 });
+
+test("The page's main action is the most prominent thing, in every Style", async ({ context, sw }) => {
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/cluttered-info/`);
+  await tidy(sw, page);
+  for (const style of STYLES) {
+    await tabMessage(sw, page, { type: "prism:set-style", styleId: style });
+    await page.waitForTimeout(900);
+    const cta = page.locator("a.btn-apply");
+    await cta.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+    await page.waitForTimeout(300);
+    const box = (await cta.boundingBox())!;
+    const font = await cta.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    const other = (await page.locator("a[href='#paper']").boundingBox())!;
+    const otherFont = await page.locator("a[href='#paper']").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(box.height).toBeGreaterThanOrEqual(52);
+    expect(font).toBeGreaterThanOrEqual(20);
+    expect(box.height).toBeGreaterThan(other.height);
+    expect(font).toBeGreaterThan(otherFont * 1.15);
+    await expect(page.getByTestId("prism-next")).toContainText("Start your application");
+    await page.screenshot({ path: path.join(OUT, `cta-${style}.png`) });
+  }
+  await page.getByTestId("prism-next").getByRole("button", { name: "Show me" }).click();
+  await expect(page.locator("a.btn-apply")).toBeFocused();
+});

@@ -129,7 +129,10 @@ export interface RegionControl {
 }
 
 export interface RegionContext {
+  /** Exactly the words inside the selection box. */
   text: string;
+  /** The full line(s) around a partial selection, for context only. */
+  surrounding: string;
   controls: RegionControl[];
   imageCount: number;
   pageTitle: string;

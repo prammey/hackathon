@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Riverside Energy — your account (fictional dark-theme contrast test)</title>
+<style>
+  body { margin: 0; background: #111; color: #eee; font: 14px "Helvetica Neue", Arial, sans-serif; }
+  .top { background: linear-gradient(90deg, #0b1d3a, #13315f); padding: 14px 20px; display: flex; align-items: center; gap: 18px; }
+  .top .brand { color: #fff; font-weight: bold; font-size: 20px; }
+  .top .tag { color: rgba(255,255,255,.75); font-size: 12px; }
+  .iconbtn { background: #222; border: 0; width: 34px; height: 34px; border-radius: 6px; color: #fff; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 20px; }
+  .card { background: #1e1e1e; border-radius: 6px; padding: 14px; margin: 12px 0; color: #ccc; }
+  .card .meta { color: #777; font-size: 12px; }
+  .gray-box { background: #2a2a2a; color: #5a5a5a; padding: 10px; }
+  .sunny { background: #fff176; color: #333; padding: 16px; margin: 12px 0; }
+  .sunny .note { background: #ffeb3b; color: #fffde7; padding: 10px; border-radius: 4px; }
+  .badge { background: #ffd600; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  table { border-collapse: collapse; width: 100%; }
+  tr.dim td { background: #181818; color: #666; }
+  td { padding: 6px; border-bottom: 1px solid #333; }
+  a { color: #8ab4f8; }
+  .ad { background: #330; color: #aa8; padding: 8px; text-align: center; }
+  .fine { color: #555; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="brand">Riverside Energy</span>
+  <span class="tag">Powering the valley since 1998</span>
+  <button class="iconbtn" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg></button>
+  <button class="iconbtn" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16"><rect y="3" width="16" height="2" fill="currentColor"/><rect y="7" width="16" height="2" fill="currentColor"/><rect y="11" width="16" height="2" fill="currentColor"/></svg></button>
+</div>
+<div class="wrap">
+  <main>
+    <h1 style="color:#fafafa">Your energy account</h1>
+    <div>Account number 4471-22 · <span style="color:#bbb">Last updated today</span></div>
+    <div class="card">
+      <div style="font-size:18px;color:#fff">Balance: £84.20 in credit</div>
+      <div class="meta">Next direct debit: £96.00 on 14 October</div>
+      <span class="badge">NEW</span> <span>Smart meter readings are now every 30 minutes.</span>
+    </div>
+    <div class="gray-box">Estimated reading used for September because no meter reading was received.</div>
+    <div class="sunny">
+      <strong>Winter support</strong>
+      <div class="note">You may be eligible for the Warm Home Discount — apply before 31 January.</div>
+    </div>
+    <table>
+      <tr><td>September</td><td>£91.10</td><td><a href="#bill-9">View bill</a></td></tr>
+      <tr class="dim"><td>August</td><td>£77.45</td><td><a href="#bill-8">View bill</a></td></tr>
+      <tr class="dim"><td>July</td><td>£70.02</td><td><a href="#bill-7">View bill</a></td></tr>
+    </table>
+    <div class="ad advert">ADVERT — Switch to our premium plan and win a hot tub!</div>
+    <p class="fine">Prices include VAT at 5%. Riverside Energy (fictional) is used only for testing Prism.</p>
+  </main>
+</div>
+</body>
+</html>

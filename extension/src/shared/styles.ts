@@ -102,27 +102,28 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     preview: { swatches: ["#F6F7FB", "#FFFFFF", "#2754E6", "#0F172A"] },
   },
   bold: {
-    id: "bold", name: "Neo-Brutalist", tagline: "Chunky type, thick outlines and blocks of colour",
+    id: "bold", name: "Neo-Brutalist", tagline: "Chunky type, firm outlines and soft blocks of colour",
     fontBody: FONT_STACKS.grotesk, fontHeading: FONT_STACKS.grotesk, headingWeight: 700,
-    headingSpacing: "-0.02em", scale: { h1: 2.5, h2: 1.8, h3: 1.35, h4: 1.15 }, lh: 1.55, lhHeading: 1.08,
+    headingSpacing: "-0.02em", scale: { h1: 2.4, h2: 1.75, h3: 1.32, h4: 1.13 }, lh: 1.55, lhHeading: 1.1,
     gap: "1em",
-    bg: "#FFF4DE", band: "#FFD84D", bandBorder: "3px solid #111111",
-    surface: "#FFFFFF", card: "#FFFFFF", cardBorder: "3px solid #111111", cardShadow: "6px 6px 0 #111111",
-    text: "#111111", muted: "#333333", divider: "#111111", control: "#111111", controlWidth: "3px",
-    field: "#FFFFFF", fieldShadow: "3px 3px 0 #111111",
-    primary: "#4F46E5", onPrimary: "#FFFFFF", primaryBorder: "#111111", primaryShadow: "5px 5px 0 #111111",
-    buttonBg: "#FFD84D", buttonText: "#111111", buttonBorder: "#111111", buttonShadow: "4px 4px 0 #111111",
-    pressTransform: "translate(3px, 3px)", pressShadow: "1px 1px 0 #111111",
+    // Calm base (cream + white); colour comes from a soft pastel spread used sparingly, not one loud yellow.
+    bg: "#FBF6EC", band: "#FFFFFF", bandBorder: "2.5px solid #1A1A1A",
+    surface: "#FFFFFF", card: "#FFFFFF", cardBorder: "2.5px solid #1A1A1A", cardShadow: "4px 4px 0 #1A1A1A",
+    text: "#1A1A1A", muted: "#3D3D3D", divider: "#1A1A1A", control: "#1A1A1A", controlWidth: "2.5px",
+    field: "#FFFFFF", fieldShadow: "none",
+    primary: "#4F46E5", onPrimary: "#FFFFFF", primaryBorder: "#1A1A1A", primaryShadow: "3px 3px 0 #1A1A1A",
+    buttonBg: "#FFE9A8", buttonText: "#1A1A1A", buttonBorder: "#1A1A1A", buttonShadow: "3px 3px 0 #1A1A1A",
+    pressTransform: "translate(2px, 2px)", pressShadow: "1px 1px 0 #1A1A1A",
     link: "#3730C9", linkThickness: "2px",
     danger: "#B00020", success: "#0B6B3A",
-    noticeBg: "#FFB8D2", noticeBorder: "3px solid #111111", noticeLeft: "3px solid #111111",
-    noticeShadow: "5px 5px 0 #111111",
+    noticeBg: "#FDE2EC", noticeBorder: "2.5px solid #1A1A1A", noticeLeft: "2.5px solid #1A1A1A",
+    noticeShadow: "4px 4px 0 #1A1A1A",
     radiusControl: "12px", radiusCard: "16px",
-    focusOutline: "3px solid #111111", focusShadow: "0 0 0 7px #FFD84D",
+    focusOutline: "3px solid #1A1A1A", focusShadow: "0 0 0 6px #FFE9A8",
     motion: "90ms ease-out",
-    headingAccent: "inset 0 -0.32em 0 #A7F3D0",
-    priceBg: "#A7F3D0", priceText: "#111111",
-    preview: { swatches: ["#FFF4DE", "#FFD84D", "#4F46E5", "#FFB8D2"] },
+    headingAccent: "inset 0 -0.3em 0 #C8F0DC",
+    priceBg: "#C8F0DC", priceText: "#1A1A1A",
+    preview: { swatches: ["#FBF6EC", "#FFE9A8", "#FDE2EC", "#C8F0DC"] },
   },
   calm: {
     id: "calm", name: "Modern Minimalist", tagline: "Quiet, spacious and refined",
@@ -204,9 +205,10 @@ export function pageCss(styleId: StyleId, settings: Settings, reducedMotion: boo
   const text = `:is(p,li,dd,dt,td,th,blockquote,figcaption,label,legend,summary,caption)${notKeep}`;
   const heading = `:is(h1,h2,h3,h4,h5,h6,[role=heading])${notKeep}`;
   const button = `:is([data-prism-c=button],[data-prism-c=button-link])`;
-  const linkSel = `a[href]:not([data-prism-c]):not([role=button])${notKeep}`;
+  const linkSel = `a[href]:not([data-prism-c]):not([role=button]):not([data-prism-role=primary-action]):not([data-prism-role=secondary-action]):not([data-prism-emphasis=primary])${notKeep}`;
   const motion = reducedMotion || settings.reduceMotion === "on";
   const dur = motion ? "0s" : t.motion;
+  const motionOk = !motion;
 
   return `
 ${P}{--p-base:${base}px;--p-target:${target};color-scheme:light!important;background:${t.bg}!important;${motion ? "" : "scroll-behavior:smooth;"}}
@@ -233,10 +235,18 @@ ${P} [data-prism-s=plain]{background:${t.surface}!important;background-image:non
 ${P} :is([data-prism-s=band],[data-prism-s=card],[data-prism-s=plain]) :is(span,div,strong,b,em,small,time)${notKeep}{color:inherit}
 ${P} ${button}{font-family:${t.fontBody}!important;font-weight:700!important;font-size:max(1em,16px)!important;line-height:1.2!important;min-height:var(--p-target)!important;padding:.5em 1.05em!important;border-radius:${t.radiusControl}!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;background:${t.buttonBg}!important;background-image:none!important;color:${t.buttonText}!important;box-shadow:${t.buttonShadow}!important;text-decoration:none!important;text-shadow:none!important;cursor:pointer!important;transition:transform ${dur},box-shadow ${dur},filter ${dur}!important;box-sizing:border-box!important}
 ${P} ${button} *{color:inherit!important}
-${P} [data-prism-c=icon-button]{min-width:var(--p-target)!important;min-height:var(--p-target)!important;border-radius:${t.radiusControl}!important;color:${t.text}!important}
+${P} :is([data-prism-c=button-link],[data-prism-tight]){box-shadow:none!important}
+${P} :is(p,li,td,label,span,small) > [data-prism-c=button-link]{padding:.15em .5em!important;min-height:0!important}
+${P} [data-prism-c=icon-button]{min-width:var(--p-target)!important;min-height:var(--p-target)!important;border-radius:${t.radiusControl}!important;color:${t.buttonText}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;border:1px solid ${t.buttonBorder}!important}
+${P} [data-prism-c=icon-button] *{color:inherit!important}
 ${P} ${button}:hover{filter:brightness(0.94)!important}
 ${P} ${button}:active{transform:${t.pressTransform}!important;box-shadow:${t.pressShadow}!important}
-${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(${button.slice(4, -1)},button,input[type=submit]){background:${t.primary}!important;color:${t.onPrimary}!important;border-color:${t.primaryBorder}!important;box-shadow:${t.primaryShadow}!important;font-size:max(1.05em,17px)!important}
+${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,input[type=submit],input[type=button],[role=button]){display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:.55em!important;background:${t.primary}!important;background-image:none!important;color:${t.onPrimary}!important;-webkit-text-fill-color:${t.onPrimary}!important;border:${t.controlWidth} solid ${t.primaryBorder}!important;box-shadow:${t.primaryShadow}${motionOk ? `,0 0 0 0 ${t.primary}55` : ""}!important;font-family:${t.fontHeading}!important;font-size:max(20px,1.2em)!important;font-weight:700!important;line-height:1.2!important;min-height:56px!important;padding:.8em 1.6em!important;border-radius:${t.radiusControl}!important;text-decoration:none!important;margin-block:.4em!important;cursor:pointer!important;${motionOk ? "animation:prism-breathe 2.6s ease-in-out infinite!important;" : ""}}
+${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button])::after{content:"→";font-size:1.05em;transition:transform ${dur}}
+${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,[role=button]):hover::after{transform:translateX(4px)}
+${P} :is([data-prism-role=primary-action],[data-prism-emphasis=primary]):is(a[href],button,input,[role=button]) *{color:inherit!important;-webkit-text-fill-color:inherit!important}
+${P} [data-prism-role=secondary-action]:is(a[href],button,[role=button]):not([data-prism-c=icon-button]){display:inline-flex!important;align-items:center!important;min-height:44px!important;padding:.5em 1.1em!important;border:${t.controlWidth} solid ${t.buttonBorder}!important;border-radius:${t.radiusControl}!important;background:${t.buttonBg === "transparent" ? t.surface : t.buttonBg}!important;color:${t.buttonText}!important;font-weight:650!important;text-decoration:none!important;font-size:max(1em,16px)!important}
+@keyframes prism-breathe{0%,100%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 0 ${t.primary}40}50%{box-shadow:${t.primaryShadow === "none" ? "0 0 0 0 transparent" : t.primaryShadow},0 0 0 10px ${t.primary}00}}
 ${P} :is(button,input[type=submit],input[type=button],input[type=reset])[disabled]{opacity:1!important;filter:none!important;background:${t.surface}!important;color:${t.muted}!important;border-style:dashed!important;cursor:not-allowed!important;box-shadow:none!important}
 ${P} [data-prism-c=field]{font-family:${t.fontBody}!important;font-size:max(1em,17px)!important;color:${t.text}!important;background-color:${t.field}!important;border:${t.controlWidth} solid ${t.control}!important;border-radius:${t.radiusControl}!important;min-height:var(--p-target)!important;padding:.4em .7em!important;box-shadow:${t.fieldShadow}!important;box-sizing:border-box!important}
 ${P} textarea[data-prism-c=field],${P} select[data-prism-c=field][multiple]{min-height:5em!important;border-radius:min(${t.radiusControl},18px)!important}
@@ -248,10 +258,9 @@ ${P} [data-prism-c=check]{accent-color:${t.primary}!important;width:1.35em!impor
 ${P} :is([data-prism-role=notice],[data-prism-role=required-notice]){background:${t.noticeBg}!important;background-image:none!important;color:${t.text}!important;border:${t.noticeBorder}!important;border-left:${t.noticeLeft}!important;border-radius:calc(${t.radiusCard} - 4px)!important;box-shadow:${t.noticeShadow}!important;padding:1em 1.2em!important}
 ${P} [data-prism-role=error]{color:${t.danger}!important;font-weight:700!important;border-left:5px solid ${t.danger}!important;padding-left:.7em!important}
 ${P} [data-prism-role=error] *{color:inherit!important}
-${P} [data-prism-emphasis=primary]:not(${button.slice(4, -1)}):not(button):not(input){outline:3px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
-${P} [data-prism-emphasis=quiet]{opacity:.78!important}
-${P} [data-prism-role=clutter]:not([data-prism-collapsed]){opacity:.5!important;filter:grayscale(.7)!important;transition:opacity ${dur}!important}
-${P} [data-prism-role=clutter]:not([data-prism-collapsed]):is(:hover,:focus-within){opacity:1!important;filter:none!important}
+${P} [data-prism-emphasis=primary]:not(${button.slice(4, -1)}):not(button):not(input):not(a[href]):not([role=button]){outline:3px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
+${P} [data-prism-emphasis=quiet]{font-size:.94em!important}
+${P} [data-prism-role=clutter]:not([data-prism-open]){display:none!important}
 ${P} [data-prism-collapsed]:not([data-prism-open]){display:none!important}
 ${P} [data-prism-step-active]{outline:4px solid ${t.primary}!important;outline-offset:6px!important;border-radius:${t.radiusControl}!important}
 ${P} :is(main,[data-prism-role=main],article) table${notKeep}{border-collapse:collapse!important;background:${t.surface}!important}
@@ -260,6 +269,9 @@ ${P} :is(main,[data-prism-role=main],article) th${notKeep}{background:${t.card}!
 ${P} :is(main,[data-prism-role=main],article) img{max-width:100%!important;height:auto!important}
 ${P} hr{border:0!important;border-top:${t.id === "bold" ? "3px solid #0F0F0F" : `1px solid ${t.divider}`}!important}
 ${P} :focus-visible{outline:${t.focusOutline}!important;outline-offset:3px!important;box-shadow:${t.focusShadow}!important}
+${P} [data-prism-fix=dark][data-prism-fix]{color:${t.text}!important;-webkit-text-fill-color:${t.text}!important;text-shadow:none!important;opacity:1!important}
+${P} [data-prism-fix=light][data-prism-fix]{color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;text-shadow:none!important;opacity:1!important}
+${P} [data-prism-fixbox][data-prism-fixbox]{outline:2px solid ${t.divider === "#111111" ? "#111111" : t.control}!important;outline-offset:-2px!important;border-radius:${t.radiusControl === "999px" ? "14px" : t.radiusControl}!important}
 ${restructureCss(t, P + "[data-prism-mode=restructure]", dur)}
 ${motion ? `${P} *,${P} *::before,${P} *::after{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important;scroll-behavior:auto!important}` : ""}
 `;

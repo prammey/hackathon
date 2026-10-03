@@ -20,9 +20,9 @@ PAIRS = {
     ("price", "#1E40C8", "#EEF2FF", 4.5), ("danger", "#C0262D", "#FFFFFF", 4.5),
   ],
   "Neo-Brutalist": [
-    ("text on bg", "#111111", "#FFF4DE", 4.5), ("text on yellow", "#111111", "#FFD84D", 4.5), ("text on pink notice", "#111111", "#FFB8D2", 4.5),
-    ("white on primary", "#FFFFFF", "#4F46E5", 4.5), ("link on card", "#3730C9", "#FFFFFF", 4.5), ("link on bg", "#3730C9", "#FFF4DE", 4.5),
-    ("price on mint", "#111111", "#A7F3D0", 4.5),
+    ("text on bg", "#1A1A1A", "#FBF6EC", 4.5), ("text on button", "#1A1A1A", "#FFE9A8", 4.5), ("text on pink notice", "#1A1A1A", "#FDE2EC", 4.5),
+    ("white on primary", "#FFFFFF", "#4F46E5", 4.5), ("link on card", "#3730C9", "#FFFFFF", 4.5), ("link on bg", "#3730C9", "#FBF6EC", 4.5),
+    ("price on mint", "#1A1A1A", "#C8F0DC", 4.5),
   ],
   "Modern Minimalist": [
     ("text on bg", "#18181B", "#FAFAF7", 4.5), ("muted on card", "#55565C", "#FFFFFF", 4.5), ("white on primary", "#FFFFFF", "#18181B", 4.5),

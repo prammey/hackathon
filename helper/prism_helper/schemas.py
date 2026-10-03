@@ -89,7 +89,8 @@ class RegionControl(BaseModel):
 
 
 class RegionContext(BaseModel):
-  text: str = Field(default="", max_length=8000)
+  text: str = Field(default="", max_length=8000)  # exactly the words the person selected
+  surrounding: str = Field(default="", max_length=2000)  # the rest of the line(s), context only
   controls: list[RegionControl] = Field(default_factory=list, max_length=60)
   imageCount: int = 0
   pageTitle: str = Field(default="", max_length=300)

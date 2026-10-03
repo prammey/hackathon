@@ -54,3 +54,49 @@ test("Judge path: online service + online practice page, tidy and Define", async
   await expect(page.getByTestId("prism-card")).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   await shot(page, "judge-02-practice-define");
 });
+
+/** Viewport box around specific words inside an element (like a person dragging over just those words). */
+async function wordsBox(page: import("@playwright/test").Page, selector: string, words: string) {
+  return page.evaluate(({ selector, words }) => {
+    const el = document.querySelector(selector)!;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n: Node | null;
+    while ((n = walker.nextNode())) {
+      const i = n.textContent!.indexOf(words);
+      if (i >= 0) {
+        const r = document.createRange();
+        r.setStart(n, i); r.setEnd(n, i + words.length);
+        r.startContainer.parentElement!.scrollIntoView({ block: "center", behavior: "instant" });
+        const b = r.getBoundingClientRect();
+        return { x: b.left, y: b.top, w: b.width, h: b.height };
+      }
+    }
+    throw new Error("words not found");
+  }, { selector, words });
+}
+
+test("Selecting just a few words explains those words (Define and Chat), with no markdown symbols", async ({ context, sw }) => {
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/cluttered-info/`);
+  await tidy(sw, page);
+  const b = await wordsBox(page, "main li:nth-of-type(3)", "Jobseeker's Allowance");
+  const { dragSelect } = await import("./harness");
+  await dragSelect(page, [b.x - 3, b.y - 3], [b.x + b.w + 3, b.y + b.h + 3]);
+  await page.getByTestId("prism-menu").locator("[data-action=define]").click();
+  const card = page.getByTestId("prism-card");
+  await expect(card).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
+  const defineText = await card.innerText();
+  expect(defineText.toLowerCase()).toMatch(/job|work|unemploy/);
+  expect(defineText).not.toContain("**");
+  await shot(page, "words-01-define-jobseekers");
+  await page.keyboard.press("Escape");
+  await dragSelect(page, [b.x - 3, b.y - 3], [b.x + b.w + 3, b.y + b.h + 3]);
+  await page.getByTestId("prism-menu").locator("[data-action=chat]").click();
+  await page.getByTestId("chat-input").fill("What is that?");
+  await page.getByTestId("chat-send").click();
+  await expect(page.getByTestId("prism-chat")).toHaveAttribute("data-status", /idle|done/, { timeout: 120_000 });
+  const reply = await page.locator(".msg--prism").last().innerText();
+  expect(reply.toLowerCase()).toMatch(/job|work|unemploy/);
+  expect(await page.getByTestId("chat-log").innerText()).not.toContain("**");
+  await shot(page, "words-02-chat-what-is-that");
+});

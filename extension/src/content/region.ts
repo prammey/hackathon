@@ -30,14 +30,28 @@ export function findById(id: string): Element | null {
   return document.querySelector(`[data-prism-id="${CSS.escape(id)}"],[data-prism-rid="${CSS.escape(id)}"]`);
 }
 
-function textIn(rect: Rect): string {
+function center(r: DOMRect): { x: number; y: number } {
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function inside(pt: { x: number; y: number }, rect: Rect): boolean {
+  return pt.x >= rect.x && pt.x <= rect.x + rect.width && pt.y >= rect.y && pt.y <= rect.y + rect.height;
+}
+
+/**
+ * The words actually inside the selection box. When the box covers only part of a line
+ * (e.g. just "Jobseeker's Allowance"), only those words are selected and the full line is kept
+ * separately as surrounding context.
+ */
+function textIn(rect: Rect): { text: string; surrounding: string } {
   const out: string[] = [];
+  const context: string[] = [];
   let size = 0;
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
       if (!parent || !node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
-      if (parent.closest("prism-root,prism-fold,script,style,noscript,[aria-hidden=true]")) return NodeFilter.FILTER_REJECT;
+      if (parent.closest("prism-root,prism-fold,script,style,noscript,[aria-hidden=true],[data-prism-hidden]")) return NodeFilter.FILTER_REJECT;
       if (parent.closest("input,textarea,select")) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
@@ -49,16 +63,37 @@ function textIn(rect: Rect): string {
     const parent = node.parentElement!;
     if (!intersects(parent.getBoundingClientRect(), rect)) continue;
     range.selectNodeContents(node);
-    const rects = [...range.getClientRects()];
-    if (!rects.some((r) => intersects(r, rect, 0.3))) continue;
+    const rects = [...range.getClientRects()].filter((r) => r.width && r.height);
+    if (!rects.some((r) => intersects(r, rect))) continue;
+    const raw = node.textContent!;
+    let text: string;
+    if (rects.every((r) => intersects(r, rect, 0.85))) {
+      text = raw;
+    } else {
+      // Partly covered: keep the words whose middle is inside the box.
+      const picked: string[] = [];
+      for (const m of raw.matchAll(/\S+/g)) {
+        range.setStart(node, m.index!);
+        range.setEnd(node, m.index! + m[0].length);
+        const wr = range.getBoundingClientRect();
+        if (wr.width && inside(center(wr), rect)) picked.push(m[0]);
+      }
+      if (!picked.length) continue;
+      text = picked.join(" ");
+      const block = parent.closest("p,li,h1,h2,h3,h4,h5,h6,td,th,label,dd,dt,blockquote,figcaption") ?? parent;
+      const full = ((block as HTMLElement).innerText ?? raw).replace(/\s+/g, " ").trim().slice(0, 600);
+      if (full && !context.includes(full)) context.push(full);
+    }
     const block = parent.closest("p,li,h1,h2,h3,h4,h5,h6,td,th,label,legend,button,a,div,section,dt,dd") ?? parent;
-    const text = node.textContent!.replace(/\s+/g, " ");
     if (lastBlock && block !== lastBlock && !lastBlock.contains(block)) out.push("\n");
-    out.push(text);
+    out.push(text.replace(/\s+/g, " "));
     lastBlock = block;
     size += text.length;
   }
-  return out.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 7000);
+  return {
+    text: out.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 7000),
+    surrounding: context.join("\n").slice(0, 1500),
+  };
 }
 
 function errorFor(el: Element): string {
@@ -144,12 +179,12 @@ export function imagesIn(rect: Rect): number {
 export function regionContext(rect: Rect, pagePurpose: string): {
   context: RegionContext; elements: Map<string, Element[]>; needsPicture: boolean;
 } {
-  const text = textIn(rect);
+  const { text, surrounding } = textIn(rect);
   const { controls, elements } = controlsIn(rect);
   const imageCount = imagesIn(rect);
   return {
     context: {
-      text, controls, imageCount, pageTitle: clean(document.title, 200), pageUrl: location.href.slice(0, 500), pagePurpose,
+      text, surrounding, controls, imageCount, pageTitle: clean(document.title, 200), pageUrl: location.href.slice(0, 500), pagePurpose,
     },
     elements,
     needsPicture: imageCount > 0 || text.replace(/\s/g, "").length < 40,

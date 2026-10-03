@@ -174,7 +174,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     if (rect) {
       const { context, needsPicture } = regionContext(rect, tidy.pagePurpose);
       const image = needsPicture ? await capture(rect) : undefined;
-      const regionText = [context.text, ...context.controls.map((c) => `[${c.id}] ${c.type} “${c.label}”${c.options.length ? ` options: ${c.options.slice(0, 12).join(" / ")}` : ""}`)].filter(Boolean).join("\n");
+      const regionText = [
+        context.text && `Selected text: “${context.text}”`,
+        context.surrounding && `Surrounding context (not selected): ${context.surrounding}`,
+        ...context.controls.map((c) => `[${c.id}] ${c.type} “${c.label}”${c.options.length ? ` options: ${c.options.slice(0, 12).join(" / ")}` : ""}`),
+      ].filter(Boolean).join("\n");
       await send({ type: "chat:start", opts: { regionLabel: "Selected area", regionText: regionText.slice(0, 7000), image } });
     } else {
       await send({ type: "chat:start", opts: { regionLabel: "This page", regionText: "" } });
@@ -200,6 +204,13 @@ export function App({ engine, selection, bus, setHidden }: Props) {
           <span class={`tab__dot${busy ? " tab__dot--busy" : ""}`} aria-hidden="true" />
           <span class="tab__status">{busy ? "Tidying…" : "Tidied"}</span>
         </button>
+      )}
+      {showTab && !panelOpen && tidy.nextStep && !menuRect && !card && sel.phase === "idle" && (
+        <div class="nextstep pz-card" role="region" aria-label="Next step" data-testid="prism-next">
+          <span class="nextstep__label">Next step</span>
+          <span class="nextstep__text">{tidy.nextStep}</span>
+          <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>Show me</button>
+        </div>
       )}
       {panelOpen && (
         <PagePanel tidy={tidy} engine={engine} settings={settings}
@@ -275,6 +286,14 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
             <ol class="steps">
               {tidy.steps.map((s) => <li><button type="button" onClick={() => engine.focusStep(s.id)}>{s.label}</button></li>)}
             </ol>
+          </div>
+        )}
+        {tidy.hiddenClutter > 0 && (
+          <div class="panel__section">
+            <span class="pz-label">Hidden to reduce clutter</span>
+            <button class="pz-btn pz-btn--small" type="button" aria-pressed={tidy.clutterShown} onClick={() => engine.toggleClutter()} data-testid="toggle-clutter">
+              {tidy.clutterShown ? "Hide" : "Show"} adverts and promotions ({tidy.hiddenClutter})
+            </button>
           </div>
         )}
         {tidy.folds.length > 0 && (
@@ -449,6 +468,16 @@ function AnswerCard(props: {
   );
 }
 
+/** Shows AI text safely: **bold** becomes bold, stray markdown symbols are removed. No HTML is injected. */
+export function Rich({ text }: { text: string }) {
+  const cleaned = text
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[*-]\s+/gm, "• ")
+    .replace(/(^|[^*])\*(?!\*)([^*\n]+)\*(?!\*)/g, "$1$2");
+  const parts = cleaned.split(/\*\*(.+?)\*\*/g);
+  return <>{parts.map((part, i) => (i % 2 ? <strong>{part}</strong> : part.replace(/\*\*/g, "")))}</>;
+}
+
 function SpeakButton({ text }: { text: string }) {
   if (!("speechSynthesis" in window)) return null;
   return (
@@ -461,14 +490,14 @@ function SpeakButton({ text }: { text: string }) {
 function DefineView({ data, usedPicture }: { data: DefineAnswer; usedPicture: boolean }) {
   return (
     <>
-      <p class="lead">{data.summary}</p>
-      {data.explanation && <p>{data.explanation}</p>}
+      <p class="lead"><Rich text={data.summary} /></p>
+      {data.explanation && <p><Rich text={data.explanation} /></p>}
       {data.terms.length > 0 && (
         <dl class="terms">
           {data.terms.map((t) => <div><dt>{t.term}</dt><dd>{t.meaning}</dd></div>)}
         </dl>
       )}
-      {data.whatToDoHere && <div class="todo"><strong>What you can do here: </strong>{data.whatToDoHere}</div>}
+      {data.whatToDoHere && <div class="todo"><strong>What you can do here: </strong><Rich text={data.whatToDoHere} /></div>}
       {data.uncertain.length > 0 && <p class="pz-muted">Prism wasn't sure about: {data.uncertain.join("; ")}</p>}
       {usedPicture && <p class="pz-hint">Prism also looked at a picture of the area you selected.</p>}
     </>
@@ -668,7 +697,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
         {chat?.messages.map((m) => {
           if (m.kind === "confirm") return null;
           if (m.kind === "action") return <div class="msg msg--action"><Icon name="check" /> {m.text}</div>;
-          return <div class={`msg msg--${m.kind}`}>{m.text}</div>;
+          return <div class={`msg msg--${m.kind}`}>{m.kind === "prism" || m.kind === "question" ? <Rich text={m.text} /> : m.text}</div>;
         })}
         {waitingConfirm && (
           <div class="confirm" role="alertdialog" aria-label="Prism needs your permission" data-testid="chat-confirm">

@@ -1,6 +1,6 @@
 {
   "name": "prism",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Prism — a browser extension that makes confusing websites beautiful, understandable and easy to use.",

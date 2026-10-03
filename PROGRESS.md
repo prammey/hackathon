@@ -58,3 +58,9 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
 - 2026-10-03 — Reliability: gemini-3.8-flash intermittently returned 504/499 during testing; the helper now
   falls back 3.8 → 3.7 → 3.5-lite with 15 s per attempt. Stop cancels in-flight actions; Esc race fixed.
   Final run: 40/41 + fixed re-run; Vitest 12/12; pytest 7/7; contrast 43/43; secret scan clean.
+- 2026-10-03 — v0.3.0 from user feedback: contrast-repair pass + whole-page contrast audits (dark-theme and
+  state-portal trap fixtures, all Styles, 0 failures); calmer Neo-Brutalist palette (no yellow overload,
+  no overlapping shadows on inline links); clutter hidden instead of faded; hero primary action + Next-step
+  bar; word-level selection with surrounding context (Define/Chat explain exactly the selected words);
+  markdown-free answers. Fixed id instability that caused extra AI plans on live pages. Regression: 40 passed,
+  2 skipped (ilsos.gov and arngren.net unreachable from this network).

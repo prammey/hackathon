@@ -9,8 +9,9 @@ import {
 } from "../shared/storage";
 import { FONT_FILES, fontsFor, effectiveTokens, pageCss } from "../shared/styles";
 import type { Result, Settings, StyleId, TidyPlan } from "../shared/types";
-import { analyze, type AnalyzeResult, isPrismNode, stripPrism } from "./analyzer";
+import { analyze, type AnalyzeResult, clean, isPrismNode, stripPrism } from "./analyzer";
 import { analyzeLayout, type LayoutMode, ungroupCanvas } from "./layout";
+import { repairContrast } from "./contrast";
 
 export type TidyStatus = "off" | "base" | "planning" | "planned" | "cached" | "error";
 
@@ -22,6 +23,10 @@ export interface TidyState {
   isOfficial: boolean;
   steps: { id: string; label: string }[];
   folds: { gid: string; label: string; count: number; open: boolean }[];
+  hiddenClutter: number;
+  clutterShown: boolean;
+  contrastFixes: number;
+  nextStep: string;
   aiCalls: number;
   cacheHit: boolean;
   lastPlanMs: number;
@@ -35,7 +40,7 @@ const AI_WINDOW_MS = 10 * 60 * 1000;
 export class TidyEngine {
   state: TidyState = {
     status: "off", styleId: "clear", message: "", pagePurpose: "", isOfficial: false, steps: [], folds: [],
-    aiCalls: 0, cacheHit: false, lastPlanMs: 0,
+    hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", aiCalls: 0, cacheHit: false, lastPlanMs: 0,
   };
   private analysis: AnalyzeResult | null = null;
   private plan: TidyPlan | null = null;
@@ -113,7 +118,7 @@ export class TidyEngine {
     await chrome.runtime.sendMessage({ type: "css:remove" }).catch(() => {});
     this.plan = null;
     this.analysis = null;
-    this.emit({ status: "off", message, steps: [], folds: [], pagePurpose: "", cacheHit: false });
+    this.emit({ status: "off", message, steps: [], folds: [], pagePurpose: "", cacheHit: false, hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "" });
   }
 
   async setStyle(styleId: StyleId): Promise<void> {
@@ -147,6 +152,7 @@ export class TidyEngine {
       else el.removeAttribute("data-prism-open");
     }
     this.emit({ folds: this.state.folds.map((f) => (f.gid === gid ? { ...f, open } : f)) });
+    this.afterRender();
     for (const host of document.querySelectorAll(`prism-fold[data-gid="${gid}"]`)) renderFold(host as HTMLElement, fold.label, fold.count, open, () => this.toggleFold(gid));
   }
 
@@ -169,6 +175,69 @@ export class TidyEngine {
     loadFonts(fontsFor(effectiveTokens(styleId, settings)));
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     await chrome.runtime.sendMessage({ type: "css:apply", css: `${pageCss(styleId, settings, reduced)}\n${this.layoutCss}` });
+    await this.afterRender();
+  }
+
+  private lastRepair = 0;
+  private repairTimer = 0;
+
+  /** Re-check readability once the browser has applied the new styles (throttled for live pages). */
+  private async afterRender(throttled = false) {
+    if (throttled) {
+      const wait = 2000 - (Date.now() - this.lastRepair);
+      if (wait > 0) {
+        clearTimeout(this.repairTimer);
+        this.repairTimer = window.setTimeout(() => this.afterRender(), wait);
+        return;
+      }
+    }
+    this.lastRepair = Date.now();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (!document.documentElement.hasAttribute("data-prism-on")) return;
+    const fixed = repairContrast();
+    const hidden = document.querySelectorAll("[data-prism-role=clutter]").length;
+    this.emit({ contrastFixes: fixed.fixed + fixed.boxes, hiddenClutter: hidden, nextStep: this.choosePrimary() });
+  }
+
+  private nextEl: WeakRef<Element> | null = null;
+
+  /**
+   * The one thing the person most likely needs to do next becomes the page's hero button. Uses the AI
+   * plan's primary action, or falls back to an obvious call to action in the main content.
+   */
+  private choosePrimary(): string {
+    const visible = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest("[data-prism-collapsed]:not([data-prism-open]),[data-prism-role=clutter]"); };
+    let el = [...document.querySelectorAll("[data-prism-role=primary-action],[data-prism-emphasis=primary]")]
+      .find((e) => e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
+    if (!el) {
+      const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue)\b/i;
+      const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
+      el = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
+        .find((e) => visible(e) && cta.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || "").trim()) && !e.closest("nav,header,footer,[role=navigation]"));
+      if (el) el.setAttribute("data-prism-emphasis", "primary");
+    }
+    this.nextEl = el ? new WeakRef(el) : null;
+    return el ? clean(((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim(), 60) : "";
+  }
+
+  /** Scrolls to the next step and makes it pulse so it's easy to find. */
+  showNextStep(): void {
+    const el = this.nextEl?.deref();
+    if (!el) return;
+    el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+    el.setAttribute("data-prism-step-active", "");
+    (el as HTMLElement).focus({ preventScroll: true });
+    setTimeout(() => el.removeAttribute("data-prism-step-active"), 4000);
+  }
+
+  /** Hidden clutter (adverts, promotions) can always be shown again from Prism's panel. */
+  toggleClutter(): void {
+    const show = !this.state.clutterShown;
+    for (const el of document.querySelectorAll("[data-prism-role=clutter]")) {
+      if (show) el.setAttribute("data-prism-open", ""); else if (!el.hasAttribute("data-prism-collapsed")) el.removeAttribute("data-prism-open");
+    }
+    this.emit({ clutterShown: show });
+    this.afterRender();
   }
 
   /** Chaotic layouts (pinned "canvas" pages, layout tables) get reflowed; tidy sites are only refined. */
@@ -332,7 +401,11 @@ export class TidyEngine {
     });
 
     const steps = plan.steps.filter((s) => ids.has(s.id));
+    this.structuralIds = new Set(analysis.outline.elements
+      .filter((e) => /^(header|nav|main|aside|footer|form|section|h[1-4]|button|input|select|textarea)$/.test(e.tag) || e.interactive)
+      .map((e) => e.id));
     this.emit({ pagePurpose: plan.pagePurpose, isOfficial: plan.isOfficialSite, steps, folds });
+    this.afterRender();
     return { rejectedRatio: total ? rejected / total : 0 };
   }
 
@@ -378,6 +451,7 @@ export class TidyEngine {
     this.analysis = analyze();
     this.debug.analyzeRuns++;
     if (this.plan) this.reapplyRoles(this.plan);
+    this.afterRender(true);
     if (this.analysis.structureHash !== this.planFingerprint) {
       if (!this.structureChangedAt) this.structureChangedAt = Date.now();
       // Only a large, lasting structural change justifies another AI plan.
@@ -391,11 +465,16 @@ export class TidyEngine {
     }
   }
 
+  private structuralIds = new Set<string>();
+
   private changeRatio(): number {
     if (!this.plan || !this.analysis) return 0;
-    const planIds = [...new Set(this.plan.roles.map((r) => r.id))];
+    // Only structural pieces (landmarks, headings, forms, buttons) decide whether the page really changed;
+    // rotating list items in live feeds don't.
+    const planIds = [...new Set(this.plan.roles.map((r) => r.id))].filter((id) => this.structuralIds.has(id));
     if (!planIds.length) return 0;
-    const missing = planIds.filter((id) => !this.analysis!.ids.has(id)).length;
+    // Elements Prism itself hid (clutter, folds) are still on the page: only truly removed ones count.
+    const missing = planIds.filter((id) => !this.analysis!.ids.has(id) && !document.querySelector(`[data-prism-id="${id}"]`)).length;
     return missing / planIds.length;
   }
 
@@ -450,13 +529,12 @@ function renderFold(host: HTMLElement, label: string, count: number, open: boole
   const style = document.createElement("style");
   style.textContent = `
     :host{display:block!important;margin:10px 0!important;max-width:100%!important}
-    button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:9px;min-height:38px;padding:8px 16px 8px 12px;max-width:100%;
-      font:600 14px/1.2 "Prism Inter",-apple-system,"Segoe UI",sans-serif;color:#F4F2F9;background:#1C1A23;
-      border:1px solid rgba(167,139,250,.35);border-radius:999px;cursor:pointer;
-      box-shadow:0 6px 18px rgba(19,18,24,.25),0 0 18px rgba(109,74,255,.18);transition:transform .15s,box-shadow .15s}
-    button:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(19,18,24,.3),0 0 24px rgba(109,74,255,.3)}
-    button:focus-visible{outline:2px solid #C4B5FD;outline-offset:3px}
-    .dot{width:8px;height:8px;flex:none;border-radius:50%;background:#A78BFA;box-shadow:0 0 8px rgba(167,139,250,.9)}`;
+    button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 12px 4px 9px;max-width:100%;
+      font:500 13px/1.2 "Prism Inter",-apple-system,"Segoe UI",sans-serif;color:#3A3550;background:rgba(255,255,255,.7);
+      border:1px dashed rgba(58,53,80,.45);border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s}
+    button:hover{background:#FFFFFF;border-color:#6D4AFF;color:#2A2540}
+    button:focus-visible{outline:2px solid #6D4AFF;outline-offset:2px}
+    .dot{width:6px;height:6px;flex:none;border-radius:50%;background:#6D4AFF}`;
   const button = document.createElement("button");
   button.type = "button";
   button.setAttribute("aria-expanded", String(open));

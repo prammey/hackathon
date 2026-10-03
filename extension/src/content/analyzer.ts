@@ -9,7 +9,7 @@ export const PRISM_ATTRS = [
   "data-prism-id", "data-prism-c", "data-prism-s", "data-prism-role", "data-prism-emphasis",
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
   "data-prism-filled", "data-prism-tight", "data-prism-layout", "data-prism-item", "data-prism-o", "data-prism-pos",
-  "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden",
+  "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden", "data-prism-fix", "data-prism-fixbox",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -202,10 +202,12 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const el = node as HTMLElement;
     scanned++;
     const tag = el.tagName;
+    // Things Prism itself folded away still count as part of the page (keeps ids and fingerprint stable).
+    const hiddenByPrism = el.hasAttribute("data-prism-collapsed") || el.getAttribute("data-prism-role") === "clutter";
     const rect = el.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0 && tag !== "INPUT") continue;
+    if (!hiddenByPrism && rect.width === 0 && rect.height === 0 && tag !== "INPUT") continue;
     const cs = getComputedStyle(el);
-    if (cs.display === "none" || cs.visibility === "hidden") continue;
+    if (!hiddenByPrism && (cs.display === "none" || cs.visibility === "hidden")) continue;
 
     const box: [number, number, number, number] = [
       Math.round(rect.left + scrollX), Math.round(rect.top + scrollY), Math.round(rect.width), Math.round(rect.height),
@@ -214,8 +216,10 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const roleAttr = el.getAttribute("role") ?? "";
     const isProt = isProtectedSelf(el);
 
-    // Controls
-    const kind = controlKind(el, cs);
+    // Controls. Classify by the page's own appearance only once: after Prism styles a link as a button,
+    // re-classifying it would change its id and look like the page had changed.
+    const styledByPrism = el.hasAttribute("data-prism-role") || el.hasAttribute("data-prism-emphasis");
+    const kind = el.getAttribute("data-prism-c") ?? (styledByPrism && tag === "A" ? null : controlKind(el, cs));
     if (kind) {
       setAttr(el, "data-prism-c", kind);
       // Controls squeezed into narrow fixed-width layouts keep a compact size so nothing gets cut off.
@@ -262,7 +266,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
 
     // Backgrounds → surfaces
     const bg = hasBackground(cs);
-    if (bg && !landmark.startsWith("main") && tag !== "BODY" && tag !== "HTML") {
+    if (bg && !landmark.startsWith("main") && tag !== "BODY" && tag !== "HTML" && !["TD", "TH", "TR", "THEAD", "TBODY", "TFOOT"].includes(tag)) {
       const area = rect.width * rect.height;
       if (bg === "image") {
         setAttr(el, "data-prism-s", "keep");

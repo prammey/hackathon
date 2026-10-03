@@ -16,6 +16,8 @@ technology — and to be pleasant for everyone.
 | **Tidy this page** | Restyles the live page: readable text, clear hierarchy, obvious buttons, clutter tucked away. The website keeps working, and **Show original page** puts it back exactly. Layouts are remembered so the page looks the same next time. |
 | **Four styles** | **Clean Flat**, **Modern Minimalist**, **Neo-Brutalist** and **Neumorphism** — complete design systems, not colour filters. |
 | **Restructures chaotic pages** | On pages built as a pinned "canvas" (like arngren.net) or with layout tables, Prism reflows the pieces into a padded, rounded card grid in reading order, groups each product's picture, name and price, and turns long link lists into pills. |
+| **Always readable** | After tidying, Prism measures every piece of text against what's really behind it and fixes anything below WCAG AA (white on white, grey on grey, colour on the same colour). Boxes that blend in get an outline. Adverts are hidden, not faded. |
+| **Clear next step** | The page's main action becomes the biggest, gently glowing button, and a *Next step* bar shows what to do next with **Show me**. |
 | **Point at something** | Hold **Option ⌥** (Mac) or **Alt** (Windows) and drag a box around anything. Choose **Define**, **Translate**, **Fill out** or **Chat**. Works on text *and* words inside pictures. |
 | **Fill out** | Explains each question and suggests answers from what you've told Prism, showing where each answer came from. Puts answers in only when you say so, never sends the form, and can undo. |
 | **Chat** | Ask about the page, or ask Prism to do a task ("report my missed bin"). It works step by step, and stops to ask before sending, submitting, paying, agreeing or deleting. **Stop** is always there. |
