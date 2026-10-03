@@ -6,7 +6,7 @@ import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
 } from "../shared/types";
 import { Icon, isMac, Logo, StylePicker } from "../ui/components";
-import { applyFill, type FillResult, undoFill } from "./actions";
+import { applyFill, fieldLabel, type FillResult, undoFill } from "./actions";
 import { controlsIn, regionContext } from "./region";
 import { placeNear, type SelState, SelectionController, shortcutLabel } from "./selection";
 import type { TidyEngine, TidyState } from "./tidy";
@@ -384,9 +384,13 @@ function AnswerCard(props: {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [lang, setLang] = useState<string>("");
   useEffect(() => { closeRef.current?.focus(); }, [card.status]);
-  const pos = placeNear(card.rect, Math.min(440, innerWidth - 24), Math.min(innerHeight * 0.78, 560));
+  // Short answers sit next to the selection; long ones (forms, many lines) dock to the side, full height.
+  const tall = card.status === "ready" && (card.kind === "fill" || (card.kind === "translate" && card.data.lines.length > 3));
+  const pos = placeNear(card.rect, Math.min(440, innerWidth - 24), 360);
+  const docked = tall || innerHeight - pos.y < 300;
+  const style = docked ? "" : `left:${pos.x}px;top:${pos.y}px;max-height:${Math.max(240, innerHeight - pos.y - 12)}px`;
   return (
-    <section class="answer pz-card" role="dialog" aria-label={TITLES[card.kind]} style={`left:${pos.x}px;top:${pos.y}px`} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
+    <section class={`answer pz-card${docked ? " answer--docked" : ""}`} role="dialog" aria-label={TITLES[card.kind]} style={style} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
       <div class="answer__head">
         <Logo size={24} />
         <h2 class="answer__title">{TITLES[card.kind]}</h2>
@@ -394,7 +398,7 @@ function AnswerCard(props: {
           <Icon name="close" /> Close
         </button>
       </div>
-      <div class="answer__body" aria-live="polite">
+      <div class="answer__body" aria-live="polite" key={card.status === "ready" && card.kind === "fill" && card.result ? "result" : "main"}>
         {card.status === "loading" && (
           <>
             <div class="pz-progress" aria-hidden="true" />
@@ -594,17 +598,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
 
 function labelOf(card: Extract<CardState, { kind: "fill" }>, id: string): string {
   const el = card.status === "ready" ? card.elements.get(id)?.[0] : undefined;
-  if (!el) return "This field";
-  const control = controlsLabel(el);
-  return control || "This field";
-}
-
-function controlsLabel(el: Element): string {
-  const input = el as HTMLInputElement;
-  if (input.type === "radio") return el.closest("fieldset")?.querySelector("legend")?.textContent?.trim() || input.name;
-  const labels = input.labels;
-  if (labels?.length) return [...labels].map((l) => l.textContent?.trim()).join(" ");
-  return el.getAttribute("aria-label") ?? el.getAttribute("placeholder") ?? el.getAttribute("name") ?? "";
+  return (el && fieldLabel(el)) || "This field";
 }
 
 function isCheckbox(card: Extract<CardState, { kind: "fill"; status: "ready" }>, id: string): boolean {

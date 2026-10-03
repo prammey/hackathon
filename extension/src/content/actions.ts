@@ -97,7 +97,7 @@ export function applyFill(suggestions: FieldSuggestion[], elements: Map<string, 
       const els = elements.get(s.id) ?? [findById(s.id)].filter(Boolean) as Element[];
       const el = els[0];
       if (!el) { result.failed.push({ id: s.id, label: s.id, reason: "The field is no longer on the page." }); continue; }
-      const label = clean(accessibleName(el), 80);
+      const label = clean(fieldLabel(el), 80);
       if (isSensitiveField(el)) { result.failed.push({ id: s.id, label, reason: "Please type this one yourself." }); continue; }
       let ok = false;
       let shown = "";
@@ -133,6 +133,16 @@ export function applyFill(suggestions: FieldSuggestion[], elements: Map<string, 
     setTimeout(() => document.removeEventListener("submit", blockSubmit, true), 300);
   }
   return result;
+}
+
+/** The question a control answers: a radio group's legend, otherwise the control's own label. */
+export function fieldLabel(el: Element): string {
+  if (el instanceof HTMLInputElement && el.type === "radio") {
+    const legend = el.closest("fieldset")?.querySelector("legend")?.textContent;
+    const group = el.closest("[role=radiogroup]")?.getAttribute("aria-label");
+    return (legend ?? group ?? el.name).trim();
+  }
+  return accessibleName(el);
 }
 
 export function undoFill(records: UndoRecord[]): void {
@@ -207,6 +217,12 @@ export function checkAction(action: ChatAction): ActionCheck {
   if ((el as HTMLButtonElement).disabled) return { ok: false, risk: "routine", description, reason: "That control is switched off (disabled) right now." };
   if (action.name === "type_text" && isSensitiveField(el)) {
     return { ok: false, risk: "forbidden", description, reason: "This looks like a password, card or ID field. Please type it yourself — Prism never enters these." };
+  }
+  if (action.name === "set_checkbox" || (action.name === "click" && el instanceof HTMLInputElement && el.type === "checkbox")) {
+    // Agreeing to declarations, terms or consent is a legal commitment: always ask first.
+    if (/\b(agree|declar|consent|confirm|terms|accept|certify)\w*/i.test(fieldLabel(el))) {
+      return { ok: true, risk: "consequential", description };
+    }
   }
   if (action.name === "click") {
     const name = accessibleName(el);

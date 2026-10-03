@@ -1,5 +1,7 @@
 /* In-page Prism UI (inside a Shadow DOM root). Builds on ../ui/prism-ui.css. */
-:host { all: initial; position: fixed !important; inset: 0 !important; z-index: 2147483646 !important; pointer-events: none !important; display: block !important; }
+:host { all: initial; position: fixed !important; inset: 0 !important; z-index: 2147483646 !important; pointer-events: none !important; display: block !important;
+  font-family: var(--pz-font) !important; font-size: 17px !important; line-height: 1.5 !important; color: var(--pz-ink) !important; }
+.layer, .layer button, .layer input, .layer select, .layer textarea { font-family: var(--pz-font); }
 .layer { position: fixed; inset: 0; pointer-events: none; }
 .interactive { pointer-events: auto; }
 
@@ -64,7 +66,8 @@
 .menu__foot { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 2px 2px 0; }
 
 /* ---------- Answer card ---------- */
-.answer { position: fixed; pointer-events: auto; width: min(440px, calc(100vw - 24px)); max-height: min(78vh, 680px); display: flex; flex-direction: column; overflow: hidden; }
+.answer { position: fixed; pointer-events: auto; width: min(440px, calc(100vw - 24px)); display: flex; flex-direction: column; overflow: hidden; }
+.answer--docked { top: 12px !important; bottom: 12px; right: 12px; left: auto !important; }
 .answer__head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--pz-line); }
 .answer__title { flex: 1; margin: 0; font-size: 19px; font-weight: 800; }
 .answer__body { padding: 14px 16px; overflow: auto; display: grid; gap: 14px; }
