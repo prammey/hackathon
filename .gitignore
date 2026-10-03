@@ -28,3 +28,6 @@ helper/demo/
 
 # Devpost draft (local only)
 about.md
+
+site/dist/
+.vercel/

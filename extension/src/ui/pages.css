@@ -143,3 +143,15 @@ pre, code { color: var(--pz-text); }
 .practice { display: grid; gap: 10px; padding: 18px; border-radius: 22px; background: linear-gradient(160deg, rgba(109, 74, 255, 0.38), rgba(109, 74, 255, 0.16)); border: 1px solid rgba(167, 139, 250, 0.55); box-shadow: 0 12px 40px rgba(109, 74, 255, 0.28); }
 .practice__title { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--pz-font); font-style: normal; font-size: 18px; font-weight: 700; color: #fff; }
 .welcome-hero .practice__hint { font-size: 15px; color: #E3DDF5; }
+
+/* Website: install button and steps */
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.install-top { font-size: 16px; padding: 12px 22px; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.install-steps { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.install-steps .pz-btn { justify-self: start; }
+.copy-url { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.copy-url code { padding: 6px 10px; border-radius: 10px; background: var(--pz-surface-3); color: var(--pz-text); font-size: 14px; }
+@media (max-width: 900px) { .install-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .install-steps { grid-template-columns: 1fr; } }

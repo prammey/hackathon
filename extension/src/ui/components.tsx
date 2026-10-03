@@ -40,6 +40,7 @@ const paths: Record<string, string> = {
   speak: "M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11",
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   mic: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3M8 21h8",
+  download: "M12 4v11M7 10l5 5 5-5M5 20h14",
 };
 
 export function Icon({ name, label }: { name: keyof typeof paths | string; label?: string }) {
