@@ -9,7 +9,7 @@ function InstallSteps() {
   return (
     <section id="install" class="section" aria-labelledby="install-h">
       <h2 id="install-h">Install Prism</h2>
-      <p>About two minutes in Google Chrome. Free, and no account needed.</p>
+      <p>Less than a minute in Google Chrome. Free, and no account needed.</p>
       <ol class="steps-big install-steps">
         <li class="step-card"><span class="step-num">1</span><b>Download Prism</b>
           <a class="pz-btn pz-btn--primary" href="Prism.zip" download data-testid="download"><Icon name="download" /> Download</a>

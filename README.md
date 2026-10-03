@@ -25,7 +25,7 @@ technology — and to be pleasant for everyone.
 
 ---
 
-## Install (about 2 minutes, no account needed)
+## Install (less than a minute, no account needed)
 
 Prism isn't in the Chrome Web Store yet, so you add it the way developers do. It's safe and easy to
 remove later.
