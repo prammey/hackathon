@@ -20,3 +20,6 @@ playwright-report/
 # OS / editor
 .DS_Store
 .vscode/
+
+extension/dist-test/
+evidence/e2e/results.json

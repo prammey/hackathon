@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strict CSP test page (fictional)</title>
+<link rel="stylesheet" href="/strict-csp/site.css">
+</head>
+<body>
+<header><strong>Ashbridge Parking Permits</strong> <nav aria-label="Main"><a href="#">Home</a> <a href="#">Permits</a></nav></header>
+<main>
+  <h1>Renew your parking permit</h1>
+  <p>This page sends a strict Content-Security-Policy header (no inline styles or scripts) to check that Prism still works.</p>
+  <form id="permit">
+    <label for="reg">Vehicle registration</label>
+    <input id="reg" name="reg">
+    <label for="zone">Permit zone</label>
+    <select id="zone" name="zone"><option value="">Choose a zone</option><option>Zone A</option><option>Zone B</option></select>
+    <button type="submit">Renew permit</button>
+  </form>
+</main>
+<script src="/strict-csp/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+body { font: 13px Arial, sans-serif; color: #666; margin: 0; }
+header { background: #234; color: #fff; padding: 10px; }
+header a { color: #9cf; }
+main { max-width: 700px; margin: 20px auto; }
+label { display: block; font-size: 12px; margin-top: 8px; }

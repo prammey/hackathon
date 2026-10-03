@@ -1,0 +1,8 @@
+Prism bundles these fonts, each licensed under the SIL Open Font License, Version 1.1
+(https://openfontlicense.org), obtained via the Fontsource project (https://fontsource.org):
+
+- Space Grotesk — Copyright 2020 The Space Grotesk Project Authors
+- Source Serif 4 — Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'
+- Inter — Copyright 2016 The Inter Project Authors
+- Nunito — Copyright 2014 The Nunito Project Authors
+- Atkinson Hyperlegible Next — Copyright 2020 Braille Institute of America, Inc.

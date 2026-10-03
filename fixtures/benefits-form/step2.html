@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Apply for Council Tax Reduction — Step 2 of 2 (fictional)</title>
+<style>
+  body { font: 13px Arial, sans-serif; color: #555; background: #f0f0f0; margin: 0; }
+  .top { background: #1d3557; color: #fff; padding: 10px 16px; font-weight: bold; }
+  .box { max-width: 760px; margin: 16px auto; background: #fff; padding: 16px 22px; border: 1px solid #ddd; }
+  h1 { font-size: 17px; color: #333; }
+  label { display: block; font-size: 12px; color: #777; margin-top: 8px; }
+  .legal { font-size: 10px; color: #aaa; }
+</style>
+</head>
+<body>
+<div class="top">Ashbridge Borough Council — Online services (fictional)</div>
+<div class="box">
+  <p class="progress">Step 2 of 2: Money and declaration</p>
+  <h1>Your income and savings</h1>
+  <form id="step2" method="post" action="/submit?form=benefits">
+    <input type="hidden" name="step1" id="step1-data">
+    <label for="income">Total weekly income (£)</label>
+    <input type="text" id="income" name="income" inputmode="decimal">
+    <label for="savings">Savings (£)</label>
+    <select id="savings" name="savings">
+      <option value="">Please select</option>
+      <option>Less than £6,000</option>
+      <option>£6,000 to £16,000</option>
+      <option>More than £16,000</option>
+    </select>
+    <p class="legal">Declaration: I confirm the information I have given is true and complete. I understand that giving false information may lead to prosecution.</p>
+    <label><input type="checkbox" id="declare" name="declare" required> I agree to the declaration</label>
+    <p><button type="submit" id="submit-application">Submit application</button></p>
+  </form>
+</div>
+<script>
+  document.getElementById("step1-data").value = sessionStorage.getItem("step1") || "";
+</script>
+</body>
+</html>

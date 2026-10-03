@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Solicitud de ayuda para el alquiler — Ayuntamiento de Villaverde (ficticio)</title>
+<style>
+  body { font: 12px Verdana, sans-serif; color: #666; background: #f4f1ea; margin: 0; }
+  .cab { background: #7a1f2b; color: #fff; padding: 10px 16px; font: bold 16px Georgia; }
+  .menu { background: #a33b48; padding: 4px 16px; }
+  .menu a { color: #fde; font-size: 11px; margin-right: 10px; }
+  .cont { max-width: 860px; margin: 12px auto; background: #fff; padding: 14px 20px; }
+  h1 { font-size: 16px; color: #7a1f2b; }
+  .aviso { background: #fff8e1; border: 1px solid #f0d890; padding: 6px; font-size: 11px; }
+  label { display: block; margin-top: 8px; font-size: 11px; }
+  .banner-publicidad { background: #eef; padding: 6px; font-size: 10px; color: #99a; margin: 10px 0; }
+</style>
+</head>
+<body>
+<div class="cab">Ayuntamiento de Villaverde (ficticio)</div>
+<nav class="menu" aria-label="Menú principal"><a href="#">Inicio</a><a href="#">Trámites</a><a href="#">Empleo</a><a href="#">Vivienda</a><a href="#">Contacto</a></nav>
+<div class="cont">
+  <main>
+    <h1>Ayuda municipal para el pago del alquiler 2026</h1>
+    <p>El Ayuntamiento ofrece una ayuda de hasta 250 euros al mes para personas con ingresos bajos que viven de alquiler en el municipio.</p>
+    <div class="aviso" id="plazo">Plazo de presentación: del 1 de octubre al 15 de noviembre de 2026. Las solicitudes fuera de plazo no serán admitidas.</div>
+    <h2 style="font-size:13px">Requisitos</h2>
+    <ul>
+      <li>Estar empadronado en Villaverde con al menos seis meses de antigüedad.</li>
+      <li>Tener un contrato de alquiler a su nombre.</li>
+      <li>Ingresos de la unidad familiar inferiores a 1,5 veces el IPREM.</li>
+    </ul>
+    <div class="banner-publicidad publicidad ad-slot">PUBLICIDAD — Seguros de hogar desde 9,99 €/mes</div>
+    <h2 style="font-size:13px">Solicitud</h2>
+    <form id="solicitud" onsubmit="event.preventDefault(); document.getElementById('estado').textContent='Solicitud registrada';">
+      <label for="nombre">Nombre y apellidos</label><input id="nombre" name="nombre" required>
+      <label for="cp">Código postal</label><input id="cp" name="cp" required pattern="[0-9]{5}">
+      <label for="tramite">Tipo de solicitud</label>
+      <select id="tramite" name="tramite"><option value="">Seleccione</option><option>Primera solicitud</option><option>Renovación</option></select>
+      <label><input type="checkbox" id="acepto" name="acepto"> Acepto el tratamiento de mis datos personales</label>
+      <p><button type="submit">Enviar solicitud</button></p>
+      <p id="estado" role="status"></p>
+    </form>
+  </main>
+</div>
+</body>
+</html>
