@@ -81,9 +81,6 @@ October 2026). The same list is the purple Practice websites panel on Prism's we
 | [Indian Health Service](https://www.ihs.gov/) | Federal health program | Healthcare |
 | [TRICARE](https://www.tricare.mil/) | Military health insurance | Insurance |
 | [Indiana Family & Social Services](https://www.in.gov/fssa/) | Medicaid, SNAP and family help | Benefits |
-| [Maine Health & Human Services](https://www.maine.gov/dhhs/) | SNAP, MaineCare and certificates | Benefits |
-| [Tennessee Courts](https://www.tncourts.gov/) | Court dockets, forms and opinions | Courts |
-| [HelpWithMyBank.gov](https://www.helpwithmybank.gov/) | Help with a bank problem | Banking |
 | [Social Security rules (POMS)](https://secure.ssa.gov/poms.nsf/home!readform) | How benefit claims are decided | Social Security |
 | [OPM Retirement Center](https://www.opm.gov/retirement-center/) | Federal retirement | Retirement |
 | [Social Security Actuarial Services](https://www.ssa.gov/oact/) | Benefit calculators and data | Social Security |

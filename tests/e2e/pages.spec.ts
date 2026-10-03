@@ -172,7 +172,7 @@ test("Welcome page renders and offers a practice page", async ({ context, extens
   const sites = page.getByTestId("demo-sites").getByRole("link");
   for (const name of ["Illinois Human Services", "Mississippi Medicaid", "craigslist", "Berkshire Hathaway"]) await expect(sites.filter({ hasText: name })).toHaveCount(1);
   await expect(sites.filter({ hasText: "TreasuryDirect" })).toHaveCount(0);
-  await expect(sites).toHaveCount(15);
+  await expect(sites).toHaveCount(12);
   for (const link of await sites.all()) {
     await expect(link).toHaveAttribute("href", /^https:\/\//);
     await expect(link).toHaveAttribute("target", "_blank");
