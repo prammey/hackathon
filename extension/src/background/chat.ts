@@ -103,7 +103,7 @@ export async function sendUserMessage(tabId: number, text: string, includeScreen
   // "I'm helping my mum…" — keep it as session context, never as a silent profile edit.
   const helping = text.match(/\b(i'?m|i am)\s+(helping|filling (this|it) (in|out) for|doing this for)\s+(.{2,120})/i);
   if (helping && !state.sessionContext) {
-    state.sessionContext = `The person is helping someone else: ${helping[4]}. Details they mention in this chat are about that person.`;
+    state.sessionContext = `The person is helping someone else: ${helping[4]}. Details they mention in this chat are about that person.\nWhat they said: “${text.slice(0, 600)}”`;
     state.messages.push(newMessage("notice", "Got it — I'll treat details in this chat as being about the person you're helping. Your saved profile won't change."));
   }
   state.messages.push(newMessage("user", text));

@@ -2,23 +2,20 @@
 (function () {
   const root = document.getElementById("root");
   window.__fixture = { renders: 0, feedItems: 0 };
-  const routes = {
-    "/dynamic-app/": home,
-    "/dynamic-app/report": report,
-    "/dynamic-app/help": help,
-  };
+  const base = location.pathname.slice(0, location.pathname.indexOf("/dynamic-app/") + "/dynamic-app/".length);
+  const routes = { [base]: home, [`${base}report`]: report, [`${base}help`]: help };
 
   function shell(inner) {
     const path = location.pathname;
     const link = (href, label) => `<a href="${href}" data-link class="${path === href ? "active" : ""}">${label}</a>`;
-    return `<div id="app-bar">${link("/dynamic-app/", "My collections")}${link("/dynamic-app/report", "Report a missed bin")}${link("/dynamic-app/help", "Help")}<span id="clock"></span></div><main id="view">${inner}</main>`;
+    return `<div id="app-bar">${link(base, "My collections")}${link(`${base}report`, "Report a missed bin")}${link(`${base}help`, "Help")}<span id="clock"></span></div><main id="view">${inner}</main>`;
   }
 
   function home() {
     return `<h1 style="color:#e5e7eb;font-size:18px">Your bin collections</h1>
       <div class="card"><h3>Black bin (general waste)</h3><p>Next collection: Tuesday 7 October</p><span class="pill">On schedule</span></div>
       <div class="card"><h3>Blue bin (recycling)</h3><p>Next collection: Tuesday 14 October</p><span class="pill">On schedule</span></div>
-      <div class="card"><h3>Brown bin (garden waste)</h3><p>Subscription needed. <a href="/dynamic-app/report" data-link style="color:#93c5fd">Subscribe or report a problem</a></p></div>
+      <div class="card"><h3>Brown bin (garden waste)</h3><p>Subscription needed. <a href="${base}report" data-link style="color:#93c5fd">Subscribe or report a problem</a></p></div>
       <h2 style="color:#d1d5db;font-size:14px">Live service updates</h2>
       <div id="feed" aria-live="off"></div>`;
   }

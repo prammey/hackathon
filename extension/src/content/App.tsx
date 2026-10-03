@@ -129,7 +129,13 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     const profile = await getProfile();
     const chatState = await send<PublicChat | null>({ type: "chat:state" }).catch(() => null);
     let profileFacts = profileText(profile, kind);
-    if (chatState?.sessionContext) profileFacts += `\nJust for now (overrides the saved profile): ${chatState.sessionContext}`;
+    if (chatState?.sessionContext) {
+      // Helping someone else: their details replace the saved person's for form answers; the saved
+      // person's reading preferences still apply to explanations.
+      profileFacts = kind === "fill"
+        ? `The user is filling this in for someone else. Use ONLY these details for answers, never the user's own:\n${chatState.sessionContext}`
+        : `${profileText(profile, "translate")}\nJust for now: ${chatState.sessionContext}`;
+    }
     if (extra.justForNow) profileFacts += `\nJust for now, the person told Prism: ${extra.justForNow}`;
     const target = extra.targetLanguage ?? (await siteLanguage()) ?? (s.translateTo || profile.language || "English");
     const result = await send<Result<{ answer: unknown }>>({

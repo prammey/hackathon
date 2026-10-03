@@ -19,6 +19,6 @@
 </head>
 <body>
 <div id="root"></div>
-<script src="/dynamic-app/app.js"></script>
+<script>document.write('<script src="' + location.pathname.slice(0, location.pathname.indexOf("/dynamic-app/")) + '/dynamic-app/app.js"><\/script>')</script>
 </body>
 </html>

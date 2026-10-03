@@ -10,7 +10,8 @@ import time
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from google.genai import types
 
 from . import prompts
@@ -72,6 +73,19 @@ async def ai_unavailable(_request: Request, err: AIUnavailable):
   log.warning("AI unavailable: %s", str(err)[:200])
   return JSONResponse({"error": "ai_unavailable", "message": "The AI service did not answer in time."},
                       status_code=503)
+
+
+DEMO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "demo")
+if os.path.isdir(DEMO_DIR):
+  # Fictional practice pages so people can try Prism safely (copied from fixtures/ at deploy time).
+  app.mount("/demo", StaticFiles(directory=DEMO_DIR, html=True), name="demo")
+
+
+@app.post("/submit", response_class=HTMLResponse)
+def demo_submit():
+  return ("<!doctype html><html lang=en><head><title>Received (practice)</title></head><body><main>"
+          "<h1>Application received</h1><p>This is a practice page: nothing was stored or sent anywhere.</p>"
+          "</main></body></html>")
 
 
 @app.get("/health")

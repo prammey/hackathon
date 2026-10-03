@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shortcut: "alt",
   explainLevel: "simple",
   translateTo: "English",
-  helperMode: __PRISM_HOSTED_URL__ ? "hosted" : "local",
+  helperMode: __PRISM_HOSTED_URL__ && !__PRISM_TEST__ ? "hosted" : "local",
   localUrl: "http://127.0.0.1:8787",
   tidyEverywhere: false,
   onboarded: false,
