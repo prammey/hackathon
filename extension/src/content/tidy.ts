@@ -3,7 +3,6 @@
  * and a mutation governor for dynamic pages and SPA route changes.
  */
 import { hash, pageKeyFor } from "../shared/hash";
-import { TidyPlanSchema } from "../shared/schemas";
 import {
   getCachedPlan, getSettings, getSitePrefs, PLAN_VERSION, putCachedPlan, saveSitePrefs, touchCachedPlan,
 } from "../shared/storage";
@@ -381,12 +380,14 @@ export class TidyEngine {
       this.emit({ status: "base", message: `${result?.error?.message ?? "Prism's AI isn't available."} The basic clean-up is still on.` });
       return;
     }
-    const parsed = TidyPlanSchema.safeParse(result.value.plan);
-    if (!parsed.success) {
+    // The service worker validated this plan against TidyPlanSchema (background/api.ts), so page code
+    // doesn't bundle the validator; applyPlan still ignores any id that isn't on the page.
+    const plan = result.value.plan as TidyPlan | undefined;
+    if (!plan || !Array.isArray(plan.roles)) {
       this.emit({ status: "base", message: "Prism kept a simple tidy for this page." });
       return;
     }
-    const applied = this.applyPlan(parsed.data);
+    const applied = this.applyPlan(plan);
     this.planFingerprint = analysis.structureHash;
     const lastPlanMs = Math.round(performance.now() - started);
     if (applied.rejectedRatio > 0.3) {
@@ -397,8 +398,8 @@ export class TidyEngine {
     }
     await putCachedPlan({
       planVersion: PLAN_VERSION, pageKey: this.pageKey, structureHash: analysis.structureHash,
-      idSignature: [...new Set(parsed.data.roles.map((r) => r.id))].slice(0, 300), prefsHash,
-      plan: parsed.data, createdAt: Date.now(), lastUsedAt: Date.now(), hits: 0,
+      idSignature: [...new Set(plan.roles.map((r) => r.id))].slice(0, 300), prefsHash,
+      plan, createdAt: Date.now(), lastUsedAt: Date.now(), hits: 0,
     });
     if (fromScratch) await saveSitePrefs(location.origin, { fromScratch: undefined });
     this.emit({ status: "planned", message: "Tidied by Prism.", lastPlanMs });

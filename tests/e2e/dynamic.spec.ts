@@ -1,6 +1,7 @@
-import { expect, FIXTURES, helperCalls, shot, tabMessage, test, tidy, waitForStatus } from "./harness";
+import { expect, FIXTURES, helperCalls, setSettings, shot, tabMessage, test, tidy, waitForStatus } from "./harness";
 
 test("Dynamic app: live updates cause no extra AI calls and no runaway re-analysis", async ({ context, sw }) => {
+  await setSettings(sw, { styleId: "clear" }); // the font check below is Clean Flat's
   const page = await context.newPage();
   await page.goto(`${FIXTURES}/dynamic-app/`);
   await tidy(sw, page);

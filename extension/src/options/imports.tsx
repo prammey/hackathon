@@ -82,7 +82,7 @@ export function ImportSection({ onSaved }: { profile: Profile; onSaved: (p: Prof
 
   return (
     <section id="import" class="section" aria-labelledby="import-h">
-      <h2 id="import-h">Import from ChatGPT or Claude</h2>
+      <h3 id="import-h">Import from ChatGPT or Claude</h3>
       <p>If you already use ChatGPT or Claude, you can bring in what they know about you. Prism reads it on this computer, shows you everything it found, and saves only what you choose.</p>
 
       {(stage.kind === "idle" || stage.kind === "saved" || stage.kind === "error") && (

@@ -33,6 +33,8 @@ const common = {
     __PRISM_TEST__: String(test),
   },
   sourcemap: test ? "inline" : false,
+  // Release builds are minified: content.js runs on every page, so its size is page-load cost.
+  minify: !test,
   legalComments: "none",
   logLevel: "warning",
 };
