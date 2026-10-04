@@ -257,6 +257,9 @@ def guide(req: GuideRequest):
   if req.history:
     parts.append("Steps so far:\n" + "\n".join(f"{i + 1}. {h.instruction} -> {h.result or 'done'}" for i, h in enumerate(req.history)))
   parts.append("Current page state:\n" + (prompts.untrusted(req.pageState) if req.pageState else "(blank new tab, no website open yet)"))
+  # The page is usually in English; the person may not be. Say it last so it wins.
+  parts.append(f"Write instruction, detail and choices in {req.language}, even if the page is in another language. "
+               "Keep button and link names in quotes exactly as they appear on the page.")
   step, model = generate_json("\n\n".join(parts), system, GuideStep)
   return bounded_guide_step(step, req.pageState) | {"model": model}
 

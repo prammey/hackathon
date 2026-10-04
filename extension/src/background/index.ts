@@ -4,7 +4,7 @@ import { getSettings, saveSettings } from "../shared/storage";
 import type { Rect } from "../shared/types";
 import { callHelper, helperHealth, stats } from "./api";
 import { captureRegion } from "./capture";
-import { followNewTabs, guideAdvanced, guideAnswer, guideBack, guidePageReady, guideRetry, loadGuide, startGuide, stopGuide } from "./guide";
+import { followNewTabs, guideAdvanced, guideAnswer, guideBack, guidePageReady, guideRetry, guideLost, loadGuide, startGuide, stopGuide } from "./guide";
 import {
   clearChat, confirmPending, loadState, notifyReady, sendUserMessage, setSessionContext, startChat, stopChat,
 } from "./chat";
@@ -184,6 +184,7 @@ const handlers: Record<string, Handler> = {
   "guide:answer": (msg, sender) => { guideAnswer(msg.tabId ?? sender.tab!.id!, String(msg.answer ?? "")); return { ok: true }; },
   "guide:back": (msg, sender) => { guideBack(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
   "guide:retry": (msg, sender) => { guideRetry(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
+  "guide:lost": (msg, sender) => { guideLost(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
   "guide:stop": (msg, sender) => stopGuide(msg.tabId ?? sender.tab!.id!).then(() => ({ ok: true })),
   // Read aloud with the computer's own voices (free, offline). One reading at a time across Prism.
   "tts:speak": (msg, sender) => {

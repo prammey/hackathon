@@ -95,19 +95,27 @@ for (const task of tasks) {
         // The spotlight marks what the person sees (a hidden checkbox's label, for example).
         const el = document.querySelector("[data-prism-guide]") ?? document.querySelector(`[data-prism-id="${id}"],[data-prism-rid="${id}"]`);
         if (!el) return null;
-        const r = el.getBoundingClientRect();
+        // A link wrapping onto two lines: aim at its first line of words, not the empty corner of its box.
+        const r = el.getClientRects()[0] ?? el.getBoundingClientRect();
         const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         const hit = top === el || el.contains(top) ? "target" : `${top?.tagName}.${String(top?.className).slice(0, 40)}`;
         return r.width && r.height ? { x: r.left, y: r.top, width: r.width, height: r.height, hit } : null;
       }, s.step.id).catch(() => null);
       if (s.step.kind === "click" || s.step.kind === "choose") {
-        if (!box) { step.note = "no spotlight visible"; rec.end = "no spotlight"; break; }
+        if (!box) {
+          // Prism re-plans a step whose element vanished; give it the time a person would.
+          step.note = "no spotlight visible";
+          if ((rec.noSpot = (rec.noSpot ?? 0) + 1) < 3) { lastKey = ""; await pg.waitForTimeout(4000); continue; }
+          rec.end = "no spotlight"; break;
+        }
         step.hit = box.hit;
         await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
         if (s.step.kind === "choose") {
           // A native select needs a value: pick the second option if there is one.
           await pg.evaluate((id) => { const el = document.querySelector(`[data-prism-id="${id}"],[data-prism-rid="${id}"]`); if (el instanceof HTMLSelectElement && el.options.length > 1) { el.selectedIndex = 1; el.dispatchEvent(new Event("change", { bubbles: true })); } }, s.step.id);
-          await pg.keyboard.press("Escape").catch(() => {});
+          // A styled dropdown opened by the click: pick an option the way a keyboard user would.
+          await pg.keyboard.press("ArrowDown").catch(() => {});
+          await pg.keyboard.press("Enter").catch(() => {});
           await pg.locator("prism-root").locator("[data-testid=guide-done]").click({ timeout: 3000 }).catch(() => {});
         }
         await pg.waitForTimeout(2500);

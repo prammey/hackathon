@@ -190,6 +190,24 @@ export async function guideAnswer(tabId: number, answer: string): Promise<void> 
   await nextStep(tabId);
 }
 
+const LOST = "that wasn't on the page any more";
+
+/** The page no longer has the step's element (it changed or redrew itself): plan again, once. */
+export async function guideLost(tabId: number): Promise<void> {
+  const state = await loadGuide(tabId);
+  if (!state || state.status !== "showing") return;
+  if (state.history[state.history.length - 1]?.result === LOST) {
+    state.status = "stuck";
+    state.step = { kind: "stuck", id: "", instruction: t("I can't find that on the page any more. Press Try again, or scroll and look for it."), detail: "", url: "", choices: [], caution: false };
+    await save(state);
+    return;
+  }
+  state.history.push({ instruction: state.step?.instruction ?? "", result: LOST });
+  state.status = "thinking";
+  await save(state);
+  await nextStep(tabId);
+}
+
 /** Show the previous step again (going back a page first if it was on another page). */
 export async function guideBack(tabId: number): Promise<void> {
   const state = await loadGuide(tabId);

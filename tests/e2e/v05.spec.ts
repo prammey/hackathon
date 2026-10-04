@@ -117,8 +117,8 @@ test("Dictation: turned on once in Settings, then works in Settings, Chat and a 
 test("Settings page is short and simple: five sections, nothing hidden behind More settings", async ({ context, extensionId }) => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/options.html`);
-  const visibleH2 = await page.locator("h2:visible").allInnerTexts();
-  expect(visibleH2).toEqual(["How pages look", "Your language", "Talking instead of typing", "About you", "Your data"]);
+  // Retries until the page has drawn (settings load asynchronously).
+  await expect(page.locator("h2:visible")).toHaveText(["How pages look", "Your language", "Talking instead of typing", "About you", "Your data"]);
   await expect(page.getByTestId("more-settings")).toHaveCount(0);
   await page.screenshot({ path: path.join(OUT, "settings-simple.png"), fullPage: true });
   // Import still reachable, inside "More about you".

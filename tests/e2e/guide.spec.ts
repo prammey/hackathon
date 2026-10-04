@@ -65,6 +65,32 @@ test("Guide me walks someone through sending an email, one spotlight at a time, 
   await expect(card(page)).toHaveCount(0);
 });
 
+test("A styled dropdown opens its list outside the spotlight, and the person can still pick from it", async ({ context, sw }) => {
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/guide-form/`);
+  await prismReady(page);
+  // A fixed "choose" step (no AI), so this checks the spotlight itself.
+  const step = { kind: "choose", id: "", instruction: 'Open "-- None --" and choose Yes', detail: "", url: "", choices: [], caution: false };
+  await tabMessage(sw, page, { type: "guide:update", state: { tabId: 0, goal: "Answer the question", status: "showing", step, shown: [{ step, url: "" }], history: [], answers: [] } });
+  await waitShowing(page);
+  await expect(page.locator("[data-testid=guide]")).toHaveAttribute("data-kind", "choose");
+  // The person opens the dropdown where the spotlight is.
+  const at = await ringTarget(page);
+  await page.mouse.click(at.x, at.y);
+  const yes = page.locator(".picker-list li", { hasText: "Yes" });
+  await expect(yes).toBeVisible();
+  // Its list sits below the spotlight: nothing of Prism's may cover it.
+  await expect.poll(() => yes.evaluate((li) => {
+    const r = li.getBoundingClientRect();
+    return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === li;
+  }), { timeout: 3_000 }).toBe(true);
+  await page.waitForTimeout(300); // let the dim finish fading
+  await page.screenshot({ path: path.join(OUT, "guide-06-dropdown.png") });
+  await yes.click();
+  await expect(page.locator("#picker")).toHaveText("Yes");
+  await expect(page.locator("[data-testid=guide-done]")).toBeVisible();
+});
+
 test("Guide me from a blank new tab starts in the popup and asks what it needs", async ({ context, sw, extensionId }) => {
   const blank = await context.newPage();
   await blank.goto("about:blank");

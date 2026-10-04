@@ -462,5 +462,6 @@
   "What do you want to do?": "ماذا تريد أن تفعل؟",
   "Full makeover": "تجديد كامل",
   "Prism restyles the whole page in your style.": "يعيد Prism تنسيق الصفحة كلها بالنمط الذي اخترته.",
-  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "هذا الموقع مصمم جيدًا بالفعل، لذلك يحافظ Prism على شكله ويجعله فقط أسهل في القراءة والاستخدام."
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "هذا الموقع مصمم جيدًا بالفعل، لذلك يحافظ Prism على شكله ويجعله فقط أسهل في القراءة والاستخدام.",
+  "I can't find that on the page any more. Press Try again, or scroll and look for it.": "لم أعد أجد ذلك في الصفحة. اضغط حاول مرة أخرى، أو مرّر الصفحة وابحث عنه."
 }

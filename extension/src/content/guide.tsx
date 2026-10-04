@@ -4,7 +4,7 @@
  * moves the guide on.
  */
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { GuideState } from "../background/guide";
+import type { GuideState, GuideStep } from "../background/guide";
 import { t } from "../shared/i18n";
 import { Icon, MicButton, useLanguage } from "../ui/components";
 import { findById } from "./region";
@@ -44,6 +44,30 @@ function visibleTarget(el: Element): Element {
   return el;
 }
 
+/**
+ * The step's element. Sites that redraw themselves (React, Angular) can replace it after Prism marked it,
+ * so when the mark is gone, look for the control named in quotes in the instruction instead.
+ */
+function locate(step: GuideStep): Element | null {
+  const byId = step.id ? findById(step.id) : null;
+  if (byId?.isConnected) return byId;
+  const quoted = step.instruction.match(/["“«„]([^"”»“]{2,80})["”»“]/)?.[1]?.trim().toLowerCase();
+  if (!quoted) return null;
+  const candidates = [...document.querySelectorAll("a,button,input,select,textarea,summary,label,[role=button],[role=link],[role=tab],[role=menuitem]")]
+    .filter((c) => !c.closest("prism-root") && c.getBoundingClientRect().width > 0);
+  const name = (c: Element) => ((c as HTMLElement).innerText || (c as HTMLInputElement).value || c.getAttribute("aria-label") || (c as HTMLInputElement).placeholder || c.getAttribute("title") || "").trim().toLowerCase();
+  return candidates.find((c) => name(c) === quoted) ?? candidates.find((c) => name(c).includes(quoted)) ?? null;
+}
+
+/**
+ * Pressing the card must not count as "clicking away" on the page: that closes a search box's suggestions
+ * (weather sites, address lookups) right when the next step is to pick one.
+ */
+function keepPageFocus(e: Event) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 /** A gentle enlargement where it can't break the page's layout (buttons and links on their own line). */
 function canEnlarge(el: Element): boolean {
   if (el.closest("td,th,li a,p a,nav,[role=menubar]")) return false;
@@ -71,10 +95,15 @@ export function GuideLayer() {
   useLanguage();
   const [state, setState] = useState<GuideState | null>(null);
   const [typed, setTyped] = useState(false);
+  /** The person is using a dropdown or text box: lift the dim so its list or suggestions can be picked. */
+  const [engaged, setEngaged] = useState(false);
   const target = useRef<Element | null>(null);
   const [el, setEl] = useState<Element | null>(null);
   /** The element the person sees for `el` (its label when the real input is hidden). */
   const [view, setView] = useState<Element | null>(null);
+  /** Bumped when the page replaced the step's element, to find it again. */
+  const [found, setFound] = useState(0);
+  const boxRef = useRef<DOMRect | null>(null);
 
   useEffect(() => {
     const onMsg = (msg: { type?: string; state?: GuideState }) => {
@@ -89,7 +118,8 @@ export function GuideLayer() {
   const step = state?.status === "showing" ? state.step : undefined;
   useEffect(() => {
     setTyped(false);
-    const found = step?.id ? findById(step.id) : null;
+    setEngaged(false);
+    const found = step ? locate(step) : null;
     target.current = found;
     setEl(found);
     if (!found) { setView(null); return; }
@@ -111,6 +141,20 @@ export function GuideLayer() {
       if (before === null) html.removeAttribute("style");
       else html.setAttribute("style", before);
     };
+  }, [step?.id, step?.instruction, found]);
+
+  // Keep hold of the element if the page redraws it; if it's really gone, ask for a fresh step.
+  useEffect(() => {
+    if (!step) return;
+    let misses = 0;
+    const timer = setInterval(() => {
+      const shows = (e: Element | null) => !!e?.isConnected && visibleTarget(e).getBoundingClientRect().width > 0;
+      if (shows(target.current)) { misses = 0; return; }
+      const again = locate(step);
+      if (again && again !== target.current && shows(again)) { misses = 0; setFound((n) => n + 1); return; }
+      if (++misses === 3) send({ type: "guide:lost" });
+    }, 1000);
+    return () => clearInterval(timer);
   }, [step?.id, step?.instruction]);
 
   // Notice the person doing the step.
@@ -120,12 +164,23 @@ export function GuideLayer() {
     const onLeave = () => { leaving = true; };
     addEventListener("pagehide", onLeave);
     const inside = (e: Event) => e.composedPath().includes(el) || (!!view && e.composedPath().includes(view));
+    // A press inside the spotlight counts even if the page swapped the element out from under it.
+    const inHole = (e: Event) => {
+      const b = boxRef.current;
+      const { clientX: x, clientY: y } = e as MouseEvent;
+      return !!b && !!(x || y) && x >= b.left - 4 && x <= b.right + 4 && y >= b.top - 4 && y <= b.bottom + 4;
+    };
+    const onEngage = (e: Event) => { if ((step.kind === "choose" || step.kind === "type") && (inside(e) || inHole(e))) setEngaged(true); };
+    let pressed = false;
+    // Some sites act on pointerdown and redraw before a click ever arrives, so either one counts.
     const onClick = (e: Event) => {
-      if (step.kind !== "click" || !inside(e)) return;
+      if (step.kind !== "click" || pressed || !(inside(e) || inHole(e))) return;
+      pressed = true;
       // If the click opens a new page, that page carries the guide on; otherwise report it here.
       setTimeout(() => { if (!leaving) send({ type: "guide:advanced", result: "clicked it" }); }, 700);
     };
-    const onInput = () => setTyped(!!(el as HTMLInputElement).value);
+    // Typing may bring up suggestions below the box (towns, addresses): they need to be clickable.
+    const onInput = () => { setTyped(!!(el as HTMLInputElement).value); setEngaged(true); };
     const onChange = () => { if (step.kind === "choose") send({ type: "guide:advanced", result: "chose an option" }); };
     const onKey = (e: KeyboardEvent) => {
       if (step.kind === "type" && e.key === "Enter" && inside(e) && (el as HTMLInputElement).value) {
@@ -133,12 +188,16 @@ export function GuideLayer() {
       }
     };
     document.addEventListener("click", onClick, true);
+    document.addEventListener("pointerdown", onClick, true);
+    document.addEventListener("pointerdown", onEngage, true);
     el.addEventListener("input", onInput);
     el.addEventListener("change", onChange);
     document.addEventListener("keydown", onKey, true);
     return () => {
       removeEventListener("pagehide", onLeave);
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("pointerdown", onClick, true);
+      document.removeEventListener("pointerdown", onEngage, true);
       el.removeEventListener("input", onInput);
       el.removeEventListener("change", onChange);
       document.removeEventListener("keydown", onKey, true);
@@ -146,6 +205,7 @@ export function GuideLayer() {
   }, [step?.id, step?.instruction, el, view]);
 
   const box = useTargetBox(step ? view : null);
+  boxRef.current = box;
   if (!state) return null;
   // Prism's own rule, not only the AI's judgement: anything that submits, pays, sends or books gets the warning.
   const caution = !!step && (step.caution || (!!el && isConsequential(el)));
@@ -198,17 +258,20 @@ export function GuideLayer() {
     below: hole.y + hole.h + GAP + CH <= vh ? { left: clampX(hole.x + hole.w / 2 - CW / 2), top: hole.y + hole.h + GAP } : null,
     above: hole.y - GAP - CH >= 0 ? { left: clampX(hole.x + hole.w / 2 - CW / 2), top: hole.y - GAP - CH } : null,
   } : null;
-  const order = caution ? ["left", "right", "below", "above"] : ["below", "above", "right", "left"];
+  // Dropdown lists and typing suggestions open below their box, so those steps keep the card off that side.
+  const order = caution ? ["left", "right", "below", "above"]
+    : step.kind === "choose" || step.kind === "type" ? ["right", "left", "above", "below"]
+    : ["below", "above", "right", "left"];
   const spot = spots ? order.map((k) => spots[k as keyof typeof spots]).find(Boolean) ?? { left: clampX(vw / 2 - CW / 2), top: 12 } : { left: vw / 2 - CW / 2, top: vh / 2 - CH / 2 };
   // Custom dropdowns don't always say when something was picked, so choosing has a Done button too.
   const needsDone = step.kind === "type" || step.kind === "read" || step.kind === "choose";
 
   return (
     <div class="guide" data-testid="guide" data-kind={step.kind}>
-      <div class={`guide__dim${caution ? " guide__dim--light" : ""}`} style={path ? `clip-path:path(evenodd, "${path}")` : ""} />
+      <div class={`guide__dim${caution ? " guide__dim--light" : ""}${engaged ? " guide__dim--open" : ""}`} style={path ? `clip-path:path(evenodd, "${path}")` : ""} />
       {hole && <div class="guide__ring" style={`left:${hole.x - 4}px;top:${hole.y - 4}px;width:${hole.w + 8}px;height:${hole.h + 8}px`} data-testid="guide-ring" />}
       <div class={`guide-card pz-card${caution ? " guide-card--caution" : ""}`} role="dialog" aria-label={t("Guide me")} data-testid="guide-card"
-        style={`left:${spot.left}px;top:${spot.top}px`}>
+        style={`left:${spot.left}px;top:${spot.top}px`} onPointerDown={keepPageFocus} onMouseDown={keepPageFocus}>
         <span class="guide-card__step">{t("Step {n}", { n: stepNo })}</span>
         <p class="guide-card__text" data-testid="guide-instruction">{step.instruction}</p>
         {step.detail && <p class="guide-card__detail">{step.detail}</p>}
