@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northwind Market – fictional well-designed shop (test page)</title>
+<style>
+:root{--brand:#13293d;--accent:#f97316;--ink:#1f2937;--muted:#6b7280}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#fff}
+header{display:flex;align-items:center;gap:20px;padding:12px 28px;background:var(--brand);color:#fff}
+.logo{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.logo svg{width:28px;height:28px}
+form.search{flex:1;display:flex;max-width:560px;background:#fff;border-radius:999px;overflow:hidden}
+form.search input{flex:1;border:0;padding:10px 18px;font:inherit;outline:none}
+form.search button{border:0;background:var(--accent);width:48px;display:grid;place-items:center;cursor:pointer}
+form.search button svg{width:20px;height:20px;fill:#fff}
+nav.cats{display:flex;gap:22px;padding:10px 28px;background:#1d3b56}
+nav.cats a{color:#e5edf5;text-decoration:none;font-size:14px}
+.alert{background:var(--accent);color:#fff;padding:12px 28px;font-weight:600}
+.alert a{color:#fff}
+main{max-width:1100px;margin:0 auto;padding:28px}
+h1{font-size:40px;letter-spacing:-.02em;margin:8px 0 4px}
+.lead{font-size:19px;color:var(--muted);margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.product{border:1px solid #e5e7eb;border-radius:16px;padding:16px;display:grid;gap:8px}
+.product .img{height:140px;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#fde68a)}
+.price{font-size:28px;font-weight:800}
+.add{justify-self:start;background:var(--brand);color:#fff;border:0;border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer}
+.fine{font-size:11px;color:#9ca3af}
+footer{margin-top:40px;background:var(--brand);color:#cbd5e1;padding:24px 28px;font-size:13px}
+footer a{color:#fff}
+</style></head><body>
+<header>
+  <a class="logo" href="#home" aria-label="Northwind Market home"><svg viewBox="0 0 24 24"><path fill="#fff" d="M3 12l9-9 9 9-9 9z"/></svg>Northwind</a>
+  <form class="search" role="search" onsubmit="return false"><input type="search" name="q" placeholder="Search Northwind" aria-label="Search"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105 14.3l5.4 5.3 1.4-1.4-5.3-5.4A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg></button></form>
+  <a href="#cart" style="color:#fff">Cart (0)</a>
+</header>
+<nav class="cats" aria-label="Categories"><a href="#fresh">Fresh food</a><a href="#bakery">Bakery</a><a href="#pharmacy">Pharmacy</a><a href="#home-goods">Home</a><a href="#deals">Deals</a></nav>
+<div class="alert" role="status">Storm warning: deliveries on Friday may be late. <a href="#delivery">See delivery times</a></div>
+<main>
+  <h1>Fresh this week</h1>
+  <p class="lead">Hand-picked groceries, delivered to your door.</p>
+  <div class="grid">
+    <div class="product"><div class="img"></div><strong>Organic apples</strong><span class="price">$4.99</span><button class="add">Add to basket</button></div>
+    <div class="product"><div class="img"></div><strong>Sourdough loaf</strong><span class="price">$6.50</span><button class="add">Add to basket</button></div>
+    <div class="product"><div class="img"></div><strong>Whole milk</strong><span class="price">$3.29</span><button class="add">Add to basket</button></div>
+  </div>
+  <p class="fine">Prices include tax. Offers end Sunday.</p>
+</main>
+<footer>© Northwind Market · <a href="#help">Help</a> · <a href="#privacy">Privacy</a></footer>
+</body></html>

@@ -459,5 +459,8 @@
   "Stop reading": "إيقاف القراءة",
   "That website didn't open. Check your internet connection and try again.": "لم يُفتح ذلك الموقع. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.",
   "That's a lot of steps. Let's stop here and try Chat.": "هذه خطوات كثيرة. لنتوقف هنا ونجرّب «محادثة».",
-  "What do you want to do?": "ماذا تريد أن تفعل؟"
+  "What do you want to do?": "ماذا تريد أن تفعل؟",
+  "Full makeover": "تجديد كامل",
+  "Prism restyles the whole page in your style.": "يعيد Prism تنسيق الصفحة كلها بالنمط الذي اخترته.",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "هذا الموقع مصمم جيدًا بالفعل، لذلك يحافظ Prism على شكله ويجعله فقط أسهل في القراءة والاستخدام."
 }

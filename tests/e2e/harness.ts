@@ -69,8 +69,20 @@ export async function prismReady(page: Page) {
 }
 
 /** Tidies the page and waits until the AI plan (or cache) has been applied. */
-export async function tidy(sw: Worker, page: Page, opts: { allowBase?: boolean } = {}) {
+/**
+ * Tidies the page. The old-style test fixtures use the full makeover (as if the person switched it on for
+ * the site), since that's the path with the most styling to verify; pass touch to test another level.
+ */
+export async function tidy(sw: Worker, page: Page, opts: { allowBase?: boolean; touch?: "full" | "light" | "auto" } = {}) {
   await prismReady(page);
+  const origin = new URL(page.url()).origin;
+  const touch = opts.touch ?? (origin === FIXTURES ? "full" : "auto");
+  await sw.evaluate(async ({ origin, touch }) => {
+    const key = `site:${origin}`;
+    const prev = ((await chrome.storage.local.get(key))[key] ?? {}) as Record<string, unknown>;
+    if (touch === "auto") delete prev.touch; else prev.touch = touch;
+    await chrome.storage.local.set({ [key]: prev });
+  }, { origin, touch });
   await tabMessage(sw, page, { type: "prism:toggle", on: true });
   const status = await waitForStatus(sw, page, opts.allowBase ? ["planned", "cached", "base"] : ["planned", "cached"]);
   return status;

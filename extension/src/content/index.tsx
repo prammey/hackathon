@@ -90,6 +90,7 @@ function main() {
         (msg.on ? engine.enable() : engine.disable("Showing the original page.")).catch((err) => console.warn("Prism:", err)).finally(() => reply(engine.state));
         return true;
       case "prism:set-style": engine.setStyle(msg.styleId as StyleId).catch(() => {}).finally(() => reply(engine.state)); return true;
+      case "prism:set-touch": engine.setTouch(msg.touch === "light" ? "light" : "full").catch(() => {}).finally(() => reply(engine.state)); return true;
       case "prism:regenerate": engine.regenerate().catch(() => {}).finally(() => reply(engine.state)); return true;
       case "prism:start-selection":
         if (msg.mode === "keyboard") selection.startKeyboard(); else selection.startExplicit();

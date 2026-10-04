@@ -459,5 +459,8 @@
   "{service} (recommended)": "{service} (recomendado)",
   "Go": "Ir",
   "Explanations only": "Só para explicações",
-  "Prism's buttons and menus in this language too": "Os botões e menus do Prism também neste idioma"
+  "Prism's buttons and menus in this language too": "Os botões e menus do Prism também neste idioma",
+  "Full makeover": "Visual completo",
+  "Prism restyles the whole page in your style.": "O Prism muda o visual da página inteira para o seu estilo.",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "Este site já é bem feito, então o Prism mantém a aparência dele e só deixa mais fácil de ler e usar."
 }

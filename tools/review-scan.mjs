@@ -83,17 +83,22 @@ for (const site of sites) {
     }
     rec.status = st?.status;
     rec.nextStep = st?.nextStep;
-    for (const style of STYLES) {
+    rec.touch = await page.evaluate(() => document.documentElement.getAttribute("data-prism-touch"));
+    const views = STYLES.map((style) => ({ style, label: style }));
+    // FULL=1 adds the full makeover (as if switched on for the site) in the first style, labelled "<style>full".
+    if (process.env.FULL === "1") views.push({ style: STYLES[0], label: `${STYLES[0]}full`, full: true });
+    for (const { style, label, full } of views) {
+      if (full) { await tabMsg(page, { type: "prism:set-touch", touch: "full" }); await page.waitForTimeout(1200); }
       await tabMsg(page, { type: "prism:set-style", styleId: style });
       await page.evaluate(() => scrollTo(0, 0));
       await page.waitForTimeout(1500);
-      const top = path.join(outDir, `${site.slug}-${style}.png`);
+      const top = path.join(outDir, `${site.slug}-${label}.png`);
       await page.screenshot({ path: top });
       await page.evaluate(() => scrollBy(0, innerHeight * 0.9));
       await page.waitForTimeout(600);
-      await page.screenshot({ path: path.join(outDir, `${site.slug}-${style}-2.png`) });
+      await page.screenshot({ path: path.join(outDir, `${site.slug}-${label}-2.png`) });
       await page.evaluate(() => scrollTo(0, 0));
-      rec.shots.push({ style, checks: await checks(page) });
+      rec.shots.push({ style: label, checks: await checks(page) });
     }
   } catch (e) {
     rec.error = String(e).slice(0, 300);

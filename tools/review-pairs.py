@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 
 out = sys.argv[1]
 styles = (os.environ.get("STYLES") or "soft,clear,calm,bold").split(",")
+if os.environ.get("FULL") == "1": styles.append(styles[0] + "full")
 for rec in json.load(open(os.path.join(out, "results.json"))):
   s = rec["slug"]
   for st in styles:

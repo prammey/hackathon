@@ -29,6 +29,8 @@ export interface SitePrefs {
   tidy?: "always" | "never";
   styleId?: StyleId;
   fromScratch?: boolean;
+  /** "full" makeover or a "light" touch on this site; unset = Prism decides from the page. */
+  touch?: "full" | "light";
   translateTo?: string;
 }
 

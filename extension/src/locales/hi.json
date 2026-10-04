@@ -459,5 +459,8 @@
   "{label}: say it instead of typing": "{label}: टाइप करने के बजाय बोलकर बताएँ",
   "{lead} On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.": "{lead} हर साफ़ किए गए पेज पर, सबसे ज़रूरी अगले कदम के चारों ओर धीरे-धीरे चमकती एक रेखा होती है, ताकि आपकी नज़र सीधे उस पर जाए।",
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "वेबसाइट को बिल्कुल पहले जैसा देखने के लिए पेज {refresh} {icon}, या {tidy} को बंद करें।",
-  "{service} (recommended)": "{service} (सुझाया गया)"
+  "{service} (recommended)": "{service} (सुझाया गया)",
+  "Full makeover": "पूरा नया रूप",
+  "Prism restyles the whole page in your style.": "Prism पूरे पेज को आपकी चुनी हुई शैली में बदल देता है।",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "यह वेबसाइट पहले से अच्छी बनी है, इसलिए Prism इसका रूप वैसा ही रखता है और बस इसे पढ़ने और इस्तेमाल करने में आसान बनाता है।"
 }

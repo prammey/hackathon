@@ -10,6 +10,7 @@ import {
 import { FONT_FILES, fontsFor, effectiveTokens, pageCss } from "../shared/styles";
 import type { Result, Settings, StyleId, TidyPlan } from "../shared/types";
 import { analyze, type AnalyzeResult, clean, isPrismNode, stripPrism } from "./analyzer";
+import { detectTouch, type Touch } from "./touch";
 import { analyzeLayout, type LayoutMode, ungroupCanvas } from "./layout";
 import { repairContrast, repairOverlaps } from "./contrast";
 
@@ -28,6 +29,7 @@ export interface TidyState {
   contrastFixes: number;
   nextStep: string;
   nextOptions: string[];
+  touch: Touch;
   aiCalls: number;
   cacheHit: boolean;
   lastPlanMs: number;
@@ -41,7 +43,7 @@ const AI_WINDOW_MS = 10 * 60 * 1000;
 export class TidyEngine {
   state: TidyState = {
     status: "off", styleId: "soft", message: "", pagePurpose: "", isOfficial: false, steps: [], folds: [],
-    hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", nextOptions: [], aiCalls: 0, cacheHit: false, lastPlanMs: 0,
+    hiddenClutter: 0, clutterShown: false, contrastFixes: 0, nextStep: "", nextOptions: [], touch: "full", aiCalls: 0, cacheHit: false, lastPlanMs: 0,
   };
   private analysis: AnalyzeResult | null = null;
   private plan: TidyPlan | null = null;
@@ -103,9 +105,12 @@ export class TidyEngine {
     this.analysis = analyze();
     this.debug.analyzeRuns++;
     this.detectLayout();
+    // The person can ask for the full makeover on a site; otherwise Prism decides from the page itself.
+    this.touch = site.touch ?? detectTouch(this.layoutMode);
+    document.documentElement.setAttribute("data-prism-touch", this.touch);
     this.pageKey = pageKeyFor(location.href);
     await this.applyStyle(this.pickedStyle ?? styleId, settings);
-    this.emit({ status: "base", styleId: this.pickedStyle ?? styleId, message: t("Tidied with Prism's basic clean-up."), steps: [], folds: [] });
+    this.emit({ status: "base", styleId: this.pickedStyle ?? styleId, touch: this.touch, message: t("Tidied with Prism's basic clean-up."), steps: [], folds: [] });
 
     if (!this.healthy(beforeWidth)) {
       await this.disable(t("Prism couldn't tidy this page safely, so it's showing the original."));
@@ -129,6 +134,7 @@ export class TidyEngine {
     html.removeAttribute("data-prism-on");
     html.removeAttribute("data-prism-style");
     html.removeAttribute("data-prism-mode");
+    html.removeAttribute("data-prism-touch");
     this.layoutCss = "";
     await chrome.runtime.sendMessage({ type: "css:remove" }).catch(() => {});
     this.plan = null;
@@ -240,7 +246,13 @@ export class TidyEngine {
    * plan's primary action, or falls back to an obvious call to action in the main content.
    */
   private choosePrimary(): string {
-    const visible = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest("[data-prism-collapsed]:not([data-prism-open]),[data-prism-role=clutter]"); };
+    // Really visible: not folded away, not a 1px screen-reader-only control, not inside a site dialog.
+    const visible = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return r.width >= 24 && r.height >= 16 && !el.closest("[data-prism-collapsed]:not([data-prism-open]),[data-prism-role=clutter],dialog,[role=dialog],[aria-modal=true]");
+    };
+    // Side actions are never "the next step", however prominent the site made them.
+    const sideAction = (e: Element) => /\b(report|feedback|survey|how this image|edited or created|cookie|privacy|terms|accessibility|share|print|subscribe|newsletter|sign up for (email|updates))\b/i.test(labelOf(e));
     // A site search is never "the next step": demote it if the plan marked it as the main action.
     const isSearch = (e: Element) => !!e.closest("[role=search],form:has(input[type=search]),form:has(input[name=q]),form:has(input[name*=search i])") ||
       /^(search|go|submit search)\b/i.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || e.getAttribute("aria-label") || "").trim());
@@ -251,11 +263,11 @@ export class TidyEngine {
       !!e.closest("[class*=cookie i],[id*=cookie i],[class*=consent i],[id*=consent i],[aria-label*=cookie i]") ||
       /^(next|previous|prev|pause|play|accept|accept all|accept necessary|agree|i agree|got it|ok|allow( all)?|decline|reject( all)?)( (image|slide|item|cookies))?$/i.test(((e as HTMLElement).innerText || e.getAttribute("aria-label") || "").trim());
     for (const e of marked) if (isSearch(e) || inNav(e)) { e.setAttribute("data-prism-role", "secondary-action"); e.removeAttribute("data-prism-emphasis"); }
-    let el = marked.find((e) => !isSearch(e) && !inNav(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
-    const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue|log ?in|sign in|file|view|download|contact)\b/i;
+    let el = marked.find((e) => !isSearch(e) && !inNav(e) && !sideAction(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
+    const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue|log ?in|sign in|file|view|download|contact|add to (basket|cart|bag|trolley)|buy|order|checkout|check out|proceed)\b/i;
     const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
     const ctas = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
-      .filter((e) => visible(e) && !isSearch(e) && !inNav(e) && cta.test(labelOf(e)) && !e.closest("nav,header,footer,[role=navigation]"));
+      .filter((e) => visible(e) && !isSearch(e) && !inNav(e) && !sideAction(e) && cta.test(labelOf(e)) && !e.closest("nav,header,footer,[role=navigation]"));
     if (!el) {
       el = ctas[0];
       if (el) el.setAttribute("data-prism-emphasis", "primary");
@@ -263,7 +275,7 @@ export class TidyEngine {
     // Up to four other likely things to do: the plan's steps, other real actions, obvious buttons.
     const options: { label: string; el: Element }[] = [];
     const add = (e: Element | null | undefined, label?: string) => {
-      if (!e || e === el || options.length >= 4 || !visible(e) || isSearch(e) || inNav(e) || options.some((o) => o.el === e)) return;
+      if (!e || e === el || options.length >= 4 || !visible(e) || isSearch(e) || inNav(e) || sideAction(e) || options.some((o) => o.el === e)) return;
       const text = clean(label || labelOf(e), 60);
       if (!text || options.some((o) => o.label.toLowerCase() === text.toLowerCase())) return;
       options.push({ label: text, el: e });
@@ -315,6 +327,18 @@ export class TidyEngine {
   }
 
   /** Chaotic layouts (pinned "canvas" pages, layout tables) get reflowed; tidy sites are only refined. */
+  touch: Touch = "full";
+
+  /** Switch between the light touch and the full makeover for this website (remembered). */
+  async setTouch(touch: Touch): Promise<void> {
+    await saveSitePrefs(location.origin, { touch });
+    this.touch = touch;
+    if (!this.active) return;
+    document.documentElement.setAttribute("data-prism-touch", touch);
+    await this.afterRender();
+    this.emit({ touch });
+  }
+
   private detectLayout() {
     // Detect against the page's own layout: undo any previous grouping/reflow first.
     ungroupCanvas();
@@ -435,6 +459,8 @@ export class TidyEngine {
       if (["field", "text", "heading", "step", "media", "table"].includes(role)) continue; // descriptive only
       // A notice box needs real content: short links or labels styled as callouts get clipped and confuse.
       if ((role === "notice" || role === "required-notice") && (el.matches("a,button,label,input,select") || ((el as HTMLElement).innerText ?? "").trim().length < 25)) continue;
+      // A link inside a sentence stays a link: a pill in the middle of running text breaks the reading line.
+      if (role === "secondary-action" && el.matches("a[href]") && inRunningText(el)) continue;
       el.setAttribute("data-prism-role", role);
     }
     for (const { id, level } of plan.emphasis) {
@@ -447,9 +473,12 @@ export class TidyEngine {
     const folds: TidyState["folds"] = [];
     const mainText = (analysis.mainEl as HTMLElement | null)?.innerText?.length ?? 0;
     let collapsedText = 0;
+    const light = document.documentElement.getAttribute("data-prism-touch") === "light";
     plan.collapse.forEach((group, gi) => {
       const gid = `g${gi}`;
       const members: Element[] = [];
+      // On a well-designed site only real clutter is folded; its menus and related content are part of the design.
+      if (light && !["ads", "social"].includes(group.reason)) return;
       for (const id of group.ids) {
         total++;
         const el = ids.get(id);
@@ -458,6 +487,11 @@ export class TidyEngine {
         if (el.matches("main,form,[role=main],[role=alert],[role=dialog],dialog") ||
             el.querySelector("input:not([type=hidden]),select,textarea,form,[role=alert],[aria-live=assertive],[aria-invalid=true],[required]") ||
             el.contains(document.activeElement)) { rejected++; continue; }
+        // Site navigation stays (unless it's ads or social links), and safety information is never hidden.
+        const links = el.querySelectorAll("a[href]").length;
+        // (Deliberate refusals, not plan errors: they don't count against the plan.)
+        if (!["ads", "social"].includes(group.reason) && (el.matches("nav,[role=navigation],aside,[role=complementary]") || el.closest("nav,[role=navigation]")) && links >= 4) { total--; continue; }
+        if (/\b(crisis|988|emergency|suicide|scam|fraud|alert|warning|deadline|recall|outage)\b/i.test((el as HTMLElement).innerText ?? "")) { total--; continue; }
         const textLen = (el as HTMLElement).innerText?.length ?? 0;
         if (analysis.mainEl?.contains(el)) {
           if (mainText && (collapsedText + textLen) / mainText > 0.4) { rejected++; continue; }
@@ -472,7 +506,8 @@ export class TidyEngine {
         let box: Element | null = null;
         for (let up = el.parentElement, depth = 0; up && depth < 4; up = up.parentElement, depth++) {
           if (up === document.body || up === analysis.mainEl || (analysis.mainEl && up.contains(analysis.mainEl)) ||
-            up.matches("main,form,[role=main]") || up.querySelector("input:not([type=hidden]),select,textarea") || hasUnfoldedText(up)) break;
+            up.matches("main,form,[role=main]") || up.querySelector("input:not([type=hidden]),select,textarea") ||
+            (hasUnfoldedText(up) && !onlyOrphansLeft(up))) break;
           box = up;
         }
         if (box && !box.hasAttribute("data-prism-collapsed")) { box.setAttribute("data-prism-collapsed", gid); members.push(box); }
@@ -484,8 +519,10 @@ export class TidyEngine {
       const host = document.createElement("prism-fold");
       host.setAttribute("data-gid", gid);
       members[0].before(host);
-      renderFold(host, label, members.length, false, () => this.toggleFold(gid));
-      folds.push({ gid, label, count: members.length, open: false });
+      // Count what the person would see (links and pictures), not how many boxes held them.
+      const count = Math.max(members.length, members.reduce((n, m) => n + m.querySelectorAll("a[href],img").length, 0));
+      renderFold(host, label, count, false, () => this.toggleFold(gid));
+      folds.push({ gid, label, count, open: false });
     });
 
     const steps = plan.steps.filter((s) => ids.has(s.id));
@@ -602,14 +639,41 @@ function labelOf(el: Element): string {
 }
 
 /** Does this element still show any words outside folded parts? */
-function hasUnfoldedText(root: Element): boolean {
+/** Is this link part of a sentence (other words around it in the same paragraph or list item)? */
+function inRunningText(link: Element): boolean {
+  const block = link.closest("p,li,dd,td,blockquote");
+  if (!block) return false;
+  const all = ((block as HTMLElement).innerText ?? "").trim().length;
+  const mine = ((link as HTMLElement).innerText ?? "").trim().length;
+  return all - mine > 25;
+}
+
+/** Text that still shows: not folded, not screen-reader-only, not a slideshow's Previous/Next/Pause button. */
+function shownText(root: Element): Text[] {
+  const out: Text[] = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (!node.textContent?.trim()) continue;
-    if (node.parentElement?.closest("[data-prism-collapsed],script,style,noscript,template,[aria-hidden=true],prism-fold")) continue;
-    return true;
+    const parent = node.parentElement;
+    if (!parent || parent.closest("[data-prism-collapsed],script,style,noscript,template,[aria-hidden=true],prism-fold")) continue;
+    const r = parent.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) continue;
+    const control = parent.closest("button,[role=button]");
+    if (control && (control.textContent ?? "").trim().length <= 24) continue;
+    out.push(node as Text);
   }
-  return false;
+  return out;
+}
+
+function hasUnfoldedText(root: Element): boolean {
+  return shownText(root).length > 0;
+}
+
+/** Folding a section's heading and links left only stray sentences: those go with them. */
+function onlyOrphansLeft(root: Element): boolean {
+  const shown = shownText(root);
+  if (!shown.length || shown.length > 4) return false;
+  return !shown.some((n) => n.parentElement?.closest("h1,h2,h3,h4,h5,h6,a[href],button,label,[role=heading]"));
 }
 
 /** A folded link that is all its list item holds takes the item with it, so no empty bullet is left behind. */

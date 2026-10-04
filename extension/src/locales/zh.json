@@ -459,5 +459,8 @@
   "{label}: say it instead of typing": "{label}：用说话代替打字",
   "{lead} On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.": "{lead} 在每个整理过的页面上，最重要的下一步会有一个轻轻“呼吸”的轮廓，让您一眼就看到它。",
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "{refresh} {icon} 页面，或关闭{tidy}，就能看到网站原来的样子。",
-  "{service} (recommended)": "{service}（推荐）"
+  "{service} (recommended)": "{service}（推荐）",
+  "Full makeover": "全面改版",
+  "Prism restyles the whole page in your style.": "Prism 会把整个页面换成您选择的样式。",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "这个网站本身设计得很好，所以 Prism 保留它的样子，只是让它更容易阅读和使用。"
 }

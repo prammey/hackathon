@@ -45,7 +45,7 @@ test("Dynamic app: SPA route change gets its own plan; going back reuses the cac
   await page.waitForURL(/\/dynamic-app\/$/);
   await expect.poll(async () => (await tabMessage(sw, page, { type: "prism:debug" })).routeChanges, { timeout: 15_000 }).toBeGreaterThan(d1.routeChanges);
   const status = await waitForStatus(sw, page, ["cached", "planned"]);
-  expect(status.status).toBe("cached");
+  expect(status.status, (await tabMessage(sw, page, { type: "prism:debug" })).planReasons.join(" | ")).toBe("cached");
   expect((await tabMessage(sw, page, { type: "prism:debug" })).planRequests).toBe(d1.planRequests);
 });
 

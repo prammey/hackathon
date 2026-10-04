@@ -459,5 +459,8 @@
   "{label}: say it instead of typing": "{label}: টাইপ না করে মুখে বলুন",
   "{lead} On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.": "{lead} গোছানো প্রতিটি পাতায়, সবচেয়ে জরুরি পরের ধাপটির চারপাশে একটি আলতো করে জ্বলা-নেভা রেখা থাকে, যাতে আপনার চোখ সোজা সেখানে যায়।",
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "পাতাটি {refresh} {icon}, অথবা {tidy} বন্ধ করুন — তাহলে ওয়েবসাইটটি ঠিক আগের মতো দেখতে পাবেন।",
-  "{service} (recommended)": "{service} (প্রস্তাবিত)"
+  "{service} (recommended)": "{service} (প্রস্তাবিত)",
+  "Full makeover": "পুরো নতুন রূপ",
+  "Prism restyles the whole page in your style.": "Prism পুরো পাতাটি আপনার বেছে নেওয়া স্টাইলে সাজিয়ে দেয়।",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "এই ওয়েবসাইটটি আগে থেকেই ভালোভাবে তৈরি, তাই Prism এর চেহারা একই রাখে এবং শুধু পড়া ও ব্যবহার করা সহজ করে।"
 }

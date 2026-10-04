@@ -459,5 +459,8 @@
   "{lead} On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.": "{lead} Sur chaque page rangée, l'étape suivante la plus importante est entourée d'un contour qui respire doucement, pour que vos yeux la trouvent tout de suite.",
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "Appuyez sur {refresh} {icon}, ou désactivez {tidy}, pour revoir le site exactement comme avant.",
   "{service} (recommended)": "{service} (recommandé)",
-  "Go": "Aller"
+  "Go": "Aller",
+  "Full makeover": "Relooking complet",
+  "Prism restyles the whole page in your style.": "Prism refait toute la page dans votre style.",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "Ce site est déjà bien conçu : Prism garde son apparence et le rend simplement plus facile à lire et à utiliser."
 }

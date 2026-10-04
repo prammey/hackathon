@@ -10,7 +10,7 @@ export const PRISM_ATTRS = [
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
   "data-prism-filled", "data-prism-tight", "data-prism-layout", "data-prism-item", "data-prism-o", "data-prism-pos",
   "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden", "data-prism-fix", "data-prism-fixbox",
-  "data-prism-pad", "data-prism-next",
+  "data-prism-pad", "data-prism-next", "data-prism-own", "data-prism-fs", "data-prism-hs",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -88,6 +88,41 @@ function luminance(color: string): number {
 }
 
 /** Text you can actually see (screen-reader-only labels are clipped to a pixel or two). */
+/** A strongly coloured background (orange alert, green button bar): the colour itself carries meaning. */
+function isVivid(color: string): boolean {
+  const m = color.match(/\d+(\.\d+)?/g);
+  if (!m) return false;
+  const [r, g, b] = m.map(Number);
+  const a = m.length > 3 ? Number(m[3]) : 1;
+  return a > 0.6 && Math.max(r, g, b) - Math.min(r, g, b) > 90;
+}
+
+function ownText(el: Element): boolean {
+  for (const n of el.childNodes) if (n.nodeType === 3 && (n.textContent ?? "").trim()) return true;
+  return false;
+}
+
+/**
+ * Controls the site has clearly designed (icon buttons, logo links, toggles, search pills, big tiles)
+ * keep their own look: restyling them is what breaks well-made sites.
+ */
+function keepsOwnLook(el: Element, cs: CSSStyleDeclaration, kind: string): boolean {
+  const role = el.getAttribute("role") ?? "";
+  if (/^(tab|radio|switch|menuitem|option|slider)$/.test(role)) return true;
+  if (el.closest("[role=dialog],[aria-modal=true],dialog,[role=tablist],[role=radiogroup]")) return true;
+  const r = el.getBoundingClientRect();
+  if (kind === "field") {
+    const noBorder = parseFloat(cs.borderTopWidth) < 0.5 && parseFloat(cs.borderBottomWidth) < 0.5;
+    if (noBorder || parseFloat(cs.paddingLeft) > 22 || cs.backgroundImage !== "none") return true;
+    return false;
+  }
+  if (kind === "icon-button") return true;
+  if (!hasVisibleText(el)) return true; // icon-only, whatever its markup
+  if (el.querySelector("img,svg,picture") && clean((el as HTMLElement).innerText ?? "", 40).length < 3) return true;
+  if (kind === "button-link" && (r.height > 72 || r.width > 280)) return true; // a tile or card, not a button
+  return false;
+}
+
 function hasVisibleText(el: Element): boolean {
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
@@ -242,6 +277,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const kind = el.getAttribute("data-prism-c") ?? (styledByPrism && tag === "A" ? null : controlKind(el, cs));
     if (kind) {
       setAttr(el, "data-prism-c", kind);
+      if (!el.hasAttribute("data-prism-own") && keepsOwnLook(el, cs, kind)) setAttr(el, "data-prism-own", "");
       // Controls squeezed into narrow fixed-width layouts keep a compact size so nothing gets cut off.
       const holder = el.parentElement?.closest("td,li,div,form,fieldset,p,span") ?? el.parentElement;
       const holderWidth = holder ? holder.getBoundingClientRect().width : vw;
@@ -287,6 +323,14 @@ export function analyze(doc: Document = document): AnalyzeResult {
       }
     }
 
+    // Site dialogs and cookie/consent banners keep exactly the look the site gave them.
+    if (!el.hasAttribute("data-prism-s") && (el.matches("dialog,[role=dialog],[role=alertdialog],[aria-modal=true]") || (CONSENT_PATTERN.test(idClass) && rect.width > 200))) {
+      setAttr(el, "data-prism-s", "keep");
+    }
+    // Remember each text's own size once (before Prism styles it): Prism only ever enlarges small text.
+    if (!el.hasAttribute("data-prism-fs") && ownText(el)) setAttr(el, "data-prism-fs", String(Math.round(parseFloat(cs.fontSize))));
+    if (/^H[1-6]$/.test(tag) && !el.hasAttribute("data-prism-hs") && parseFloat(cs.fontSize) < 20.5) setAttr(el, "data-prism-hs", "");
+
     // Backgrounds → surfaces
     const bg = hasBackground(cs);
     if (bg && !landmark.startsWith("main") && tag !== "BODY" && tag !== "HTML" && !["TD", "TH", "TR", "THEAD", "TBODY", "TFOOT"].includes(tag)) {
@@ -294,13 +338,14 @@ export function analyze(doc: Document = document): AnalyzeResult {
       // Pieces of a strip kept in the site's colours stay as they are too; carding them makes boxes-in-boxes.
       // A see-through colour layer is a designed overlay (usually over a photo): repainting it washes the photo out.
       const alpha = Number(cs.backgroundColor.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1);
-      if (bg === "image" || alpha < 0.95 || el.parentElement?.closest("[data-prism-s=keep]")) {
+      const dark = luminance(cs.backgroundColor) < 0.3;
+      const imageTile = clean(el.innerText ?? "", 40).length < 30 && !!el.querySelector("img,picture,video,svg");
+      if (el.getAttribute("data-prism-s") === "keep" || bg === "image" || alpha < 0.95 || dark || isVivid(cs.backgroundColor) || imageTile || el.parentElement?.closest("[data-prism-s=keep]")) {
+        // Dark or strongly coloured bars (brand headers, footers, urgent alerts), photo tiles and overlays
+        // keep the site's own colours: repainting them hides white logos and drains alerts of urgency.
         setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9 && rect.height > docHeight * 0.5) {
         setAttr(el, "data-prism-s", "plain");
-      } else if (rect.width >= vw * 0.9 && rect.height < 260 && luminance(cs.backgroundColor) < 0.2 && el.querySelector("svg,img")) {
-        // A dark branded header strip (logo on dark): keep the site's identity as it is.
-        setAttr(el, "data-prism-s", "keep");
       } else if (rect.width >= vw * 0.9) {
         setAttr(el, "data-prism-s", "band");
       } else if (area >= 12000 && rect.height >= 64 && !el.closest("header,[role=banner],nav,[role=navigation]") && !el.querySelector("nav,[role=navigation]")) {

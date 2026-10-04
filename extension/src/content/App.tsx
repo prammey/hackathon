@@ -290,6 +290,8 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
         {tidy.status !== "off" && <div class="panel__section">
           <span class="pz-label">{t("Style for this website")}</span>
           <StylePicker value={tidy.styleId} onChange={(id: StyleId) => engine.setStyle(id)} />
+          <Switch checked={tidy.touch === "full"} label={t("Full makeover")} id="pz-touch" onChange={(on) => engine.setTouch(on ? "full" : "light")} />
+          <span class="pz-hint">{tidy.touch === "full" ? t("Prism restyles the whole page in your style.") : t("This site is already well designed, so Prism keeps its look and just makes it easier to read and use.")}</span>
         </div>}
         {tidy.steps.length > 0 && (
           <div class="panel__section">
@@ -799,9 +801,38 @@ function PageTalk() {
 }
 
 /** Bottom-left dock: the main next step, other things to do, and "What do you want to do next?". */
+/** How far up to sit so a site's own bars fixed at the bottom (cookie banners, chat bars) stay readable. */
+function useBottomClearance(): number {
+  const [lift, setLift] = useState(0);
+  useEffect(() => {
+    const measure = () => {
+      let top = innerHeight;
+      // Only what touches the bottom edge matters: probe there instead of scanning the whole page.
+      for (const x of [40, innerWidth / 2, innerWidth - 40]) {
+        for (const hit of document.elementsFromPoint(x, innerHeight - 4)) {
+          if (hit.closest("prism-root")) continue;
+          for (let el: Element | null = hit; el && el !== document.body; el = el.parentElement) {
+            const cs = getComputedStyle(el);
+            if (cs.position !== "fixed" && cs.position !== "sticky") continue;
+            const r = el.getBoundingClientRect();
+            if (r.width > 280 && r.height > 20 && r.top > innerHeight * 0.45) top = Math.min(top, r.top);
+            break;
+          }
+        }
+      }
+      setLift(top < innerHeight ? innerHeight - top + 10 : 0);
+    };
+    measure();
+    const timer = setInterval(measure, 1500);
+    return () => clearInterval(timer);
+  }, []);
+  return lift;
+}
+
 function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: string) => void }) {
   useLanguage();
   const { tidy, engine } = props;
+  const lift = useBottomClearance();
   const [open, setOpen] = useState(false);
   const [goal, setGoal] = useState("");
   function ask(e: Event) {
@@ -820,7 +851,8 @@ function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: st
     send({ type: "guide:start", goal: text });
   }
   return (
-    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label={t("Next step")} data-testid="prism-next">
+    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label={t("Next step")} data-testid="prism-next"
+      style={lift ? `bottom:${18 + lift}px` : undefined}>
       {open && (
         <div class="nextstep__more" data-testid="next-more">
           {tidy.nextOptions.length > 0 && (

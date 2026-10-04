@@ -122,7 +122,7 @@ test("The page's main action is the most prominent thing, in every Style", async
     const otherFont = await page.locator("a[href='#paper']").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     expect(box.height).toBeGreaterThanOrEqual(52);
     expect(font).toBeGreaterThanOrEqual(20);
-    expect(box.height).toBeGreaterThan(other.height);
+    expect(box.width * box.height).toBeGreaterThan(other.width * other.height * 1.5);
     expect(font).toBeGreaterThan(otherFont * 1.15);
     await expect(page.getByTestId("prism-next")).toContainText("Start your application");
     // The next step is ringed and breathing before anyone presses "Show me".

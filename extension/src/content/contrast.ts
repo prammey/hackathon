@@ -121,11 +121,9 @@ export function repairContrast(): RepairStats {
 
     if (!hasOwnText(el) && !el.matches("input,select,textarea,button")) continue;
     const cx = rect.left + Math.min(rect.width / 2, 40), cy = rect.top + rect.height / 2;
-    if (media.some((m) => cx >= m.left && cx <= m.right && cy >= m.top && cy <= m.bottom) && overMedia(el, rect)) {
-      stats.checked++;
-      fixes.push([el, "media"]);
-      continue;
-    }
+    // Text drawn over a photo or video keeps the site's own colours: the site chose them for that picture,
+    // and Prism can't see the picture's pixels to do better.
+    if (media.some((m) => cx >= m.left && cx <= m.right && cy >= m.top && cy <= m.bottom) && overMedia(el, rect)) continue;
     const fg = parse(cs.color);
     const bg = backgroundOf(el, cache);
     if (!fg || !bg) continue;

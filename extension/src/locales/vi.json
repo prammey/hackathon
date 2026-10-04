@@ -458,5 +458,8 @@
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "{refresh} {icon} trang, hoặc tắt {tidy}, để xem trang web đúng như ban đầu.",
   "{service} (recommended)": "{service} (khuyên dùng)",
   "Explanations only": "Chỉ dùng cho phần giải thích",
-  "Prism's buttons and menus in this language too": "Nút bấm và menu của Prism cũng dùng ngôn ngữ này"
+  "Prism's buttons and menus in this language too": "Nút bấm và menu của Prism cũng dùng ngôn ngữ này",
+  "Full makeover": "Thay đổi toàn bộ giao diện",
+  "Prism restyles the whole page in your style.": "Prism thay đổi kiểu dáng của toàn bộ trang theo kiểu bạn chọn.",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "Trang web này đã được thiết kế tốt, nên Prism giữ nguyên giao diện và chỉ giúp nó dễ đọc, dễ dùng hơn."
 }

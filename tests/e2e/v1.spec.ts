@@ -69,3 +69,41 @@ test("Read aloud: answers, chat replies and the whole page are read with the rig
   await expect.poll(async () => (await spoken(sw)).length).toBe(2);
   expect((await spoken(sw))[1].text.length).toBeGreaterThan(10);
 });
+
+test("A well-designed site gets the light touch: its look stays, small text grows, nothing is repainted or shrunk", async ({ context, sw }) => {
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/modern-shop/`);
+  await prismReady(page);
+  const read = () => page.evaluate(() => {
+    const cs = (sel: string) => getComputedStyle(document.querySelector(sel)!);
+    return {
+      header: cs("header").backgroundColor, alert: cs(".alert").backgroundColor, footer: cs("footer").backgroundColor,
+      searchBtn: cs("form.search button").backgroundColor, add: cs(".add").backgroundColor,
+      h1: parseFloat(cs("h1").fontSize), price: parseFloat(cs(".price").fontSize), fine: parseFloat(cs(".fine").fontSize),
+      nav: parseFloat(cs("nav.cats a").fontSize), body: getComputedStyle(document.body).backgroundColor,
+      hScroll: document.documentElement.scrollWidth > innerWidth,
+    };
+  });
+  const before = await read();
+  await page.screenshot({ path: path.join(OUT, "light-0-before.png") });
+  await tidy(sw, page, { allowBase: true, touch: "auto" });
+  await expect(page.locator("html")).toHaveAttribute("data-prism-touch", "light");
+  await page.waitForTimeout(800);
+  const after = await read();
+  await page.screenshot({ path: path.join(OUT, "light-1-after.png") });
+  // The site's own design is kept.
+  for (const k of ["header", "alert", "footer", "searchBtn", "add", "body"] as const) expect(after[k], k).toBe(before[k]);
+  // Big text is never shrunk; small text grows.
+  expect(after.h1).toBeGreaterThanOrEqual(before.h1);
+  expect(after.price).toBeGreaterThanOrEqual(before.price);
+  expect(after.fine).toBeGreaterThanOrEqual(16);
+  expect(after.nav).toBeGreaterThanOrEqual(before.nav);
+  expect(after.hScroll).toBe(false);
+  // The next step is still highlighted.
+  await expect(page.locator("[data-prism-next]")).toHaveCount(1);
+  // The person can ask for the full makeover on this site.
+  await page.locator("[data-testid=prism-tab]").click();
+  await page.getByRole("switch", { name: "Full makeover" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-prism-touch", "full");
+  await page.screenshot({ path: path.join(OUT, "light-2-full.png") });
+});

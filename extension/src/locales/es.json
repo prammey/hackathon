@@ -459,5 +459,8 @@
   "{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.": "Para ver el sitio web tal como era, use {refresh} {icon} o desactive {tidy}.",
   "{service} (recommended)": "{service} (recomendado)",
   "Explanations only": "Solo para explicaciones",
-  "Prism's buttons and menus in this language too": "Los botones y menús de Prism también en este idioma"
+  "Prism's buttons and menus in this language too": "Los botones y menús de Prism también en este idioma",
+  "Full makeover": "Rediseño completo",
+  "Prism restyles the whole page in your style.": "Prism cambia el estilo de toda la página al estilo que usted eligió.",
+  "This site is already well designed, so Prism keeps its look and just makes it easier to read and use.": "Este sitio ya está bien diseñado, así que Prism mantiene su aspecto y solo lo hace más fácil de leer y usar."
 }
