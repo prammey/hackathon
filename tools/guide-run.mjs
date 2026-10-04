@@ -38,57 +38,92 @@ for (const task of tasks) {
   try {
     if (task.start !== "blank") { await page.goto(task.start, { waitUntil: "domcontentloaded", timeout: 40000 }); await page.waitForTimeout(3000); }
     else await page.goto("about:blank");
-    const tabId = await sw.evaluate(async (u) => (await chrome.tabs.query({}))
-      .find((t) => (u === "blank" ? t.url === "about:blank" : (t.url ?? "").startsWith(u.slice(0, 20))))?.id, task.start);
-    await sw.evaluate(({ tabId, goal }) => chrome.runtime.sendMessage({ type: "guide:start", tabId, goal }).catch(() => null), { tabId, goal: task.goal });
+    await page.bringToFront();
+    const tabId = await sw.evaluate(async () => (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]?.id);
+    // Commands go from an extension page, exactly as the Prism popup sends them.
+    const extId = sw.url().split("/")[2];
+    const ext = await ctx.newPage();
+    await ext.goto(`chrome-extension://${extId}/options.html`);
+    const send = (m) => ext.evaluate((m) => chrome.runtime.sendMessage(m).catch(() => null), m);
+    await page.bringToFront();
+    await send({ type: "guide:start", tabId, goal: task.goal });
     // The page-side spotlight answers through the service worker; read state from there too.
-    const state = () => sw.evaluate(async (tabId) => (await chrome.storage.session.get(`guide:${tabId}`))[`guide:${tabId}`] ?? null, tabId);
+    let cur = page;
+    let curTab = tabId;
+    ctx.on("page", async (p) => { if (p.url().startsWith("chrome-extension://")) return; cur = p; });
+    const state = async () => {
+      // The guide may have moved to a tab the click opened.
+      const found = await sw.evaluate(async () => {
+        const all = await chrome.storage.session.get(null);
+        const k = Object.keys(all).find((k) => k.startsWith("guide:"));
+        return k ? all[k] : null;
+      });
+      if (found && found.tabId !== curTab) curTab = found.tabId;
+      return found;
+    };
     let answers = [...(task.answers ?? [])];
     let lastKey = "";
-    for (let i = 0; i < 40 && rec.steps.length < MAX_STEPS; i++) {
-      await page.waitForTimeout(1500);
+    for (let i = 0; i < 150 && rec.steps.length < MAX_STEPS; i++) {
+      await cur.waitForTimeout(1500);
       const s = await state();
       if (!s) { rec.end = "guide disappeared"; break; }
       if (s.status === "thinking") continue;
-      const key = `${s.status}|${s.step?.instruction}|${s.step?.id}`;
+      const key = `${s.status}|${s.step?.instruction}|${s.step?.id}|${s.history.length}`;
       if (key === lastKey) continue;
       lastKey = key;
       const n = rec.steps.length + 1;
+      const pg = cur;
       const shot = path.join(outDir, `${task.slug}-${String(n).padStart(2, "0")}.png`);
-      await page.screenshot({ path: shot }).catch(() => {});
-      const step = { n, status: s.status, kind: s.step?.kind, instruction: s.step?.instruction ?? s.error ?? "", detail: s.step?.detail ?? "", caution: !!s.step?.caution, url: page.url(), shot: path.basename(shot) };
+      await pg.screenshot({ path: shot }).catch(() => {});
+      const step = { n, status: s.status, kind: s.step?.kind, instruction: s.step?.instruction ?? s.error ?? "", detail: s.step?.detail ?? "", caution: !!s.step?.caution, url: pg.url(), shot: path.basename(shot) };
       rec.steps.push(step);
       if (s.status === "done" || s.status === "stuck") { rec.end = s.status; break; }
       if (s.status === "asking") {
         const a = answers.shift() ?? s.step.choices[0] ?? "I'm not sure";
         step.answered = a;
-        await sw.evaluate(({ tabId, a }) => chrome.runtime.sendMessage({ type: "guide:answer", tabId, answer: a }).catch(() => null), { tabId, a });
+        await send({ type: "guide:answer", tabId: curTab, answer: a });
         continue;
       }
       if (s.status !== "showing") continue;
-      if (s.step.caution) { rec.end = "stopped before a consequential step (as a careful person would)"; break; }
+      const warned = await pg.locator("prism-root").locator(".guide-card--caution").count().catch(() => 0);
+      step.caution = step.caution || warned > 0;
+      if (step.caution) { rec.end = "stopped before a consequential step (as a careful person would)"; break; }
       // Act like a person on the highlighted element.
-      const ring = page.locator("prism-root").locator("[data-testid=guide-ring]");
-      const box = await ring.boundingBox().catch(() => null);
+      // Click where the highlighted element really is (after its scroll settles), as a person would.
+      await pg.waitForTimeout(800);
+      const box = await pg.evaluate((id) => {
+        // The spotlight marks what the person sees (a hidden checkbox's label, for example).
+        const el = document.querySelector("[data-prism-guide]") ?? document.querySelector(`[data-prism-id="${id}"],[data-prism-rid="${id}"]`);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const hit = top === el || el.contains(top) ? "target" : `${top?.tagName}.${String(top?.className).slice(0, 40)}`;
+        return r.width && r.height ? { x: r.left, y: r.top, width: r.width, height: r.height, hit } : null;
+      }, s.step.id).catch(() => null);
       if (s.step.kind === "click" || s.step.kind === "choose") {
         if (!box) { step.note = "no spotlight visible"; rec.end = "no spotlight"; break; }
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        step.hit = box.hit;
+        await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
         if (s.step.kind === "choose") {
           // A native select needs a value: pick the second option if there is one.
-          await page.evaluate((id) => { const el = document.querySelector(`[data-prism-id="${id}"],[data-prism-rid="${id}"]`); if (el instanceof HTMLSelectElement && el.options.length > 1) { el.selectedIndex = 1; el.dispatchEvent(new Event("change", { bubbles: true })); } }, s.step.id);
+          await pg.evaluate((id) => { const el = document.querySelector(`[data-prism-id="${id}"],[data-prism-rid="${id}"]`); if (el instanceof HTMLSelectElement && el.options.length > 1) { el.selectedIndex = 1; el.dispatchEvent(new Event("change", { bubbles: true })); } }, s.step.id);
+          await pg.keyboard.press("Escape").catch(() => {});
+          await pg.locator("prism-root").locator("[data-testid=guide-done]").click({ timeout: 3000 }).catch(() => {});
         }
-        await page.waitForTimeout(2500);
+        await pg.waitForTimeout(2500);
       } else if (s.step.kind === "type") {
         const want = Object.entries(task.typing ?? {}).find(([k]) => s.step.instruction.toLowerCase().includes(k))?.[1] ?? task.typing?.default ?? "test";
         step.typed = want;
-        await page.keyboard.type(want, { delay: 20 });
-        await page.locator("prism-root").locator("[data-testid=guide-done]").click().catch(() => {});
-        await page.waitForTimeout(1500);
+        // A person clicks into the box first (old sites clear "Enter location..." on click).
+        if (box) await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await pg.keyboard.type(want, { delay: 20 });
+        await pg.locator("prism-root").locator("[data-testid=guide-done]").click().catch(() => {});
+        await pg.waitForTimeout(1500);
       } else if (s.step.kind === "read") {
-        await page.locator("prism-root").locator("[data-testid=guide-done]").click().catch(() => {});
+        await pg.locator("prism-root").locator("[data-testid=guide-done]").click().catch(() => {});
       }
     }
-    if (!rec.end) rec.end = rec.steps.length >= MAX_STEPS ? `stopped after ${MAX_STEPS} steps` : "timeout";
+    if (!rec.end) { rec.end = rec.steps.length >= MAX_STEPS ? `stopped after ${MAX_STEPS} steps` : "timeout"; const s = await state(); rec.last = s && { status: s.status, step: s.step, error: s.error, history: s.history.slice(-4) }; }
   } catch (e) {
     rec.end = `error: ${String(e).slice(0, 200)}`;
   }

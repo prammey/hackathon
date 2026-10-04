@@ -4,7 +4,7 @@ import { getSettings, saveSettings } from "../shared/storage";
 import type { Rect } from "../shared/types";
 import { callHelper, helperHealth, stats } from "./api";
 import { captureRegion } from "./capture";
-import { guideAdvanced, guideAnswer, guideBack, guidePageReady, guideRetry, loadGuide, startGuide, stopGuide } from "./guide";
+import { followNewTabs, guideAdvanced, guideAnswer, guideBack, guidePageReady, guideRetry, loadGuide, startGuide, stopGuide } from "./guide";
 import {
   clearChat, confirmPending, loadState, notifyReady, sendUserMessage, setSessionContext, startChat, stopChat,
 } from "./chat";
@@ -102,6 +102,8 @@ async function removeCss(tabId: number, frameId: number, key = "page") {
   appliedCss.delete(k);
   if (previous) await chrome.scripting.removeCSS({ target: { tabId, frameIds: [frameId] }, css: previous, origin: "AUTHOR" }).catch(() => {});
 }
+
+followNewTabs();
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   for (const k of [...appliedCss.keys()]) if (k.startsWith(`${tabId}:`)) appliedCss.delete(k);

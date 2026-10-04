@@ -60,11 +60,14 @@ export function guidePageReady(tabId: number): void {
   readyWaiters.get(tabId)?.();
   readyWaiters.delete(tabId);
   // A page that loads mid-guide (the person's click opened it) continues the guide there.
-  loadGuide(tabId).then((state) => {
-    if (state && (state.status === "showing" || state.status === "thinking")) {
-      if (state.status === "showing") state.history.push({ instruction: state.step?.instruction ?? "", result: "a new page opened" });
-      nextStep(state);
+  loadGuide(tabId).then(async (state) => {
+    if (!state || (state.status !== "showing" && state.status !== "thinking")) return;
+    if (state.status === "showing") {
+      state.history.push({ instruction: state.step?.instruction ?? "", result: "a new page opened" });
+      state.status = "thinking";
+      await save(state);
     }
+    nextStep(tabId);
   });
 }
 
@@ -78,74 +81,92 @@ function waitForPage(tabId: number, ms = 20000): Promise<boolean> {
 // ---------- the loop ----------
 
 const inFlight = new Set<number>();
+/** Something happened (a new page, the person's action) while a step was being planned: plan again. */
+const rerun = new Set<number>();
 
-async function nextStep(state: GuideState): Promise<void> {
-  if (inFlight.has(state.tabId)) return;
-  inFlight.add(state.tabId);
+async function nextStep(tabId: number): Promise<void> {
+  if (inFlight.has(tabId)) { rerun.add(tabId); return; }
+  inFlight.add(tabId);
   try {
-    if (state.history.length >= MAX_STEPS) {
-      state.status = "stuck";
-      state.step = { kind: "stuck", id: "", instruction: t("That's a lot of steps. Let's stop here and try Chat."), detail: "", url: "", choices: [], caution: false };
-      await save(state);
-      return;
-    }
-    state.status = "thinking";
-    state.error = undefined;
-    await save(state);
-    const tab = await chrome.tabs.get(state.tabId).catch(() => undefined);
-    const onWebPage = !!tab?.url && /^https?:/.test(tab.url);
-    const page = onWebPage ? await toTab<{ text: string }>(state.tabId, { type: "chat:observe" }) : undefined;
-    const settings = await getSettings();
-    const profile = await getProfile();
-    const reply = (await callHelper("/v1/guide", {
-      goal: state.goal,
-      pageState: page?.text ?? "",
-      history: state.history.slice(-20),
-      answers: state.answers,
-      profile: profileText(profile, "chat"),
-      language: settings.translateTo || "English",
-    })) as Result<GuideStep>;
-    if ((await loadGuide(state.tabId))?.status === "stopped") return;
-    if (!reply.ok) {
-      state.status = "stuck";
-      state.error = reply.error.message;
-      state.step = undefined;
-      await save(state);
-      return;
-    }
-    const step = reply.value;
-    state.step = step;
-    if (step.kind === "go") {
-      state.history.push({ instruction: step.instruction, result: `opened ${step.url}` });
-      state.status = "thinking";
-      await save(state);
-      const ready = waitForPage(state.tabId);
-      await chrome.tabs.update(state.tabId, { url: step.url });
-      if (!(await ready)) {
-        state.status = "stuck";
-        state.step = { kind: "stuck", id: "", instruction: t("That website didn't open. Check your internet connection and try again."), detail: "", url: "", choices: [], caution: false };
-        await save(state);
-      }
-      // guidePageReady continues the guide on the new page.
-      return;
-    }
-    if (step.kind === "ask") state.status = "asking";
-    else if (step.kind === "done") state.status = "done";
-    else if (step.kind === "stuck") state.status = "stuck";
-    else {
-      state.status = "showing";
-      state.shown.push({ step, url: tab?.url ?? "" });
-    }
-    await save(state);
+    do {
+      rerun.delete(tabId);
+      await planStep(tabId);
+    } while (rerun.has(tabId));
   } finally {
-    inFlight.delete(state.tabId);
+    inFlight.delete(tabId);
   }
+}
+
+async function planStep(tabId: number): Promise<void> {
+  let state = await loadGuide(tabId);
+  if (!state || state.status === "stopped") return;
+  if (state.history.length >= MAX_STEPS) {
+    state.status = "stuck";
+    state.step = { kind: "stuck", id: "", instruction: t("That's a lot of steps. Let's stop here and try Chat."), detail: "", url: "", choices: [], caution: false };
+    await save(state);
+    return;
+  }
+  state.status = "thinking";
+  state.error = undefined;
+  await save(state);
+  const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+  const onWebPage = !!tab?.url && /^https?:/.test(tab.url);
+  let page = onWebPage ? await toTab<{ text: string }>(tabId, { type: "chat:observe" }) : undefined;
+  // A page still loading (a portal that draws itself with scripts) shows almost nothing yet: give it time.
+  for (let wait = 0; onWebPage && wait < 4 && (page?.text.match(/\n\[p/g)?.length ?? 0) < 4; wait++) {
+    await new Promise((r) => setTimeout(r, 1500));
+    page = await toTab<{ text: string }>(tabId, { type: "chat:observe" });
+  }
+  const settings = await getSettings();
+  const profile = await getProfile();
+  const reply = (await callHelper("/v1/guide", {
+    goal: state.goal,
+    pageState: page?.text ?? "",
+    history: state.history.slice(-20),
+    answers: state.answers,
+    profile: profileText(profile, "chat"),
+    language: settings.translateTo || "English",
+  })) as Result<GuideStep>;
+  // Work from the latest state: the person may have stopped, acted, or moved to a new page meanwhile.
+  state = await loadGuide(tabId);
+  if (!state || state.status === "stopped" || rerun.has(tabId)) return;
+  if (!reply.ok) {
+    state.status = "stuck";
+    state.error = reply.error.message;
+    state.step = undefined;
+    await save(state);
+    return;
+  }
+  const step = reply.value;
+  state.step = step;
+  if (step.kind === "go") {
+    state.history.push({ instruction: step.instruction, result: `opened ${step.url}` });
+    state.status = "thinking";
+    await save(state);
+    const ready = waitForPage(tabId);
+    await chrome.tabs.update(tabId, { url: step.url });
+    if (!(await ready)) {
+      state.status = "stuck";
+      state.step = { kind: "stuck", id: "", instruction: t("That website didn't open. Check your internet connection and try again."), detail: "", url: "", choices: [], caution: false };
+      await save(state);
+    }
+    // guidePageReady asks for a rerun, which plans the first step on the new page.
+    return;
+  }
+  if (step.kind === "ask") state.status = "asking";
+  else if (step.kind === "done") state.status = "done";
+  else if (step.kind === "stuck") state.status = "stuck";
+  else {
+    state.status = "showing";
+    state.shown.push({ step, url: tab?.url ?? "" });
+  }
+  await save(state);
 }
 
 export async function startGuide(tabId: number, goal: string): Promise<GuideState> {
   const state: GuideState = { tabId, goal: goal.trim().slice(0, 400), status: "thinking", shown: [], history: [], answers: [] };
   await save(state);
-  nextStep(state);
+  nextStep(tabId);
   return state;
 }
 
@@ -154,7 +175,9 @@ export async function guideAdvanced(tabId: number, result: string): Promise<void
   const state = await loadGuide(tabId);
   if (!state || state.status !== "showing") return;
   state.history.push({ instruction: state.step?.instruction ?? "", result: result.slice(0, 200) });
-  await nextStep(state);
+  state.status = "thinking";
+  await save(state);
+  await nextStep(tabId);
 }
 
 export async function guideAnswer(tabId: number, answer: string): Promise<void> {
@@ -162,7 +185,9 @@ export async function guideAnswer(tabId: number, answer: string): Promise<void> 
   if (!state || state.status !== "asking") return;
   state.answers.push(answer.slice(0, 200));
   state.history.push({ instruction: state.step?.instruction ?? "", result: `answered: ${answer.slice(0, 120)}` });
-  await nextStep(state);
+  state.status = "thinking";
+  await save(state);
+  await nextStep(tabId);
 }
 
 /** Show the previous step again (going back a page first if it was on another page). */
@@ -195,6 +220,24 @@ export async function stopGuide(tabId: number): Promise<void> {
 
 /** Try the same step again (after an error). */
 export async function guideRetry(tabId: number): Promise<void> {
-  const state = await loadGuide(tabId);
-  if (state) await nextStep(state);
+  if (await loadGuide(tabId)) await nextStep(tabId);
+}
+
+/**
+ * A click in the guided tab that opens a new tab (target=_blank links, sign-in windows) takes the guide
+ * with it: the person keeps following the spotlight where the page actually went.
+ */
+export function followNewTabs(): void {
+  chrome.tabs.onCreated.addListener(async (tab) => {
+    if (tab.id === undefined || tab.openerTabId === undefined) return;
+    const state = await loadGuide(tab.openerTabId);
+    if (!state || state.status !== "showing") return;
+    await chrome.storage.session.remove(key(tab.openerTabId));
+    chrome.tabs.sendMessage(tab.openerTabId, { type: "guide:update", state: { ...state, status: "stopped" } }).catch(() => {});
+    state.history.push({ instruction: state.step?.instruction ?? "", result: "it opened in a new tab" });
+    state.tabId = tab.id;
+    state.status = "thinking";
+    await chrome.storage.session.set({ [key(tab.id)]: state });
+    // The new tab's Prism announces itself when ready (guidePageReady), which continues the guide.
+  });
 }

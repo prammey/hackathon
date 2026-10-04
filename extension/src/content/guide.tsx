@@ -14,6 +14,35 @@ function send(message: unknown): Promise<unknown> {
 }
 
 const PAD = 10;
+const CONSEQUENTIAL = /\b(submit|send|pay|payment|buy|purchase|place (your )?order|checkout|check out|confirm|delete|remove|transfer|donate|reserve|agree|accept|e-?sign|sign (and|&) submit|book (now|it|this|appointment))\b/i;
+
+function isConsequential(el: Element): boolean {
+  const label = ((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim();
+  // Moving between the pages of a form, or looking something up, commits nothing.
+  if (/^(next|continue|go|search|find|look ?up|get weather|start)\b/i.test(label)) return false;
+  const form = (el as HTMLButtonElement).form ?? el.closest("form");
+  const fields = form ? form.querySelectorAll("input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=checkbox]):not([type=radio]),select,textarea").length : 0;
+  const searchForm = fields <= 1 || !!form && (!!form.querySelector("input[type=search],input[name=q],input[name*=search i],input[placeholder*=search i]") || form.matches("[role=search]") || /search/i.test(label));
+  const submit = !searchForm && ((el instanceof HTMLButtonElement && (el.type === "submit" || !el.getAttribute("type")) && !!el.form) || (el instanceof HTMLInputElement && el.type === "submit"));
+  if (submit) return true;
+  // A plain link only warns for unmistakable words; buttons for the whole list.
+  if (el.matches("a[href]") && !el.matches("[role=button]")) return /\b(pay|buy|purchase|place (your )?order|send|submit|confirm|delete)\b/i.test(label);
+  return CONSEQUENTIAL.test(label);
+}
+
+/** What the person actually sees: a styled checkbox or radio hides its real input, so point at its label. */
+function visibleTarget(el: Element): Element {
+  const r = el.getBoundingClientRect();
+  if (r.width >= 6 && r.height >= 6 && getComputedStyle(el).opacity !== "0") return el;
+  const label = (el as HTMLInputElement).labels?.[0] ?? el.closest("label");
+  if (label && label.getBoundingClientRect().width > 0) return label;
+  let parent = el.parentElement;
+  for (let i = 0; parent && i < 3; i++, parent = parent.parentElement) {
+    const pr = parent.getBoundingClientRect();
+    if (pr.width >= 12 && pr.height >= 12) return parent;
+  }
+  return el;
+}
 
 /** A gentle enlargement where it can't break the page's layout (buttons and links on their own line). */
 function canEnlarge(el: Element): boolean {
@@ -44,6 +73,8 @@ export function GuideLayer() {
   const [typed, setTyped] = useState(false);
   const target = useRef<Element | null>(null);
   const [el, setEl] = useState<Element | null>(null);
+  /** The element the person sees for `el` (its label when the real input is hidden). */
+  const [view, setView] = useState<Element | null>(null);
 
   useEffect(() => {
     const onMsg = (msg: { type?: string; state?: GuideState }) => {
@@ -61,18 +92,22 @@ export function GuideLayer() {
     const found = step?.id ? findById(step.id) : null;
     target.current = found;
     setEl(found);
-    if (!found) return;
+    if (!found) { setView(null); return; }
+    const seen = visibleTarget(found);
+    setView(seen);
+    seen.setAttribute("data-prism-guide", "");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    found.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    seen.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     const html = found as HTMLElement;
     const before = html.getAttribute("style");
-    if (canEnlarge(found)) {
+    if (seen === found && canEnlarge(found)) {
       html.style.setProperty("transition", reduce ? "none" : "transform .25s ease", "important");
       html.style.setProperty("transform", "scale(1.12)", "important");
       html.style.setProperty("transform-origin", "center", "important");
     }
     if (step?.kind === "type") (found as HTMLElement).focus({ preventScroll: true });
     return () => {
+      seen.removeAttribute("data-prism-guide");
       if (before === null) html.removeAttribute("style");
       else html.setAttribute("style", before);
     };
@@ -84,7 +119,7 @@ export function GuideLayer() {
     let leaving = false;
     const onLeave = () => { leaving = true; };
     addEventListener("pagehide", onLeave);
-    const inside = (e: Event) => e.composedPath().includes(el);
+    const inside = (e: Event) => e.composedPath().includes(el) || (!!view && e.composedPath().includes(view));
     const onClick = (e: Event) => {
       if (step.kind !== "click" || !inside(e)) return;
       // If the click opens a new page, that page carries the guide on; otherwise report it here.
@@ -108,10 +143,12 @@ export function GuideLayer() {
       el.removeEventListener("change", onChange);
       document.removeEventListener("keydown", onKey, true);
     };
-  }, [step?.id, step?.instruction, el]);
+  }, [step?.id, step?.instruction, el, view]);
 
-  const box = useTargetBox(step ? el : null);
+  const box = useTargetBox(step ? view : null);
   if (!state) return null;
+  // Prism's own rule, not only the AI's judgement: anything that submits, pays, sends or books gets the warning.
+  const caution = !!step && (step.caution || (!!el && isConsequential(el)));
 
   const stop = () => send({ type: "guide:stop" });
   const stepNo = state.shown.length || 1;
@@ -161,25 +198,26 @@ export function GuideLayer() {
     below: hole.y + hole.h + GAP + CH <= vh ? { left: clampX(hole.x + hole.w / 2 - CW / 2), top: hole.y + hole.h + GAP } : null,
     above: hole.y - GAP - CH >= 0 ? { left: clampX(hole.x + hole.w / 2 - CW / 2), top: hole.y - GAP - CH } : null,
   } : null;
-  const order = step.caution ? ["left", "right", "below", "above"] : ["below", "above", "right", "left"];
+  const order = caution ? ["left", "right", "below", "above"] : ["below", "above", "right", "left"];
   const spot = spots ? order.map((k) => spots[k as keyof typeof spots]).find(Boolean) ?? { left: clampX(vw / 2 - CW / 2), top: 12 } : { left: vw / 2 - CW / 2, top: vh / 2 - CH / 2 };
-  const needsDone = step.kind === "type" || step.kind === "read";
+  // Custom dropdowns don't always say when something was picked, so choosing has a Done button too.
+  const needsDone = step.kind === "type" || step.kind === "read" || step.kind === "choose";
 
   return (
     <div class="guide" data-testid="guide" data-kind={step.kind}>
-      <div class={`guide__dim${step.caution ? " guide__dim--light" : ""}`} style={path ? `clip-path:path(evenodd, "${path}")` : ""} />
+      <div class={`guide__dim${caution ? " guide__dim--light" : ""}`} style={path ? `clip-path:path(evenodd, "${path}")` : ""} />
       {hole && <div class="guide__ring" style={`left:${hole.x - 4}px;top:${hole.y - 4}px;width:${hole.w + 8}px;height:${hole.h + 8}px`} data-testid="guide-ring" />}
-      <div class={`guide-card pz-card${step.caution ? " guide-card--caution" : ""}`} role="dialog" aria-label={t("Guide me")} data-testid="guide-card"
+      <div class={`guide-card pz-card${caution ? " guide-card--caution" : ""}`} role="dialog" aria-label={t("Guide me")} data-testid="guide-card"
         style={`left:${spot.left}px;top:${spot.top}px`}>
         <span class="guide-card__step">{t("Step {n}", { n: stepNo })}</span>
         <p class="guide-card__text" data-testid="guide-instruction">{step.instruction}</p>
         {step.detail && <p class="guide-card__detail">{step.detail}</p>}
-        {step.caution && <p class="guide-card__caution"><Icon name="warning" /> {t("Check everything is right before you press it.")}</p>}
+        {caution && <p class="guide-card__caution"><Icon name="warning" /> {t("Check everything is right before you press it.")}</p>}
         {!hole && <p class="guide-card__detail">{t("Scroll the page until you see it.")}</p>}
         <div class="guide-card__row">
           {needsDone && (
             <button class="pz-btn pz-btn--primary pz-btn--small" type="button" disabled={step.kind === "type" && !typed}
-              onClick={() => send({ type: "guide:advanced", result: step.kind === "type" ? "typed it" : "read it" })} data-testid="guide-done">{t("Done")}</button>
+              onClick={() => send({ type: "guide:advanced", result: step.kind === "type" ? "typed it" : step.kind === "choose" ? "chose an option" : "read it" })} data-testid="guide-done">{t("Done")}</button>
           )}
           {state.shown.length > 1 && <button class="pz-btn pz-btn--small" type="button" onClick={() => send({ type: "guide:back" })} data-testid="guide-back">{t("Back")}</button>}
           <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={stop} data-testid="guide-stop"><Icon name="close" /> {t("Stop")}</button>
