@@ -215,17 +215,19 @@ export function App({ engine, selection, bus, setHidden }: Props) {
 
   return (
     <div class="layer">
-      {showTab && !panelOpen && (
-        <button class="tab" type="button" aria-label={t("Prism: {status}. Open Prism panel", { status: tidy.message || t("page tidied") })} onClick={() => setPanelOpen(true)}
-          data-testid="prism-tab">
-          <Logo size={30} />
-          <span class={`tab__dot${busy ? " tab__dot--busy" : ""}${tidyOn ? "" : " tab__dot--off"}`} aria-hidden="true" />
-          <span class="tab__status">{!tidyOn ? t("Original") : busy ? t("Tidying…") : t("Tidied")}</span>
-        </button>
-      )}
       {settings?.dictation && sel.phase === "idle" && <PageTalk />}
-      {showTab && tidyOn && !panelOpen && !menuRect && !card && sel.phase === "idle" && (
-        <NextDock tidy={tidy} engine={engine} onAsk={async (goal) => { await openChat(null); await send({ type: "chat:send", text: goal, includeScreen: false }); }} />
+      {showTab && !panelOpen && (
+        // One compact control, bottom-left: the Prism button, then the next step when the page is tidied.
+        <NextDock tidy={tidy} engine={engine} showNext={tidyOn && !menuRect && !card && sel.phase === "idle"}
+          tab={(
+            <button class="tab" type="button" aria-label={t("Prism: {status}. Open Prism panel", { status: tidy.message || t("page tidied") })} onClick={() => setPanelOpen(true)}
+              data-testid="prism-tab" title={!tidyOn ? t("Original") : busy ? t("Tidying…") : t("Tidied")}>
+              <Logo size={26} />
+              <span class={`tab__dot${busy ? " tab__dot--busy" : ""}${tidyOn ? "" : " tab__dot--off"}`} aria-hidden="true" />
+              {!tidyOn && <span class="tab__status">{t("Original")}</span>}
+            </button>
+          )}
+          onAsk={async (goal) => { await openChat(null); await send({ type: "chat:send", text: goal, includeScreen: false }); }} />
       )}
       {panelOpen && (
         <PagePanel tidy={tidy} engine={engine} settings={settings}
@@ -829,11 +831,30 @@ function useBottomClearance(): number {
   return lift;
 }
 
-function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: string) => void }) {
+function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: string) => void; tab: preact.ComponentChildren; showNext: boolean }) {
   useLanguage();
   const { tidy, engine } = props;
   const lift = useBottomClearance();
   const [open, setOpen] = useState(false);
+  const dockRef = useRef<HTMLDivElement>(null);
+  // If the bar would sit on the very thing it points to, it moves to the other corner.
+  const [right, setRight] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const target = document.querySelector("[data-prism-next]");
+      const dock = dockRef.current;
+      if (!target || !dock) return;
+      const a = target.getBoundingClientRect();
+      const b = dock.getBoundingClientRect();
+      const hits = a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+      if (hits) setRight((r) => !r);
+    };
+    const timer = setInterval(check, 900);
+    return () => clearInterval(timer);
+  }, []);
+  if (!props.showNext) {
+    return <div class={`nextstep nextstep--tab pz-card${right ? " nextstep--right" : ""}`} ref={dockRef} style={lift ? `bottom:${18 + lift}px` : undefined}>{props.tab}</div>;
+  }
   const [goal, setGoal] = useState("");
   function ask(e: Event) {
     e.preventDefault();
@@ -851,8 +872,8 @@ function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: st
     send({ type: "guide:start", goal: text });
   }
   return (
-    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label={t("Next step")} data-testid="prism-next"
-      style={lift ? `bottom:${18 + lift}px` : undefined}>
+    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}${right ? " nextstep--right" : ""}`} role="region" aria-label={t("Next step")} data-testid="prism-next"
+      ref={dockRef} style={lift ? `bottom:${18 + lift}px` : undefined}>
       {open && (
         <div class="nextstep__more" data-testid="next-more">
           {tidy.nextOptions.length > 0 && (
@@ -880,6 +901,7 @@ function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: st
         </div>
       )}
       <div class="nextstep__bar">
+        {props.tab}
         {tidy.nextStep
           ? <><span class="nextstep__label">{t("Next step")}</span><span class="nextstep__text">{tidy.nextStep}</span>
             <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>{t("Show me")}</button></>

@@ -251,8 +251,13 @@ export class TidyEngine {
       const r = el.getBoundingClientRect();
       return r.width >= 24 && r.height >= 16 && !el.closest("[data-prism-collapsed]:not([data-prism-open]),[data-prism-role=clutter],dialog,[role=dialog],[aria-modal=true]");
     };
-    // Side actions are never "the next step", however prominent the site made them.
-    const sideAction = (e: Element) => /\b(report|feedback|survey|how this image|edited or created|cookie|privacy|terms|accessibility|share|print|subscribe|newsletter|sign up for (email|updates))\b/i.test(labelOf(e));
+    // Side actions, vague links, media controls and links inside sentences are never "the next step".
+    const sideAction = (e: Element) => {
+      const label = labelOf(e);
+      return /\b(report|feedback|survey|how this image|edited or created|cookie|privacy|terms|accessibility|share|print|subscribe|newsletter|sign up for (email|updates)|request sound|mute|unmute|volume|captions|full ?screen|transcript)\b/i.test(label) ||
+        /^(learn more( here)?|read more|click here|more|see more|details|here|view more|find out more|more info|view all|see all|go|start here)\.?$/i.test(label.trim()) ||
+        label.split(/\s+/).length > 8 || (e.matches("a[href]") && inRunningText(e));
+    };
     // A site search is never "the next step": demote it if the plan marked it as the main action.
     const isSearch = (e: Element) => !!e.closest("[role=search],form:has(input[type=search]),form:has(input[name=q]),form:has(input[name*=search i])") ||
       /^(search|go|submit search)\b/i.test(((e as HTMLElement).innerText || (e as HTMLInputElement).value || e.getAttribute("aria-label") || "").trim());
@@ -263,15 +268,19 @@ export class TidyEngine {
       !!e.closest("[class*=cookie i],[id*=cookie i],[class*=consent i],[id*=consent i],[aria-label*=cookie i]") ||
       /^(next|previous|prev|pause|play|accept|accept all|accept necessary|agree|i agree|got it|ok|allow( all)?|decline|reject( all)?)( (image|slide|item|cookies))?$/i.test(((e as HTMLElement).innerText || e.getAttribute("aria-label") || "").trim());
     for (const e of marked) if (isSearch(e) || inNav(e)) { e.setAttribute("data-prism-role", "secondary-action"); e.removeAttribute("data-prism-emphasis"); }
-    let el = marked.find((e) => !isSearch(e) && !inNav(e) && !sideAction(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
+    // A popup blocking the page comes first: point at its way through (Agree, Continue, Close).
+    const blocker = blockingDialogButton();
+    let el = blocker ?? marked.find((e) => !isSearch(e) && !inNav(e) && !sideAction(e) && e.matches("a[href],button,input[type=submit],input[type=button],[role=button]") && visible(e));
     const cta = /^\s*(start|apply|begin|continue|next|get started|sign up|register|book|renew|report|check|find|pay|claim|request|make a|submit|send|save and continue|log ?in|sign in|file|view|download|contact|add to (basket|cart|bag|trolley)|buy|order|checkout|check out|proceed)\b/i;
     const scope = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
     const ctas = [...scope.querySelectorAll("a[href],button,input[type=submit],[role=button]")]
-      .filter((e) => visible(e) && !isSearch(e) && !inNav(e) && !sideAction(e) && cta.test(labelOf(e)) && !e.closest("nav,header,footer,[role=navigation]"));
+      .filter((e) => visible(e) && !isSearch(e) && !inNav(e) && !sideAction(e) && cta.test(labelOf(e)) && !e.closest("nav,header,footer,[role=navigation]") && looksLikeButton(e));
     if (!el) {
       el = ctas[0];
-      if (el) el.setAttribute("data-prism-emphasis", "primary");
+      // Picture cards and tiles get the breathing ring only; turning them into a big button breaks them.
+      if (el && !isPictureOrTile(el)) el.setAttribute("data-prism-emphasis", "primary");
     }
+    if (el && isPictureOrTile(el)) el.removeAttribute("data-prism-emphasis");
     // Up to four other likely things to do: the plan's steps, other real actions, obvious buttons.
     const options: { label: string; el: Element }[] = [];
     const add = (e: Element | null | undefined, label?: string) => {
@@ -478,7 +487,7 @@ export class TidyEngine {
       const gid = `g${gi}`;
       const members: Element[] = [];
       // On a well-designed site only real clutter is folded; its menus and related content are part of the design.
-      if (light && !["ads", "social"].includes(group.reason)) return;
+      if (light && group.reason !== "ads") return;
       for (const id of group.ids) {
         total++;
         const el = ids.get(id);
@@ -639,13 +648,65 @@ function labelOf(el: Element): string {
 }
 
 /** Does this element still show any words outside folded parts? */
+/** A link that is mostly a picture, or a tall tile/card, rather than a button. */
+function isPictureOrTile(el: Element): boolean {
+  if (el.hasAttribute("data-prism-own")) return true;
+  const r = el.getBoundingClientRect();
+  if (r.height > 120 || r.width > 420) return true;
+  return !!el.querySelector("img,picture,svg,video") && labelOf(el).length < 40 && r.height > 60;
+}
+
+/** Buttons, and links the site styled as buttons (filled or outlined), as opposed to plain text links. */
+function looksLikeButton(el: Element): boolean {
+  if (el.matches("button,input[type=submit],input[type=button],[role=button],[data-prism-c=button],[data-prism-c=button-link]")) return true;
+  const cs = getComputedStyle(el);
+  return (cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent") || parseFloat(cs.borderTopWidth) >= 1;
+}
+
+/** If a dialog covers much of the screen, the button that gets the person past it. */
+function blockingDialogButton(): Element | null {
+  const area = innerWidth * innerHeight;
+  // Marked-up dialogs, plus whatever floats over the middle of the screen (many popups aren't marked up).
+  const floating: Element[] = [];
+  for (const hit of document.elementsFromPoint(innerWidth / 2, innerHeight / 2)) {
+    if (hit.closest("prism-root")) continue;
+    for (let e: Element | null = hit; e && e !== document.body; e = e.parentElement) {
+      const pos = getComputedStyle(e).position;
+      if (pos === "fixed") { floating.push(e); break; }
+    }
+    if (floating.length) break;
+  }
+  const dialogs = [...document.querySelectorAll("dialog[open],[role=dialog],[role=alertdialog],[aria-modal=true]"), ...floating].filter((d) => {
+    if (d.closest("prism-root")) return false;
+    const r = d.getBoundingClientRect();
+    const cs = getComputedStyle(d);
+    const marked = d.matches("dialog,[role=dialog],[role=alertdialog],[aria-modal=true]");
+    return cs.display !== "none" && cs.visibility !== "hidden" && r.width * r.height > area * 0.15 && (marked || r.width * r.height < area * 0.95) && r.top < innerHeight && r.bottom > 0;
+  });
+  for (const d of dialogs) {
+    const buttons = [...d.querySelectorAll("button,a[href],[role=button],input[type=submit]")].filter((b) => {
+      const r = b.getBoundingClientRect();
+      return r.width >= 16 && r.height >= 16;
+    });
+    const go = buttons.find((b) => /^(agree|i agree|accept|accept all|accept and continue|continue|ok|okay|got it|i understand)$/i.test(labelOf(b)));
+    const close = buttons.find((b) => /^(close|no thanks|no, thanks|not now|maybe later|dismiss|skip|×|x)$/i.test(labelOf(b)) || /close|dismiss/i.test(b.getAttribute("aria-label") ?? ""));
+    if (go || close) return go ?? close!;
+  }
+  return null;
+}
+
 /** Is this link part of a sentence (other words around it in the same paragraph or list item)? */
 function inRunningText(link: Element): boolean {
   const block = link.closest("p,li,dd,td,blockquote");
   if (!block) return false;
-  const all = ((block as HTMLElement).innerText ?? "").trim().length;
-  const mine = ((link as HTMLElement).innerText ?? "").trim().length;
-  return all - mine > 25;
+  // Only words that aren't themselves links or buttons count as the sentence around it.
+  let prose = 0;
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n.parentElement?.closest("a[href],button,[role=button]")) continue;
+    prose += (n.textContent ?? "").replace(/\s+/g, " ").trim().length;
+  }
+  return prose > 25;
 }
 
 /** Text that still shows: not folded, not screen-reader-only, not a slideshow's Previous/Next/Pause button. */

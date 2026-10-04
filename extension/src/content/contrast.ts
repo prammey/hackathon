@@ -83,8 +83,22 @@ function hasOwnText(el: Element): boolean {
 
 export interface RepairStats { checked: number; fixed: number; boxes: number }
 
+/** A gradient, picture or pseudo-element shape behind the text somewhere close above it. */
+function hasPaintedAncestor(el: Element): boolean {
+  for (let e: Element | null = el, i = 0; e && i < 8; e = e.parentElement, i++) {
+    const cs = getComputedStyle(e);
+    if (cs.backgroundImage !== "none") return true;
+    for (const pseudo of ["::before", "::after"]) {
+      const ps = getComputedStyle(e, pseudo);
+      if (ps.content !== "none" && ((parse(ps.backgroundColor)?.a ?? 0) > 0.3 || ps.backgroundImage !== "none")) return true;
+    }
+  }
+  return false;
+}
+
 export function repairContrast(): RepairStats {
   const stats: RepairStats = { checked: 0, fixed: 0, boxes: 0 };
+  const light = document.documentElement.getAttribute("data-prism-touch") === "light";
   // Measure the page as styled, without previous fixes, in one synchronous pass (no flicker).
   for (const el of document.querySelectorAll(`[${FIX}],[${FIXBOX}]`)) { el.removeAttribute(FIX); el.removeAttribute(FIXBOX); }
   const cache = new Map<Element, RGBA | null>();
@@ -113,7 +127,7 @@ export function repairContrast(): RepairStats {
 
     // Boxes that blend into what's behind them get an outline so they read as separate.
     const own = parse(cs.backgroundColor);
-    if (own && own.a > 0.5 && rect.width * rect.height > 2500 && el.parentElement && !el.matches("input,select,textarea,button,img")) {
+    if (!light && own && own.a > 0.5 && rect.width * rect.height > 2500 && el.parentElement && !el.matches("input,select,textarea,button,img")) {
       const behind = backgroundOf(el.parentElement, cache);
       const noBorder = parseFloat(cs.borderTopWidth) < 1 && parseFloat(cs.borderLeftWidth) < 1 && cs.boxShadow === "none";
       if (behind && noBorder && ratio(own, behind) < 1.12 && (own.r !== behind.r || own.g !== behind.g || own.b !== behind.b)) boxes.push(el);
@@ -133,6 +147,12 @@ export function repairContrast(): RepairStats {
     const need = size >= 24 || (size >= 18.66 && bold) ? 3.2 : 4.6;
     const effectiveFg = fg.a < 1 ? blend(fg, bg) : fg;
     if (ratio(effectiveFg, bg) >= need) continue;
+    // On a site that keeps its own design, only faint grey text is darkened: white text and brand colours
+    // were chosen for backgrounds Prism can't always measure (gradients, pseudo-element shapes).
+    if (light) {
+      const sat = Math.max(effectiveFg.r, effectiveFg.g, effectiveFg.b) - Math.min(effectiveFg.r, effectiveFg.g, effectiveFg.b);
+      if (luminance(effectiveFg) > 0.35 || sat > 40 || luminance(bg) < 0.5 || hasPaintedAncestor(el)) continue;
+    }
     // Pick whichever of dark ink or white reads best on this background.
     fixes.push([el, ratio({ r: 17, g: 17, b: 17, a: 1 }, bg) >= ratio(WHITE, bg) ? "dark" : "light"]);
   }

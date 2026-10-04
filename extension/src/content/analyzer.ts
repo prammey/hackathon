@@ -10,7 +10,7 @@ export const PRISM_ATTRS = [
   "data-prism-collapsed", "data-prism-open", "data-prism-step-active", "data-prism-protect", "data-prism-rid",
   "data-prism-filled", "data-prism-tight", "data-prism-layout", "data-prism-item", "data-prism-o", "data-prism-pos",
   "data-prism-title", "data-prism-price", "data-prism-member", "data-prism-hidden", "data-prism-fix", "data-prism-fixbox",
-  "data-prism-pad", "data-prism-next", "data-prism-own", "data-prism-fs", "data-prism-hs",
+  "data-prism-pad", "data-prism-next", "data-prism-own", "data-prism-fs", "data-prism-hs", "data-prism-ad",
 ];
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "LINK", "META", "HEAD", "BR", "WBR"]);
@@ -18,6 +18,8 @@ const LEAF_TAGS = new Set(["SVG", "IFRAME", "CANVAS", "VIDEO", "AUDIO", "IMG", "
 const LANDMARKS: Record<string, string> = {
   HEADER: "header", NAV: "nav", MAIN: "main", ASIDE: "aside", FOOTER: "footer", FORM: "form",
 };
+/** Unmistakable advertising (ad slots, ad networks, "sponsored"): hidden even on well-designed sites. */
+const HARD_AD_PATTERN = /(^|[\s_-])(ad|ads|adslot|ad-slot|adunit|ad-unit|advert|advertisement|sponsored|dfp|gpt-ad|outbrain|taboola)([\s_-]|$)/i;
 const AD_PATTERN = /(^|[\s_-])(ad|ads|adv|advert|advertisement|adslot|ad-slot|sponsor|sponsored|promo|promotion|outbrain|taboola|newsletter-signup|social-share|share-bar|sharing)([\s_-]|$)/i;
 const CONSENT_PATTERN = /(cookie|consent|gdpr|privacy-banner|onetrust|cmp)/i;
 const NOTICE_PATTERN = /(notice|alert|warning|important|callout|announcement|info-box|infobox|highlight|deadline)/i;
@@ -97,6 +99,24 @@ function isVivid(color: string): boolean {
   return a > 0.6 && Math.max(r, g, b) - Math.min(r, g, b) > 90;
 }
 
+/**
+ * Text that can safely be made bigger: not screen-reader-only or clipped helper text, and not sitting in a
+ * small box that cuts off what doesn't fit (a forecast tile, a product card), where bigger text gets chopped.
+ */
+function canGrow(el: Element, cs: CSSStyleDeclaration, rect: DOMRect): boolean {
+  if (rect.width <= 3 || rect.height <= 3 || cs.clip !== "auto" || cs.clipPath !== "none" || parseFloat(cs.fontSize) < 4) return false;
+  if (cs.position === "absolute" && rect.width * rect.height < 40) return false;
+  if (cs.overflow === "hidden" && cs.whiteSpace === "nowrap" && cs.textOverflow === "ellipsis") return false;
+  for (let e: Element | null = el, i = 0; e && i < 5; e = e.parentElement, i++) {
+    const ecs = i === 0 ? cs : getComputedStyle(e);
+    if (/hidden|clip/.test(ecs.overflowY) || /hidden|clip/.test(ecs.overflow)) {
+      const r = i === 0 ? rect : e.getBoundingClientRect();
+      if (r.height < 320) return false;
+    }
+  }
+  return true;
+}
+
 function ownText(el: Element): boolean {
   for (const n of el.childNodes) if (n.nodeType === 3 && (n.textContent ?? "").trim()) return true;
   return false;
@@ -117,6 +137,8 @@ function keepsOwnLook(el: Element, cs: CSSStyleDeclaration, kind: string): boole
     return false;
   }
   if (kind === "icon-button") return true;
+  // A button the site filled with a strong colour (green "Continue", navy "Shop now") is already obvious.
+  if ((kind === "button" || kind === "button-link") && r.height >= 36 && parseFloat(cs.fontSize) >= 14 && (isVivid(cs.backgroundColor) || (luminance(cs.backgroundColor) < 0.3 && (parseFloat(cs.backgroundColor.split(",")[3] ?? "1") || 1) > 0.6))) return true;
   if (!hasVisibleText(el)) return true; // icon-only, whatever its markup
   if (el.querySelector("img,svg,picture") && clean((el as HTMLElement).innerText ?? "", 40).length < 3) return true;
   if (kind === "button-link" && (r.height > 72 || r.width > 280)) return true; // a tile or card, not a button
@@ -328,7 +350,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
       setAttr(el, "data-prism-s", "keep");
     }
     // Remember each text's own size once (before Prism styles it): Prism only ever enlarges small text.
-    if (!el.hasAttribute("data-prism-fs") && ownText(el)) setAttr(el, "data-prism-fs", String(Math.round(parseFloat(cs.fontSize))));
+    if (!el.hasAttribute("data-prism-fs") && ownText(el) && canGrow(el, cs, rect)) setAttr(el, "data-prism-fs", String(Math.round(parseFloat(cs.fontSize))));
     if (/^H[1-6]$/.test(tag) && !el.hasAttribute("data-prism-hs") && parseFloat(cs.fontSize) < 20.5) setAttr(el, "data-prism-hs", "");
 
     // Backgrounds → surfaces
@@ -363,6 +385,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
     const sticky = cs.position === "fixed" || cs.position === "sticky";
     if (AD_PATTERN.test(idClass) && !isProt && !el.querySelector("input,select,textarea,form")) {
       setAttr(el, "data-prism-role", "clutter");
+      if (HARD_AD_PATTERN.test(idClass)) setAttr(el, "data-prism-ad", "");
       tagged++;
       register(el, { tag: tag.toLowerCase(), name: clean(el.innerText ?? "", 60), box, hint: "likely-ad" }, 6);
       continue;
@@ -371,7 +394,7 @@ export function analyze(doc: Document = document): AnalyzeResult {
       const src = (el as HTMLIFrameElement).src;
       const ad = /doubleclick|googlesyndication|adservice|amazon-adsystem|taboola|outbrain|criteo/.test(src);
       register(el, { tag: "iframe", name: clean(el.getAttribute("title") ?? "", 60), box, hint: ad ? "ad-frame" : "frame" }, ad ? 6 : 4);
-      if (ad) { setAttr(el, "data-prism-role", "clutter"); tagged++; }
+      if (ad) { setAttr(el, "data-prism-role", "clutter"); setAttr(el, "data-prism-ad", ""); tagged++; }
       continue;
     }
     if (sticky && rect.height < 220 && rect.width > vw * 0.5 && !landmark && !CONSENT_PATTERN.test(idClass)) {

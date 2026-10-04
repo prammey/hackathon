@@ -7,8 +7,12 @@
 export type Touch = "full" | "light";
 
 export function detectTouch(layoutMode: string): Touch {
-  if (layoutMode !== "refine") return "full"; // pinned canvases and layout tables need the reflow
-  const legacyTags = document.querySelectorAll("font,center,marquee,blink,[bgcolor],table[width],td[width],body[link],body[vlink]").length;
+  const oldTags = document.querySelectorAll("font,center,marquee,blink,[bgcolor],body[link],body[vlink]").length;
+  const sizedTables = document.querySelectorAll("table[width],td[width]").length;
   const nestedTables = document.querySelectorAll("table table").length;
-  return legacyTags >= 8 || nestedTables >= 3 ? "full" : "light";
+  const barelyStyled = document.styleSheets.length <= 2 && !document.querySelector("meta[name=viewport]");
+  if (layoutMode === "canvas" || layoutMode === "restructure" && document.querySelector("[data-prism-layout=canvas]")) return "full";
+  // Tables used for layout on a modern site (Amazon product pages) are not a sign of an old page.
+  const old = oldTags >= 8 || (oldTags >= 3 && sizedTables >= 3) || nestedTables >= 3 || barelyStyled;
+  return old ? "full" : "light";
 }
