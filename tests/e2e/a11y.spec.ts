@@ -87,7 +87,12 @@ test("Keyboard only: popup is fully operable with Tab and Space", async ({ conte
   await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${await tabId(sw, page)}`);
   await popup.bringToFront();
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toBeVisible();
+  // "What do you want to do?" comes first, then the Tidy switch.
   await popup.keyboard.press("Tab");
+  await expect(popup.getByTestId("popup-guide-goal")).toBeFocused();
+  for (let i = 0; i < 4 && !(await popup.getByRole("switch", { name: /Tidy this page/ }).evaluate((el) => el === document.activeElement)); i++) {
+    await popup.keyboard.press("Tab");
+  }
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toBeFocused();
   await popup.keyboard.press("Space");
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "true");

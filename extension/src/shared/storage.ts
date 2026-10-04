@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   localUrl: "http://127.0.0.1:8787",
   tidyEverywhere: false,
   dictation: false,
+  languageChosen: false,
   onboarded: false,
   installId: "",
 };

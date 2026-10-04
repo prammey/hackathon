@@ -4,7 +4,9 @@ import { getSettings, getSitePrefs } from "../shared/storage";
 import type { Rect, Settings, StyleId } from "../shared/types";
 import uiCss from "../ui/prism-ui.css";
 import overlayCss from "./overlay.css";
+import { loadLanguage } from "../shared/i18n";
 import { App, type Bus } from "./App";
+import { GuideLayer } from "./guide";
 import { cancelPendingActions, checkAction, executeAction, observePage } from "./actions";
 import { SelectionController } from "./selection";
 import { loadFonts, TidyEngine } from "./tidy";
@@ -54,8 +56,16 @@ function main() {
   };
 
   render(<App engine={engine} selection={selection} bus={bus} setHidden={setHidden} />, mount);
+  // Guide me's spotlight sits above everything else Prism draws.
+  const guideMount = document.createElement("div");
+  shadow.append(guideMount);
+  render(<GuideLayer />, guideMount);
 
   const applySettings = (s: Settings) => {
+    loadLanguage(s.translateTo, (code) => chrome.runtime.sendMessage({ type: "i18n:words", code })).then((lang) => {
+      host.setAttribute("dir", lang.rtl ? "rtl" : "ltr");
+      host.setAttribute("lang", lang.code);
+    });
     selection.shortcut = s.shortcut;
     if (s.reduceMotion === "on") host.setAttribute("data-reduce-motion", "");
     else host.removeAttribute("data-reduce-motion");
@@ -86,6 +96,7 @@ function main() {
         reply({ ok: true });
         return false;
       case "prism:open-chat": bus.emit("open-chat"); reply({ ok: true }); return false;
+      case "prism:guide": chrome.runtime.sendMessage({ type: "guide:start", goal: String(msg.goal ?? "") }).then(() => reply({ ok: true }), () => reply({ ok: false })); return true;
       case "prism:open-panel": bus.emit("panel", true); reply({ ok: true }); return false;
       case "prism:context-ask": bus.emit("context-ask", contextRect(msg.selectionText, msg.srcUrl)); reply({ ok: true }); return false;
       case "prism:viewport": reply({ width: innerWidth, height: innerHeight }); return false;

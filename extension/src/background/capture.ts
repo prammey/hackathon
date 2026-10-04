@@ -1,4 +1,5 @@
 /** Visible-tab capture, cropped to the selected region at the device pixel scale. */
+import { t } from "../shared/i18n";
 import type { Rect, Result } from "../shared/types";
 
 let lastCapture = 0;
@@ -16,7 +17,7 @@ export async function captureRegion(
   } catch (err) {
     return {
       ok: false,
-      error: { code: "capture_blocked", message: "Prism can't take a picture of this page. The browser may be protecting it." },
+      error: { code: "capture_blocked", message: t("Prism can't take a picture of this page. The browser may be protecting it.") },
     };
   }
   const blob = await (await fetch(dataUrl)).blob();
@@ -38,7 +39,7 @@ export async function captureRegion(
   const outH = Math.max(1, Math.round(src.h * shrink));
   const canvas = new OffscreenCanvas(outW, outH);
   const ctx = canvas.getContext("2d");
-  if (!ctx) return { ok: false, error: { code: "unknown", message: "Prism couldn't process the picture." } };
+  if (!ctx) return { ok: false, error: { code: "unknown", message: t("Prism couldn't process the picture.") } };
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, outW, outH);
   ctx.drawImage(bitmap, src.x, src.y, src.w, src.h, 0, 0, outW, outH);

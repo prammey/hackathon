@@ -2,6 +2,7 @@ import logoUrl from "./logo-96.png";
 /** Small shared Preact components used by the in-page UI and the extension pages. */
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { onLanguageChange, t } from "../shared/i18n";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { StyleId } from "../shared/types";
 
@@ -41,6 +42,10 @@ const paths: Record<string, string> = {
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   mic: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3M8 21h8",
   download: "M12 4v11M7 10l5 5 5-5M5 20h14",
+  globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9",
+  guide: "M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z",
+  warning: "M12 3l10 18H2zM12 10v5M12 18v.5",
+  read: "M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6",
 };
 
 export function Icon({ name, label }: { name: keyof typeof paths | string; label?: string }) {
@@ -53,13 +58,14 @@ export function Icon({ name, label }: { name: keyof typeof paths | string; label
 }
 
 export function Switch(props: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string; disabled?: boolean }) {
+  useLanguage();
   return (
     // Never disabled while busy: disabling a focused control would drop keyboard focus.
     <button type="button" role="switch" id={props.id} class="pz-switch" aria-checked={props.checked}
       aria-busy={props.disabled ? "true" : undefined} onClick={() => !props.disabled && props.onChange(!props.checked)}>
       <span>{props.label}</span>
       <span style="display:flex;align-items:center">
-        <span class="pz-switch__state" aria-hidden="true">{props.checked ? "On" : "Off"}</span>
+        <span class="pz-switch__state" aria-hidden="true">{props.checked ? t("On") : t("Off")}</span>
         <span class="pz-switch__track" aria-hidden="true"><span class="pz-switch__thumb" /></span>
       </span>
     </button>
@@ -67,8 +73,9 @@ export function Switch(props: { checked: boolean; onChange: (v: boolean) => void
 }
 
 export function StylePicker(props: { value: StyleId; onChange: (id: StyleId) => void; label?: string }) {
+  useLanguage();
   return (
-    <div role="group" aria-label={props.label ?? "Style"} class="pz-styles">
+    <div role="group" aria-label={props.label ?? t("Style")} class="pz-styles">
       {STYLE_ORDER.map((id) => {
         const s = STYLES[id];
         return (
@@ -108,7 +115,8 @@ export type MicPhase = "idle" | "listening" | "writing";
  * Talk instead of typing: tap to start listening, tap again to stop; Prism writes the words down and hands
  * them to `onText`. Recording happens in Prism's own recorder page (see offscreen/record.ts).
  */
-export function MicButton(props: { onText: (text: string) => void; onError?: (message: string) => void; onPhase?: (phase: MicPhase) => void; label?: string; small?: boolean; testId?: string }) {
+export function MicButton(props: { onText: (text: string) => void; onError?: (message: string) => void; onPhase?: (phase: MicPhase) => void; label?: string; small?: boolean; iconOnly?: boolean; testId?: string }) {
+  useLanguage();
   const [phase, setPhaseState] = useState<MicPhase>("idle");
   const live = useRef<MicPhase>("idle");
   const setPhase = (p: MicPhase) => { live.current = p; setPhaseState(p); props.onPhase?.(p); };
@@ -121,20 +129,20 @@ export function MicButton(props: { onText: (text: string) => void; onError?: (me
     if (phase === "idle") {
       const r = await chrome.runtime.sendMessage({ type: "dictate:start" }) as { ok: boolean; error?: { message: string } };
       if (r?.ok) setPhase("listening");
-      else props.onError?.(r?.error?.message ?? "Prism couldn't start listening.");
+      else props.onError?.(r?.error?.message ?? t("Prism couldn't start listening."));
       return;
     }
     setPhase("writing");
     const r = await chrome.runtime.sendMessage({ type: "dictate:stop" }) as { ok: boolean; value?: { text: string }; error?: { message: string } };
     setPhase("idle");
     if (r?.ok && r.value?.text) props.onText(r.value.text);
-    else props.onError?.(r?.error?.message ?? "Prism didn't catch that. Please try again.");
+    else props.onError?.(r?.error?.message ?? t("Prism didn't catch that. Please try again."));
   }
-  const text = phase === "listening" ? "Tap to stop" : phase === "writing" ? "Writing it down…" : (props.label ?? "Talk");
+  const text = phase === "listening" ? t("Tap to stop") : phase === "writing" ? t("Writing it down…") : (props.label ?? t("Talk"));
   return (
     <button type="button" class={`pz-btn pz-mic${props.small ? " pz-btn--small" : ""} pz-mic--${phase}`} onMouseDown={(e) => e.preventDefault()} onClick={toggle}
-      aria-pressed={phase === "listening"} aria-label={phase === "idle" ? `${props.label ?? "Talk"}: say it instead of typing` : text} data-testid={props.testId} data-phase={phase}>
-      <Icon name="mic" /> {text}
+      aria-pressed={phase === "listening"} aria-label={phase === "idle" ? t("{label}: say it instead of typing", { label: props.label ?? t("Talk") }) : text} data-testid={props.testId} data-phase={phase}>
+      <Icon name="mic" />{props.iconOnly && phase === "idle" ? null : ` ${text}`}
     </button>
   );
 }
@@ -147,7 +155,13 @@ export async function allowMicrophone(): Promise<string> {
     return "";
   } catch (err) {
     return (err as Error).name === "NotAllowedError"
-      ? "The microphone was blocked. Click the camera/microphone icon in the address bar, choose Allow, then try again."
-      : "Prism couldn't find a microphone on this computer.";
+      ? t("The microphone was blocked. Click the camera/microphone icon in the address bar, choose Allow, then try again.")
+      : t("Prism couldn't find a microphone on this computer.");
   }
+}
+
+/** Redraws the calling component when Prism's language changes. Call it at the top of each screen. */
+export function useLanguage(): void {
+  const [, setTick] = useState(0);
+  useEffect(() => onLanguageChange(() => setTick((n) => n + 1)), []);
 }

@@ -5,6 +5,7 @@ Credentials come from Application Default Credentials (local `gcloud auth applic
 or the Cloud Run service account). Payloads are never logged.
 """
 import logging
+import re
 import os
 import time
 
@@ -19,7 +20,7 @@ from .gemini import FALLBACK_MODEL, PLAN_MODEL, PRIMARY_MODEL, AIUnavailable, ge
 from .limits import Limiter
 from .schemas import (
   AssistRequest, ChatReply, ChatRequest, DefineAnswer, ExtractRequest, FillAnswer, PlanRequest,
-  ProfileCandidates, TidyPlan, TranscribeRequest, TranslateAnswer,
+  GuideRequest, GuideStep, ProfileCandidates, TidyPlan, TranscribeRequest, TranslateAnswer,
 )
 from .tools import CHAT_TOOLS, TOOL_NAMES
 
@@ -238,6 +239,50 @@ def chat(req: ChatRequest):
       texts.append(part.text)
   raw = candidate.content.model_dump(mode="json", exclude_none=True)
   return ChatReply(text="\n".join(texts).strip(), actions=actions, raw=raw, model=model)
+
+
+# ---------- Guide me ----------
+
+PAGE_IDS = re.compile(r"\[(p[0-9a-z]+)\]")
+
+
+@app.post("/v1/guide")
+def guide(req: GuideRequest):
+  system = prompts.GUIDE_SYSTEM + f"\nReply in {req.language}."
+  if req.profile:
+    system += f"\nFacts the person chose to share (from Prism settings):\n{req.profile}"
+  parts = [f"The person's goal: {req.goal}"]
+  if req.answers:
+    parts.append("Their answers to your earlier questions: " + " | ".join(req.answers))
+  if req.history:
+    parts.append("Steps so far:\n" + "\n".join(f"{i + 1}. {h.instruction} -> {h.result or 'done'}" for i, h in enumerate(req.history)))
+  parts.append("Current page state:\n" + (prompts.untrusted(req.pageState) if req.pageState else "(blank new tab, no website open yet)"))
+  step, model = generate_json("\n\n".join(parts), system, GuideStep)
+  return bounded_guide_step(step, req.pageState) | {"model": model}
+
+
+def bounded_guide_step(step: GuideStep, page_state: str) -> dict:
+  """Never trust the model's ids or links: an id must be on the page, a link must be a plain https site."""
+  out = step.model_dump()
+  out["instruction"] = out["instruction"].strip()[:160] or "Take a look at the page."
+  out["detail"] = out["detail"].strip()[:240]
+  out["choices"] = [c.strip()[:60] for c in out["choices"] if c.strip()][:5]
+  if out["kind"] in ("click", "type", "choose", "read"):
+    if out["id"] not in set(PAGE_IDS.findall(page_state)):
+      return {**out, "kind": "stuck", "id": "", "url": "",
+              "instruction": "I couldn't find that on this page. Try scrolling, or ask in Chat."}
+  else:
+    out["id"] = ""
+  if out["kind"] == "go":
+    url = out["url"].strip()
+    if not re.match(r"^https://[a-z0-9.-]+\.[a-z]{2,}(/[^\s]*)?$", url, re.I):
+      return {**out, "kind": "stuck", "url": "", "instruction": "I'm not sure which website to open for that."}
+    out["url"] = url
+  else:
+    out["url"] = ""
+  if out["kind"] != "ask":
+    out["choices"] = []
+  return out
 
 
 # ---------- Imports ----------

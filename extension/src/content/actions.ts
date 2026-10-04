@@ -3,6 +3,7 @@
  * Policy (what needs confirmation, what is forbidden) is enforced here, never left to the model.
  */
 import type { ActionCheck, ActionOutcome } from "../shared/chat";
+import { t, k } from "../shared/i18n";
 import type { ChatAction, FieldSuggestion } from "../shared/types";
 import { accessibleName, analyze, clean, isSensitiveField } from "./analyzer";
 import { findById } from "./region";
@@ -97,9 +98,9 @@ export function applyFill(suggestions: FieldSuggestion[], elements: Map<string, 
     for (const s of suggestions) {
       const els = elements.get(s.id) ?? [findById(s.id)].filter(Boolean) as Element[];
       const el = els[0];
-      if (!el) { result.failed.push({ id: s.id, label: s.id, reason: "The field is no longer on the page." }); continue; }
+      if (!el) { result.failed.push({ id: s.id, label: s.id, reason: t("The field is no longer on the page.") }); continue; }
       const label = clean(fieldLabel(el), 80);
-      if (isSensitiveField(el)) { result.failed.push({ id: s.id, label, reason: "Please type this one yourself." }); continue; }
+      if (isSensitiveField(el)) { result.failed.push({ id: s.id, label, reason: t("Please type this one yourself.") }); continue; }
       let ok = false;
       let shown = "";
       if (el instanceof HTMLInputElement && el.type === "radio") {
@@ -111,7 +112,7 @@ export function applyFill(suggestions: FieldSuggestion[], elements: Map<string, 
       } else if (el instanceof HTMLInputElement && el.type === "checkbox") {
         result.undo.push({ el, kind: "check", previous: el.checked });
         ok = setChecked(el, s.checked);
-        shown = s.checked ? "ticked" : "not ticked";
+        shown = s.checked ? t("ticked") : t("not ticked");
       } else if (el instanceof HTMLSelectElement) {
         result.undo.push({ el, kind: "select", previous: [...el.selectedOptions].map((o) => o.value) });
         const values = s.optionValues.length ? s.optionValues : [s.value];
@@ -126,7 +127,7 @@ export function applyFill(suggestions: FieldSuggestion[], elements: Map<string, 
         result.changed.push({ id: s.id, label, value: shown });
         flash(el);
       } else {
-        result.failed.push({ id: s.id, label, reason: "The website didn't accept this value. You may need to enter it yourself." });
+        result.failed.push({ id: s.id, label, reason: t("The website didn't accept this value. You may need to enter it yourself.") });
       }
     }
   } finally {
@@ -180,14 +181,14 @@ function flash(el: Element) {
 function describe(action: ChatAction, el: Element | null): string {
   const name = el ? clean(accessibleName(el), 60) || el.tagName.toLowerCase() : "";
   switch (action.name) {
-    case "click": return `Press “${name}”`;
-    case "type_text": return `Type “${clean(String(action.args.text ?? ""), 60)}” into “${name}”`;
-    case "select_option": return `Choose “${(action.args.values as string[] | undefined)?.join(", ")}” for “${name}”`;
-    case "set_checkbox": return `${action.args.checked ? "Tick" : "Untick"} “${name}”`;
-    case "scroll": return "Scroll the page";
-    case "navigate": return `Open ${String(action.args.url ?? "")}`;
-    case "emphasize": return `Highlight ${clean(String(action.args.note ?? "") || name, 80)}`;
-    case "clear_emphasis": return "Remove the highlights";
+    case "click": return t("Press “{name}”", { name });
+    case "type_text": return t("Type “{text}” into “{name}”", { text: clean(String(action.args.text ?? ""), 60), name });
+    case "select_option": return t("Choose “{values}” for “{name}”", { values: String((action.args.values as string[] | undefined)?.join(", ")), name });
+    case "set_checkbox": return action.args.checked ? t("Tick “{name}”", { name }) : t("Untick “{name}”", { name });
+    case "scroll": return t("Scroll the page");
+    case "navigate": return t("Open {url}", { url: String(action.args.url ?? "") });
+    case "emphasize": return t("Highlight {what}", { what: clean(String(action.args.note ?? "") || name, 80) });
+    case "clear_emphasis": return t("Remove the highlights");
     default: return action.name;
   }
 }
@@ -205,28 +206,28 @@ function pageHasPaymentFields(): boolean {
 export function checkAction(action: ChatAction): ActionCheck {
   if (action.name === "navigate") {
     let url: URL;
-    try { url = new URL(String(action.args.url ?? ""), location.href); } catch { return { ok: false, risk: "forbidden", description: "Open an invalid address", reason: "That web address isn't valid." }; }
-    if (!/^https?:$/.test(url.protocol)) return { ok: false, risk: "forbidden", description: `Open ${url.href}`, reason: "Prism only opens normal web pages." };
-    const description = `Open ${url.host}${url.pathname}`;
-    return { ok: true, risk: url.origin === location.origin ? "routine" : "consequential", description: url.origin === location.origin ? description : `${description} (a different website)` };
+    try { url = new URL(String(action.args.url ?? ""), location.href); } catch { return { ok: false, risk: "forbidden", description: t("Open an invalid address"), reason: k("That web address isn't valid.") }; }
+    if (!/^https?:$/.test(url.protocol)) return { ok: false, risk: "forbidden", description: t("Open {url}", { url: url.href }), reason: k("Prism only opens normal web pages.") };
+    const description = t("Open {url}", { url: `${url.host}${url.pathname}` });
+    return { ok: true, risk: url.origin === location.origin ? "routine" : "consequential", description: url.origin === location.origin ? description : t("{description} (a different website)", { description }) };
   }
-  if (action.name === "scroll") return { ok: true, risk: "routine", description: "Scroll the page" };
+  if (action.name === "scroll") return { ok: true, risk: "routine", description: t("Scroll the page") };
   // Highlighting only changes how the page looks, so it never needs confirmation.
   if (action.name === "clear_emphasis") return { ok: true, risk: "routine", description: describe(action, null) };
   if (action.name === "emphasize") {
     const found = emphasisTargets(action);
-    if (!found.length) return { ok: false, risk: "routine", description: describe(action, null), reason: "I couldn't find that part of the page." };
+    if (!found.length) return { ok: false, risk: "routine", description: describe(action, null), reason: k("I couldn't find that part of the page.") };
     return { ok: true, risk: "routine", description: describe(action, found[0]) };
   }
   const el = findById(String(action.args.id ?? ""));
-  if (!el) return { ok: false, risk: "routine", description: action.name, reason: "I couldn't find that part of the page any more." };
+  if (!el) return { ok: false, risk: "routine", description: action.name, reason: k("I couldn't find that part of the page any more.") };
   const description = describe(action, el);
   const rect = el.getBoundingClientRect();
   const hidden = rect.width === 0 && rect.height === 0 && !(el instanceof HTMLInputElement && (el.type === "radio" || el.type === "checkbox"));
-  if (hidden) return { ok: false, risk: "routine", description, reason: "That part of the page is hidden right now." };
-  if ((el as HTMLButtonElement).disabled) return { ok: false, risk: "routine", description, reason: "That control is switched off (disabled) right now." };
+  if (hidden) return { ok: false, risk: "routine", description, reason: k("That part of the page is hidden right now.") };
+  if ((el as HTMLButtonElement).disabled) return { ok: false, risk: "routine", description, reason: k("That control is switched off (disabled) right now.") };
   if (action.name === "type_text" && isSensitiveField(el)) {
-    return { ok: false, risk: "forbidden", description, reason: "This looks like a password, card or ID field. Please type it yourself — Prism never enters these." };
+    return { ok: false, risk: "forbidden", description, reason: k("This looks like a password, card or ID field. Please type it yourself — Prism never enters these.") };
   }
   if (action.name === "set_checkbox" || (action.name === "click" && el instanceof HTMLInputElement && el.type === "checkbox")) {
     // Agreeing to declarations, terms or consent is a legal commitment: always ask first.
@@ -238,9 +239,9 @@ export function checkAction(action: ChatAction): ActionCheck {
     const name = accessibleName(el);
     if (el instanceof HTMLAnchorElement && el.href) {
       const url = new URL(el.href, location.href);
-      if (url.origin !== location.origin) return { ok: true, risk: "consequential", description: `${description} (opens ${url.host})` };
+      if (url.origin !== location.origin) return { ok: true, risk: "consequential", description: t("{description} (opens {host})", { description, host: url.host }) };
       if (/\.(pdf|zip|exe|dmg|docx?|xlsx?)$/i.test(url.pathname) || el.hasAttribute("download")) {
-        return { ok: false, risk: "forbidden", description, reason: "That link downloads a file. Please click it yourself if you want it." };
+        return { ok: false, risk: "forbidden", description, reason: k("That link downloads a file. Please click it yourself if you want it.") };
       }
     }
     if (isSubmitControl(el) || CONSEQUENTIAL.test(name) || (pageHasPaymentFields() && /button|submit/i.test(el.tagName + (el.getAttribute("role") ?? "")))) {

@@ -1,3 +1,4 @@
+import { k } from "./i18n";
 /**
  * The four Prism Styles as token sets, and the generator for the page stylesheet.
  * Tokens mirror specs/03-design-system.md; contrast is checked by scripts/contrast_check.py.
@@ -84,7 +85,7 @@ export const FONT_FILES: Record<string, string> = {
 
 export const STYLES: Record<StyleId, StyleTokens> = {
   clear: {
-    id: "clear", name: "Clean Flat", tagline: "Crisp shapes, clear colours, nothing extra",
+    id: "clear", name: "Clean Flat", tagline: k("Crisp shapes, clear colours, nothing extra"),
     fontBody: FONT_STACKS.inter, fontHeading: FONT_STACKS.inter, headingWeight: 700, headingSpacing: "-0.02em",
     scale: { h1: 2.2, h2: 1.6, h3: 1.28, h4: 1.1 }, lh: 1.6, lhHeading: 1.15, gap: "1em",
     bg: "#F6F7FB", band: "#FFFFFF", bandBorder: "1px solid #E4E8F0",
@@ -107,7 +108,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     preview: { swatches: ["#F6F7FB", "#FFFFFF", "#2754E6", "#0F172A"] },
   },
   bold: {
-    id: "bold", name: "Neo-Brutalist", tagline: "Chunky type, firm outlines and soft blocks of colour",
+    id: "bold", name: "Neo-Brutalist", tagline: k("Chunky type, firm outlines and soft blocks of colour"),
     fontBody: FONT_STACKS.grotesk, fontHeading: FONT_STACKS.grotesk, headingWeight: 700,
     headingSpacing: "-0.02em", scale: { h1: 2.4, h2: 1.75, h3: 1.32, h4: 1.13 }, lh: 1.55, lhHeading: 1.1,
     gap: "1em",
@@ -132,7 +133,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     preview: { swatches: ["#FBF6EC", "#FFE9A8", "#FDE2EC", "#C8F0DC"] },
   },
   calm: {
-    id: "calm", name: "Modern Minimalist", tagline: "Quiet, spacious and refined",
+    id: "calm", name: "Modern Minimalist", tagline: k("Quiet, spacious and refined"),
     fontBody: FONT_STACKS.inter, fontHeading: FONT_STACKS.serif, headingWeight: 500, headingSpacing: "-0.01em",
     scale: { h1: 2.4, h2: 1.7, h3: 1.3, h4: 1.12 }, lh: 1.7, lhHeading: 1.15, gap: "1.5em",
     bg: "#FAFAF7", band: "#FAFAF7", bandBorder: "1px solid #E8E8E2",
@@ -155,7 +156,7 @@ export const STYLES: Record<StyleId, StyleTokens> = {
     preview: { swatches: ["#FAFAF7", "#FFFFFF", "#ECECE6", "#18181B"] },
   },
   soft: {
-    id: "soft", name: "Neumorphism", tagline: "Soft raised surfaces, with edges you can still see",
+    id: "soft", name: "Neumorphism", tagline: k("Soft raised surfaces, with edges you can still see"),
     fontBody: FONT_STACKS.nunito, fontHeading: FONT_STACKS.nunito, headingWeight: 800, headingSpacing: "-0.01em",
     scale: { h1: 2.3, h2: 1.7, h3: 1.33, h4: 1.13 }, lh: 1.6, lhHeading: 1.18, gap: "1.15em",
     bg: "#E8ECF4", band: "#E8ECF4", bandBorder: "0 solid transparent",

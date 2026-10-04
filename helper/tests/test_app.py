@@ -76,3 +76,22 @@ def test_transcribe_rejects_bad_audio_before_ai():
   assert r.status_code == 422
   r = client.post("/v1/transcribe", json={"audio": "x" * 3_000_000}, headers={"Origin": ORIGIN})
   assert r.status_code == 422
+
+
+def test_guide_step_ids_and_links_are_checked():
+  from prism_helper.app import bounded_guide_step
+  from prism_helper.schemas import GuideStep
+  page = '[p1] button "Compose"\n[p2] textbox "To"'
+  ok = bounded_guide_step(GuideStep(kind="click", id="p1", instruction='Click "Compose"', detail="", url="", choices=[], caution=False), page)
+  assert ok["kind"] == "click" and ok["id"] == "p1"
+  ghost = bounded_guide_step(GuideStep(kind="click", id="p99", instruction="Click it", detail="", url="", choices=[], caution=False), page)
+  assert ghost["kind"] == "stuck" and ghost["id"] == ""
+  bad_link = bounded_guide_step(GuideStep(kind="go", id="", instruction="Open it", detail="", url="javascript:alert(1)", choices=[], caution=False), "")
+  assert bad_link["kind"] == "stuck" and bad_link["url"] == ""
+  go = bounded_guide_step(GuideStep(kind="go", id="p1", instruction="Open Gmail", detail="", url="https://mail.google.com/", choices=["x"], caution=False), "")
+  assert go["url"] == "https://mail.google.com/" and go["id"] == "" and go["choices"] == []
+
+
+def test_guide_rejects_empty_goal_before_ai():
+  r = client.post("/v1/guide", json={"goal": ""}, headers={"Origin": ORIGIN})
+  assert r.status_code == 422

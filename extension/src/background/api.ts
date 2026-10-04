@@ -4,6 +4,7 @@ import {
   ChatReplySchema, DefineAnswerSchema, FillAnswerSchema, ProfileCandidatesSchema, TidyPlanSchema,
   TranslateAnswerSchema,
 } from "../shared/schemas";
+import { t } from "../shared/i18n";
 import { getSettings } from "../shared/storage";
 import type { PrismError, Result } from "../shared/types";
 import { z } from "zod";
@@ -50,21 +51,21 @@ export async function callHelper<T>(path: string, body: unknown, signal?: AbortS
     const parsed = schema ? schema.safeParse(data) : { success: true as const, data };
     if (!parsed.success) {
       console.warn("Prism: invalid helper response", path, parsed.error?.issues?.slice(0, 3));
-      return { ok: false, error: { code: "invalid_response", message: "Prism got an answer it couldn't use. Please try again." } };
+      return { ok: false, error: { code: "invalid_response", message: t("Prism got an answer it couldn't use. Please try again.") } };
     }
     return { ok: true, value: parsed.data as T };
   } catch (err) {
     const reason = controller.signal.reason;
-    if (reason === "cancelled") return { ok: false, error: { code: "unknown", message: "Stopped." } };
-    if (reason === "timeout") return { ok: false, error: { code: "ai_unavailable", message: "Prism's AI took too long to answer. Please try again." } };
-    if (!navigator.onLine) return { ok: false, error: { code: "offline", message: "You seem to be offline. Check your internet connection." } };
+    if (reason === "cancelled") return { ok: false, error: { code: "unknown", message: t("Stopped.") } };
+    if (reason === "timeout") return { ok: false, error: { code: "ai_unavailable", message: t("Prism's AI took too long to answer. Please try again.") } };
+    if (!navigator.onLine) return { ok: false, error: { code: "offline", message: t("You seem to be offline. Check your internet connection.") } };
     return {
       ok: false,
       error: {
         code: "helper_unreachable",
         message: settings.helperMode === "local"
-          ? "Prism can't reach its helper on this computer. Start it, or switch to the online service in Settings."
-          : "Prism can't reach its online service right now. Please try again in a moment.",
+          ? t("Prism can't reach its helper on this computer. Start it, or switch to the online service in Settings.")
+          : t("Prism can't reach its online service right now. Please try again in a moment."),
       },
     };
   } finally {
@@ -73,11 +74,11 @@ export async function callHelper<T>(path: string, body: unknown, signal?: AbortS
 }
 
 function httpError(status: number, data: { message?: string; detail?: string }): PrismError {
-  if (status === 429) return { code: "rate_limited", message: data.message ?? "Prism is busy. Please wait a minute and try again." };
-  if (status === 403) return { code: "forbidden", message: "Prism's service refused the request." };
-  if (status === 503) return { code: "ai_unavailable", message: data.message ?? "Prism's AI is not answering right now. Please try again." };
-  if (status === 422) return { code: "bad_request", message: typeof data.detail === "string" ? data.detail : "Prism couldn't use that selection." };
-  return { code: "unknown", message: `Something went wrong (error ${status}). Please try again.` };
+  if (status === 429) return { code: "rate_limited", message: data.message ?? t("Prism is busy. Please wait a minute and try again.") };
+  if (status === 403) return { code: "forbidden", message: t("Prism's service refused the request.") };
+  if (status === 503) return { code: "ai_unavailable", message: data.message ?? t("Prism's AI is not answering right now. Please try again.") };
+  if (status === 422) return { code: "bad_request", message: typeof data.detail === "string" ? data.detail : t("Prism couldn't use that selection.") };
+  return { code: "unknown", message: t("Something went wrong (error {status}). Please try again.", { status }) };
 }
 
 export async function helperHealth(): Promise<{ ok: boolean; mode?: string; model?: string; base: string }> {

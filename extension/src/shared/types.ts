@@ -18,6 +18,8 @@ export interface Settings {
   tidyEverywhere: boolean;
   /** Talking instead of typing: the microphone was allowed once on Prism's own page. */
   dictation: boolean;
+  /** The person picked their language on the first-run screen. */
+  languageChosen: boolean;
   onboarded: boolean;
   installId: string;
 }

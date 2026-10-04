@@ -6,7 +6,8 @@ import { getProfile, getSettings, profileText, saveProfile, saveSitePrefs } from
 import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
 } from "../shared/types";
-import { Brand, Icon, isMac, Logo, MicButton, StylePicker, Switch } from "../ui/components";
+import { Brand, Icon, isMac, Logo, MicButton, StylePicker, Switch, useLanguage } from "../ui/components";
+import { currentLanguage, t, tj, UI_LANGUAGES } from "../shared/i18n";
 import { applyFill, fieldLabel, type FillResult, setText, undoFill } from "./actions";
 import { isSensitiveField } from "./analyzer";
 import { controlsIn, regionContext } from "./region";
@@ -45,6 +46,7 @@ const talkError = (message: string) => dispatchEvent(new CustomEvent("prism:toas
 const addSpoken = (old: string, spoken: string) => (old.trim() ? `${old.trimEnd()} ${spoken}` : spoken);
 
 export function App({ engine, selection, bus, setHidden }: Props) {
+  useLanguage();
   const [tidy, setTidy] = useState<TidyState>(engine.state);
   const [panelOpen, setPanelOpen] = useState(false);
   const [sel, setSel] = useState<SelState>(selection.state);
@@ -133,13 +135,13 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     const s = (await getSettings());
     const { context, elements, needsPicture } = regionContext(rect, tidy.pagePurpose);
     if (kind === "fill" && !context.controls.length) {
-      setCard({ kind, rect, status: "error", message: "There are no form fields in the area you selected. Try drawing the box around the questions you need help with." });
+      setCard({ kind, rect, status: "error", message: t("There are no form fields in the area you selected. Try drawing the box around the questions you need help with.") });
       return;
     }
     const wantPicture = needsPicture || (kind === "translate" && context.imageCount > 0);
     const image = wantPicture ? await capture(rect) : undefined;
     if (!context.text && !context.controls.length && !image) {
-      setCard({ kind, rect, status: "error", message: "Prism couldn't read anything in that area, and the browser didn't allow a picture of it. Try a different area, or copy the text into Chat." });
+      setCard({ kind, rect, status: "error", message: t("Prism couldn't read anything in that area, and the browser didn't allow a picture of it. Try a different area, or copy the text into Chat.") });
       return;
     }
     const profile = await getProfile();
@@ -162,7 +164,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
       },
     });
     if (!result?.ok) {
-      setCard({ kind, rect, status: "error", message: result?.error?.message ?? "Prism couldn't get an answer." });
+      setCard({ kind, rect, status: "error", message: result?.error?.message ?? t("Prism couldn't get an answer.") });
       return;
     }
     const answer = result.value.answer;
@@ -214,11 +216,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
   return (
     <div class="layer">
       {showTab && !panelOpen && (
-        <button class="tab" type="button" aria-label={`Prism: ${tidy.message || "page tidied"}. Open Prism panel`} onClick={() => setPanelOpen(true)}
+        <button class="tab" type="button" aria-label={t("Prism: {status}. Open Prism panel", { status: tidy.message || t("page tidied") })} onClick={() => setPanelOpen(true)}
           data-testid="prism-tab">
           <Logo size={30} />
           <span class={`tab__dot${busy ? " tab__dot--busy" : ""}${tidyOn ? "" : " tab__dot--off"}`} aria-hidden="true" />
-          <span class="tab__status">{!tidyOn ? "Original" : busy ? "Tidying…" : "Tidied"}</span>
+          <span class="tab__status">{!tidyOn ? t("Original") : busy ? t("Tidying…") : t("Tidied")}</span>
         </button>
       )}
       {settings?.dictation && sel.phase === "idle" && <PageTalk />}
@@ -246,7 +248,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
       {toast && (
         <div class="toast pz-card" role={toast.tone === "error" ? "alert" : "status"}>
           <span>{toast.text}</span>
-          <button class="pz-btn pz-btn--small" type="button" onClick={() => setToast(null)}>OK</button>
+          <button class="pz-btn pz-btn--small" type="button" onClick={() => setToast(null)}>{t("OK")}</button>
         </div>
       )}
     </div>
@@ -256,6 +258,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
 // ---------- Page panel ----------
 
 function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Settings | null; onClose: () => void; onPoint: () => void; onChat: () => void }) {
+  useLanguage();
   const { tidy, engine } = props;
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { closeRef.current?.focus(); }, []);
@@ -264,32 +267,33 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
     <section class="panel pz-card" role="dialog" aria-label="Prism" data-testid="prism-panel">
       <div class="panel__head">
         <Brand size={26} />
-        <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close Prism panel">
-          <Icon name="close" /> Close
+        <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label={t("Close Prism panel")}>
+          <Icon name="close" /> {t("Close")}
         </button>
       </div>
       <div class="panel__body">
         <div class="panel__section" aria-live="polite">
           {tidy.status === "planning" && <div class="pz-progress" aria-hidden="true" />}
-          <Switch checked={tidy.status !== "off"} label="Tidy this page" id="panel-tidy-switch"
-            onChange={(on) => (on ? engine.enable() : engine.disable("Showing the original page."))} />
+          <Switch checked={tidy.status !== "off"} label={t("Tidy this page")} id="panel-tidy-switch"
+            onChange={(on) => (on ? engine.enable() : engine.disable(t("Showing the original page.")))} />
           {tidy.status !== "off" && <p style="margin:0;font-weight:600">{tidy.message}</p>}
-          {tidy.status !== "off" && tidy.pagePurpose && <p class="pz-muted" style="margin:0">This page: {tidy.pagePurpose}</p>}
+          {tidy.status !== "off" && tidy.pagePurpose && <p class="pz-muted" style="margin:0">{t("This page: {purpose}", { purpose: tidy.pagePurpose })}</p>}
         </div>
         <div class="panel__section">
           <button class="pz-btn pz-btn--block" type="button" onClick={props.onPoint}>
-            <Icon name="select" /> Point at something
+            <Icon name="select" /> {t("Point at something")}
           </button>
-          <p class="pz-hint" style="margin:0">Or hold <strong>{shortcutLabel(props.settings?.shortcut ?? "alt", mac)}</strong> and drag over anything on the page.</p>
-          <button class="pz-btn pz-btn--block" type="button" onClick={props.onChat}><Icon name="chat" /> Chat about this page</button>
+          <p class="pz-hint" style="margin:0">{tj("Or hold {key} and drag over anything on the page.", { key: <strong>{shortcutLabel(props.settings?.shortcut ?? "alt", mac)}</strong> })}</p>
+          <button class="pz-btn pz-btn--block" type="button" onClick={props.onChat}><Icon name="chat" /> {t("Chat about this page")}</button>
+          <SpeakButton block text={pageText} lang={document.documentElement.lang?.slice(0, 2) || undefined} label={t("Read this page to me")} />
         </div>
         {tidy.status !== "off" && <div class="panel__section">
-          <span class="pz-label">Style for this website</span>
+          <span class="pz-label">{t("Style for this website")}</span>
           <StylePicker value={tidy.styleId} onChange={(id: StyleId) => engine.setStyle(id)} />
         </div>}
         {tidy.steps.length > 0 && (
           <div class="panel__section">
-            <span class="pz-label">Next steps on this page</span>
+            <span class="pz-label">{t("Next steps on this page")}</span>
             <ol class="steps">
               {tidy.steps.map((s) => <li><button type="button" onClick={() => engine.focusStep(s.id)}>{s.label}</button></li>)}
             </ol>
@@ -297,28 +301,32 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
         )}
         {tidy.hiddenClutter > 0 && (
           <div class="panel__section">
-            <span class="pz-label">Hidden to reduce clutter</span>
+            <span class="pz-label">{t("Hidden to reduce clutter")}</span>
             <button class="pz-btn pz-btn--small" type="button" aria-pressed={tidy.clutterShown} onClick={() => engine.toggleClutter()} data-testid="toggle-clutter">
-              {tidy.clutterShown ? "Hide" : "Show"} adverts and promotions ({tidy.hiddenClutter})
+              {tidy.clutterShown
+                ? t("Hide adverts and promotions ({count})", { count: tidy.hiddenClutter })
+                : t("Show adverts and promotions ({count})", { count: tidy.hiddenClutter })}
             </button>
           </div>
         )}
         {tidy.folds.length > 0 && (
           <div class="panel__section">
-            <span class="pz-label">Tucked away to reduce clutter</span>
+            <span class="pz-label">{t("Tucked away to reduce clutter")}</span>
             {tidy.folds.map((f) => (
               <button class="pz-btn pz-btn--small" type="button" aria-pressed={f.open} onClick={() => engine.toggleFold(f.gid)}>
-                {f.open ? "Hide" : "Show"} {f.label.toLowerCase()} ({f.count})
+                {f.open
+                  ? t("Hide {name} ({count})", { name: f.label.toLowerCase(), count: f.count })
+                  : t("Show {name} ({count})", { name: f.label.toLowerCase(), count: f.count })}
               </button>
             ))}
           </div>
         )}
         <div class="panel__section">
-          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => engine.regenerate()}><Icon name="restore" /> Tidy again from scratch</button>
-          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => saveSitePrefs(location.origin, { tidy: "never" }).then(() => engine.disable("Prism won't tidy this website automatically."))}>
-            Don't tidy this website
+          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => engine.regenerate()}><Icon name="restore" /> {t("Tidy again from scratch")}</button>
+          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => saveSitePrefs(location.origin, { tidy: "never" }).then(() => engine.disable(t("Prism won't tidy this website automatically.")))}>
+            {t("Don't tidy this website")}
           </button>
-          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => send({ type: "open-options" })}><Icon name="settings" /> Settings</button>
+          <button class="pz-btn pz-btn--quiet" type="button" onClick={() => send({ type: "open-options" })}><Icon name="settings" /> {t("Settings")}</button>
         </div>
       </div>
     </section>
@@ -328,6 +336,7 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
 // ---------- Selection ----------
 
 function SelectionLayer(props: { sel: SelState; selection: SelectionController; settings: Settings | null; menuRect: Rect | null }) {
+  useLanguage();
   const { sel, selection } = props;
   const catcherRef = useRef<HTMLDivElement>(null);
   const active = sel.phase === "armed" || sel.phase === "dragging";
@@ -342,7 +351,7 @@ function SelectionLayer(props: { sel: SelState; selection: SelectionController; 
     <>
       {active && (
         <div ref={catcherRef} class={`catcher${sel.mode === "hotkey" ? " catcher--hotkey" : ""}`} tabIndex={-1} data-testid="prism-catcher"
-          aria-label="Prism selection area"
+          aria-label={t("Prism selection area")}
           onPointerDown={(e) => { block(e); (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); selection.pointerDown(e.clientX, e.clientY); }}
           onPointerMove={(e) => { block(e); selection.pointerMove(e.clientX, e.clientY); }}
           onPointerUp={(e) => { block(e); selection.pointerUp(e.clientX, e.clientY); }}
@@ -350,16 +359,16 @@ function SelectionLayer(props: { sel: SelState; selection: SelectionController; 
       )}
       {r && r.width > 0 && (
         <div class="sel-rect" style={`left:${r.x}px;top:${r.y}px;width:${r.width}px;height:${r.height}px`} data-testid="prism-sel-rect">
-          {sel.phase === "dragging" && r.y > 36 && <span class="sel-label">Selected area</span>}
+          {sel.phase === "dragging" && r.y > 36 && <span class="sel-label">{t("Selected area")}</span>}
         </div>
       )}
       {active && sel.mode !== "hotkey" && (
         <div class="sel-hint pz-card" role="status">
           <Icon name="select" />
           <span>{sel.mode === "keyboard"
-            ? "Use the arrow keys to move the box, Shift + arrows to resize it, then press Enter."
-            : "Drag a box around what you want help with."}</span>
-          <button class="pz-btn pz-btn--small" type="button" onClick={() => selection.cancel()}>Cancel (Esc)</button>
+            ? t("Use the arrow keys to move the box, Shift + arrows to resize it, then press Enter.")
+            : t("Drag a box around what you want help with.")}</span>
+          <button class="pz-btn pz-btn--small" type="button" onClick={() => selection.cancel()}>{t("Cancel (Esc)")}</button>
         </div>
       )}
     </>
@@ -367,15 +376,16 @@ function SelectionLayer(props: { sel: SelState; selection: SelectionController; 
 }
 
 function ActionMenu(props: { rect: Rect; onAction: (a: AssistAction | "chat") => void; onAdjust: () => void; onClose: () => void }) {
+  useLanguage();
   const first = useRef<HTMLButtonElement>(null);
   const hasFields = useMemo(() => controlsIn(props.rect).controls.length > 0, [props.rect]);
   useEffect(() => { first.current?.focus(); }, []);
   const pos = placeNear(props.rect, 316, 240); // matches .menu width in overlay.css
   const items: { id: AssistAction | "chat"; label: string; hint: string; icon: string; disabled?: boolean }[] = [
-    { id: "define", label: "Define", hint: "What does this mean?", icon: "define" },
-    { id: "translate", label: "Translate", hint: "Put it in my language", icon: "translate" },
-    { id: "fill", label: "Fill out", hint: hasFields ? "Help with these questions" : "No form fields here", icon: "fill", disabled: !hasFields },
-    { id: "chat", label: "Chat", hint: "Ask anything or get help doing it", icon: "chat" },
+    { id: "define", label: t("Define"), hint: t("What does this mean?"), icon: "define" },
+    { id: "translate", label: t("Translate"), hint: t("Put it in my language"), icon: "translate" },
+    { id: "fill", label: t("Fill out"), hint: hasFields ? t("Help with these questions") : t("No form fields here"), icon: "fill", disabled: !hasFields },
+    { id: "chat", label: t("Chat"), hint: t("Ask anything or get help doing it"), icon: "chat" },
   ];
   const onKeyDown = (e: KeyboardEvent) => {
     const buttons = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>(".menu__action")];
@@ -388,7 +398,7 @@ function ActionMenu(props: { rect: Rect; onAction: (a: AssistAction | "chat") =>
     }
   };
   return (
-    <div class="menu pz-card" role="menu" aria-label="What would you like Prism to do?" style={`left:${pos.x}px;top:${pos.y}px`}
+    <div class="menu pz-card" role="menu" aria-label={t("What would you like Prism to do?")} style={`left:${pos.x}px;top:${pos.y}px`}
       onKeyDown={onKeyDown} data-testid="prism-menu">
       <div class="menu__grid">
         {items.map((it, idx) => (
@@ -402,8 +412,8 @@ function ActionMenu(props: { rect: Rect; onAction: (a: AssistAction | "chat") =>
         ))}
       </div>
       <div class="menu__foot">
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onAdjust}>Adjust area</button>
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose}>Close (Esc)</button>
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onAdjust}>{t("Adjust area")}</button>
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose}>{t("Close (Esc)")}</button>
       </div>
     </div>
   );
@@ -411,12 +421,17 @@ function ActionMenu(props: { rect: Rect; onAction: (a: AssistAction | "chat") =>
 
 // ---------- Answer cards ----------
 
-const TITLES: Record<AssistAction, string> = { define: "What this means", translate: "Translation", fill: "Help filling this out" };
+function titleOf(kind: AssistAction): string {
+  if (kind === "define") return t("What this means");
+  if (kind === "translate") return t("Translation");
+  return t("Help filling this out");
+}
 
 function AnswerCard(props: {
   card: CardState; onClose: () => void; onRetry: (extra?: { targetLanguage?: string; question?: string; justForNow?: string }) => void;
   onChat: () => void; onUpdate: (c: CardState) => void;
 }) {
+  useLanguage();
   const { card } = props;
   const closeRef = useRef<HTMLButtonElement>(null);
   const boxRef = useRef<HTMLElement>(null);
@@ -482,23 +497,23 @@ function AnswerCard(props: {
     setMoved(clampTo(r.left + d[e.key][0], r.top + d[e.key][1]));
   };
   return (
-    <section ref={boxRef} class={`answer pz-card${docked ? " answer--docked" : ""}${moved ? " answer--moved" : ""}`} role="dialog" aria-label={TITLES[card.kind]} style={style} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
-      <div class="answer__head answer__grip" onPointerDown={startDrag} title="Drag to move">
-        <button class="answer__move" type="button" aria-label="Move window (use arrow keys)" onKeyDown={nudge} data-testid="card-move">
+    <section ref={boxRef} class={`answer pz-card${docked ? " answer--docked" : ""}${moved ? " answer--moved" : ""}`} role="dialog" aria-label={titleOf(card.kind)} style={style} data-testid="prism-card" data-kind={card.kind} data-status={card.status}>
+      <div class="answer__head answer__grip" onPointerDown={startDrag} title={t("Drag to move")}>
+        <button class="answer__move" type="button" aria-label={t("Move window (use arrow keys)")} onKeyDown={nudge} data-testid="card-move">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="4" r="1.3" /><circle cx="11" cy="4" r="1.3" /><circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" /><circle cx="5" cy="12" r="1.3" /><circle cx="11" cy="12" r="1.3" /></g></svg>
         </button>
         <Logo size={24} />
-        <h2 class="answer__title">{TITLES[card.kind]}</h2>
-        <span class="answer__resize" onPointerDown={startResize} title="Drag to resize" aria-hidden="true" data-testid="card-resize" />
-        <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close">
-          <Icon name="close" /> Close
+        <h2 class="answer__title">{titleOf(card.kind)}</h2>
+        <span class="answer__resize" onPointerDown={startResize} title={t("Drag to resize")} aria-hidden="true" data-testid="card-resize" />
+        <button ref={closeRef} class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label={t("Close")}>
+          <Icon name="close" /> {t("Close")}
         </button>
       </div>
       <div class="answer__body" aria-live="polite" key={card.status === "ready" && card.kind === "fill" && card.result ? "result" : "main"}>
         {card.status === "loading" && (
           <>
             <div class="pz-progress" aria-hidden="true" />
-            <p>{card.kind === "translate" ? "Translating…" : card.kind === "fill" ? "Reading the form…" : "Working out what this means…"}</p>
+            <p>{card.kind === "translate" ? t("Translating…") : card.kind === "fill" ? t("Reading the form…") : t("Working out what this means…")}</p>
           </>
         )}
         {card.status === "error" && <div class="pz-notice pz-notice--error" role="alert"><div>{card.message}</div></div>}
@@ -509,13 +524,16 @@ function AnswerCard(props: {
         )}
       </div>
       <div class="answer__foot">
-        {card.status === "error" && <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry()}>Try again</button>}
+        {card.status === "error" && <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry()}>{t("Try again")}</button>}
         {card.status === "ready" && card.kind === "define" && (
-          <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ question: "Explain this even more simply, in very short sentences." })}>Explain more simply</button>
+          <>
+            <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ question: "Explain this even more simply, in very short sentences." })}>{t("Explain more simply")}</button>
+            <SpeakButton text={[card.data.summary, card.data.explanation, card.data.whatToDoHere].filter(Boolean).join(" ")} />
+          </>
         )}
         {card.status === "ready" && card.kind === "translate" && (
           <span class="lang-row">
-            <label for="pz-lang">Into</label>
+            <label for="pz-lang">{t("Into")}</label>
             <select id="pz-lang" value={lang || card.data.targetLanguage} onChange={(e) => {
               const v = (e.target as HTMLSelectElement).value;
               setLang(v);
@@ -524,10 +542,10 @@ function AnswerCard(props: {
             }}>
               {[...new Set([card.data.targetLanguage, ...LANGUAGES])].map((l) => <option value={l}>{l}</option>)}
             </select>
-            <SpeakButton text={card.data.lines.map((l) => l.translation).join(". ")} />
+            <SpeakButton text={card.data.lines.map((l) => l.translation).join(". ")} lang={UI_LANGUAGES.find((l) => l.english === card.data.targetLanguage)?.code} />
           </span>
         )}
-        {card.status === "ready" && <button class="pz-btn pz-btn--small" type="button" onClick={props.onChat}><Icon name="chat" /> Ask a follow-up</button>}
+        {card.status === "ready" && <button class="pz-btn pz-btn--small" type="button" onClick={props.onChat}><Icon name="chat" /> {t("Ask a follow-up")}</button>}
       </div>
     </section>
   );
@@ -543,16 +561,40 @@ export function Rich({ text }: { text: string }) {
   return <>{parts.map((part, i) => (i % 2 ? <strong>{part}</strong> : part.replace(/\*\*/g, "")))}</>;
 }
 
-function SpeakButton({ text }: { text: string }) {
-  if (!("speechSynthesis" in window)) return null;
+let speakCounter = 0;
+
+/** Read aloud / Stop reading, with the computer's own voices (via the service worker's chrome.tts). */
+function SpeakButton({ text, lang, label, block }: { text: string | (() => string); lang?: string; label?: string; block?: boolean }) {
+  useLanguage();
+  const [speaking, setSpeaking] = useState<number | null>(null);
+  useEffect(() => {
+    const onMsg = (msg: { type?: string; id?: number }) => { if (msg?.type === "tts:ended" && msg.id === speaking) setSpeaking(null); };
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => chrome.runtime.onMessage.removeListener(onMsg);
+  }, [speaking]);
+  const toggle = () => {
+    if (speaking !== null) { send({ type: "tts:stop" }); setSpeaking(null); return; }
+    const id = ++speakCounter;
+    const words = typeof text === "function" ? text() : text;
+    if (!words.trim()) return;
+    setSpeaking(id);
+    send({ type: "tts:speak", id, text: words, lang: lang ?? currentLanguage().code });
+  };
   return (
-    <button class="pz-btn pz-btn--small" type="button" onClick={() => { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(text)); }}>
-      <Icon name="speak" /> Read aloud
+    <button class={`pz-btn pz-btn--small${block ? " pz-btn--block" : ""}`} type="button" aria-pressed={speaking !== null} onClick={toggle} data-testid="read-aloud">
+      <Icon name={speaking !== null ? "stop" : "speak"} /> {speaking !== null ? t("Stop reading") : (label ?? t("Read aloud"))}
     </button>
   );
 }
 
+/** The page's main content as it reads on screen (folded-away clutter and hidden parts are skipped). */
+function pageText(): string {
+  const main = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
+  return ((main as HTMLElement).innerText ?? "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 30000);
+}
+
 function DefineView({ data }: { data: DefineAnswer }) {
+  useLanguage();
   return (
     <>
       <p class="lead"><Rich text={data.summary} /></p>
@@ -562,21 +604,22 @@ function DefineView({ data }: { data: DefineAnswer }) {
           {data.terms.map((t) => <div><dt>{t.term}</dt><dd>{t.meaning}</dd></div>)}
         </dl>
       )}
-      {data.whatToDoHere && <div class="todo"><strong>What you can do here: </strong><Rich text={data.whatToDoHere} /></div>}
-      {data.uncertain.length > 0 && <p class="pz-muted">Unclear: {data.uncertain.join("; ")}</p>}
+      {data.whatToDoHere && <div class="todo"><strong>{t("What you can do here:")} </strong><Rich text={data.whatToDoHere} /></div>}
+      {data.uncertain.length > 0 && <p class="pz-muted">{t("Unclear: {items}", { items: data.uncertain.join("; ") })}</p>}
     </>
   );
 }
 
 function TranslateView({ data }: { data: TranslateAnswer }) {
+  useLanguage();
   return (
     <>
       <p class="pz-muted" style="margin:0">{data.sourceLanguage} → {data.targetLanguage}</p>
       <ol class="lines">
         {data.lines.map((l) => (
           <li class="line">
-            <span class="line__dst">{l.unclear ? <span class="unclear">[unclear] </span> : null}{l.translation}</span>
-            <span class="line__src" lang="">Original: {l.source}</span>
+            <span class="line__dst">{l.unclear ? <span class="unclear">{t("[unclear]")} </span> : null}{l.translation}</span>
+            <span class="line__src" lang="">{t("Original: {text}", { text: l.source })}</span>
             {l.note && <span class="line__note">{l.note}</span>}
           </li>
         ))}
@@ -586,14 +629,15 @@ function TranslateView({ data }: { data: TranslateAnswer }) {
 }
 
 function sourceLabel(s: FieldSuggestion): string {
-  if (s.source === "profile") return "From About you";
-  if (s.source === "session") return "From what you told Prism just now";
-  if (s.source === "page") return "Shown on the page";
-  if (s.source === "inference") return "Prism's guess — please check";
+  if (s.source === "profile") return t("From About you");
+  if (s.source === "session") return t("From what you told Prism just now");
+  if (s.source === "page") return t("Shown on the page");
+  if (s.source === "inference") return t("Prism's guess — please check");
   return "";
 }
 
 function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "ready" }>; onRetry: (extra?: { justForNow?: string }) => void; onUpdate: (c: CardState) => void }) {
+  useLanguage();
   const { card } = props;
   const [chosen, setChosen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(card.data.fields.map((f) => [f.id, f.hasSuggestion && ["profile", "session", "page"].includes(f.source)])));
@@ -628,7 +672,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
     return (
       <>
         <div class="pz-notice pz-notice--ok" role="status" data-testid="fill-result">
-          <div><strong>{r.changed.length} {r.changed.length === 1 ? "answer" : "answers"} filled in.</strong> Not submitted.</div>
+          <div><strong>{r.changed.length === 1 ? t("1 answer filled in.") : t("{count} answers filled in.", { count: r.changed.length })}</strong> {t("Not submitted.")}</div>
         </div>
         <ul class="fields">
           {r.changed.map((c) => <li class="field"><span class="field__name">{c.label}</span><span>{c.value}</span></li>)}
@@ -636,7 +680,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
         </ul>
         <div>
           <button class="pz-btn" type="button" data-testid="fill-undo" onClick={() => { undoFill(r.undo); props.onUpdate({ ...card, result: undefined }); }}>
-            <Icon name="undo" /> Undo — put the old answers back
+            <Icon name="undo" /> {t("Undo — put the old answers back")}
           </button>
         </div>
       </>
@@ -654,12 +698,12 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
               <span>{f.explanation}</span>
               <label class="field__value">
                 <input type="checkbox" checked={chosen[f.id]} onChange={(e) => setChosen({ ...chosen, [f.id]: (e.target as HTMLInputElement).checked })}
-                  aria-label={`Use this answer for ${labelOf(card, f.id)}`} />
+                  aria-label={t("Use this answer for {field}", { field: labelOf(card, f.id) })} />
                 {isCheckbox(card, f.id)
-                  ? <span><strong>{f.checked ? "Tick this box" : "Leave unticked"}</strong></span>
+                  ? <span><strong>{f.checked ? t("Tick this box") : t("Leave unticked")}</strong></span>
                   : <><input class="pz-input" value={values[f.id]} onInput={(e) => setValues({ ...values, [f.id]: (e.target as HTMLInputElement).value })}
-                      aria-label={`Answer for ${labelOf(card, f.id)}`} />
-                    <MicButton small label="Say it" onError={talkError} onText={(t) => { setValues({ ...values, [f.id]: t }); setChosen({ ...chosen, [f.id]: true }); }} /></>}
+                      aria-label={t("Answer for {field}", { field: labelOf(card, f.id) })} />
+                    <MicButton small label={t("Say it")} onError={talkError} onText={(t) => { setValues({ ...values, [f.id]: t }); setChosen({ ...chosen, [f.id]: true }); }} /></>}
               </label>
               {sourceLabel(f) && <span><span class={`source source--${f.source}`}>{sourceLabel(f)}</span>{f.evidence && <span class="pz-hint"> · “{f.evidence}”</span>}</span>}
             </li>
@@ -673,26 +717,26 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
       )}
       {card.data.questions.length > 0 && (
         <div class="question">
-          <strong>Prism needs a little more information</strong>
+          <strong>{t("Prism needs a little more information")}</strong>
           {card.data.questions.map((q) => (
             <label class="pz-field">
               <span>{q.question}</span>
               <span class="talk-row"><input class="pz-input" value={answers[q.fieldId] ?? ""} onInput={(e) => setAnswers({ ...answers, [q.fieldId]: (e.target as HTMLInputElement).value })} />
-                <MicButton small label="Say it" onError={talkError} onText={(t) => setAnswers({ ...answers, [q.fieldId]: addSpoken(answers[q.fieldId] ?? "", t) })} /></span>
+                <MicButton small label={t("Say it")} onError={talkError} onText={(t) => setAnswers({ ...answers, [q.fieldId]: addSpoken(answers[q.fieldId] ?? "", t) })} /></span>
             </label>
           ))}
           <div class="lang-row">
             <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ justForNow: Object.entries(answers).map(([k, v]) => `${card.data.questions.find((q) => q.fieldId === k)?.question} ${v}`).join("; ") })}>
-              Use these answers just for now
+              {t("Use these answers just for now")}
             </button>
-            <button class="pz-btn pz-btn--small pz-btn--quiet" type="button" onClick={saveAnswers} disabled={saved}>{saved ? "Saved to About you" : "Save to About you"}</button>
+            <button class="pz-btn pz-btn--small pz-btn--quiet" type="button" onClick={saveAnswers} disabled={saved}>{saved ? t("Saved to About you") : t("Save to About you")}</button>
           </div>
         </div>
       )}
       {suggestions.length > 0 && (
         <div>
           <button class="pz-btn pz-btn--primary" type="button" onClick={apply} disabled={!count} data-testid="fill-apply">
-            Fill in {count} {count === 1 ? "answer" : "answers"}
+            {count === 1 ? t("Fill in 1 answer") : t("Fill in {count} answers", { count })}
           </button>
         </div>
       )}
@@ -702,7 +746,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
 
 function labelOf(card: Extract<CardState, { kind: "fill" }>, id: string): string {
   const el = card.status === "ready" ? card.elements.get(id)?.[0] : undefined;
-  return (el && fieldLabel(el)) || "This field";
+  return (el && fieldLabel(el)) || t("This field");
 }
 
 function isCheckbox(card: Extract<CardState, { kind: "fill"; status: "ready" }>, id: string): boolean {
@@ -715,6 +759,7 @@ const TYPEABLE = "textarea,input:not([type]),input[type=text],input[type=search]
 
 /** A Talk button beside whichever of the website's own text boxes has focus (never sensitive fields). */
 function PageTalk() {
+  useLanguage();
   const [target, setTarget] = useState<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const [box, setBox] = useState<DOMRect | null>(null);
   const busy = useRef(false);
@@ -755,6 +800,7 @@ function PageTalk() {
 
 /** Bottom-left dock: the main next step, other things to do, and "What do you want to do next?". */
 function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: string) => void }) {
+  useLanguage();
   const { tidy, engine } = props;
   const [open, setOpen] = useState(false);
   const [goal, setGoal] = useState("");
@@ -766,38 +812,48 @@ function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: st
     setOpen(false);
     props.onAsk(text);
   }
+  function guide() {
+    const text = goal.trim();
+    if (!text) return;
+    setGoal("");
+    setOpen(false);
+    send({ type: "guide:start", goal: text });
+  }
   return (
-    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label="Next step" data-testid="prism-next">
+    <div class={`nextstep pz-card${open ? " nextstep--open" : ""}`} role="region" aria-label={t("Next step")} data-testid="prism-next">
       {open && (
         <div class="nextstep__more" data-testid="next-more">
           {tidy.nextOptions.length > 0 && (
             <>
-              <span class="nextstep__label">Other things you can do</span>
+              <span class="nextstep__label">{t("Other things you can do")}</span>
               <ul class="nextstep__options">
                 {tidy.nextOptions.map((label, i) => (
-                  <li><span>{label}</span><button class="pz-btn pz-btn--small" type="button" onClick={() => engine.showOption(i)}>Show me</button></li>
+                  <li><span>{label}</span><button class="pz-btn pz-btn--small" type="button" onClick={() => engine.showOption(i)}>{t("Show me")}</button></li>
                 ))}
               </ul>
             </>
           )}
           <form class="nextstep__ask" onSubmit={ask}>
-            <label class="nextstep__label" for="pz-next-goal">What do you want to do next?</label>
+            <label class="nextstep__label" for="pz-next-goal">{t("What do you want to do next?")}</label>
             <div class="nextstep__askrow">
-              <input id="pz-next-goal" class="pz-input" value={goal} placeholder="For example: find the opening hours"
+              <input id="pz-next-goal" class="pz-input" value={goal} placeholder={t("For example: find the opening hours")}
                 onInput={(e) => setGoal((e.target as HTMLInputElement).value)} data-testid="next-goal" />
               <MicButton small onError={talkError} onText={(t) => setGoal(addSpoken(goal, t))} testId="next-talk" />
-              <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!goal.trim()} data-testid="next-go">Go</button>
+            </div>
+            <div class="nextstep__askrow">
+              <button class="pz-btn pz-btn--primary pz-btn--small" type="button" disabled={!goal.trim()} onClick={guide} data-testid="next-guide"><Icon name="guide" /> {t("Guide me step by step")}</button>
+              <button class="pz-btn pz-btn--small" type="submit" disabled={!goal.trim()} data-testid="next-go">{t("Just show me")}</button>
             </div>
           </form>
         </div>
       )}
       <div class="nextstep__bar">
         {tidy.nextStep
-          ? <><span class="nextstep__label">Next step</span><span class="nextstep__text">{tidy.nextStep}</span>
-            <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>Show me</button></>
-          : <span class="nextstep__text">What do you want to do next?</span>}
+          ? <><span class="nextstep__label">{t("Next step")}</span><span class="nextstep__text">{tidy.nextStep}</span>
+            <button class="pz-btn pz-btn--primary pz-btn--small" type="button" onClick={() => engine.showNextStep()}>{t("Show me")}</button></>
+          : <span class="nextstep__text">{t("What do you want to do next?")}</span>}
         <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" aria-expanded={open} onClick={() => setOpen(!open)} data-testid="next-toggle">
-          {open ? "Less" : tidy.nextStep ? "More" : "Ask"}
+          {open ? t("Less") : tidy.nextStep ? t("More") : t("Ask")}
         </button>
       </div>
     </div>
@@ -805,6 +861,7 @@ function NextDock(props: { tidy: TidyState; engine: TidyEngine; onAsk: (goal: st
 }
 
 function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
+  useLanguage();
   const { chat } = props;
   const [text, setText] = useState("");
   const [includeScreen, setIncludeScreen] = useState(false);
@@ -832,43 +889,46 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
   }
 
   return (
-    <section class="chat pz-card" role="dialog" aria-label="Chat with Prism" data-testid="prism-chat" data-status={chat?.status ?? "idle"}>
+    <section class="chat pz-card" role="dialog" aria-label={t("Chat with Prism")} data-testid="prism-chat" data-status={chat?.status ?? "idle"}>
       <div class="chat__head">
-        <span style="flex:1"><Brand size={26} label="Chat" /></span>
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:clear" }).then(props.onClose)}>New chat</button>
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label="Close chat"><Icon name="close" /> Close</button>
+        <span style="flex:1"><Brand size={26} label={t("Chat")} /></span>
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:clear" }).then(props.onClose)}>{t("New chat")}</button>
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label={t("Close chat")}><Icon name="close" /> {t("Close")}</button>
       </div>
       <div class="chat__context">
-        <span class="chip"><Icon name="select" /> Talking about: {chat?.regionLabel ?? "This page"}</span>
-        {highlights > 0 && <button class="pz-btn pz-btn--small" type="button" data-testid="clear-highlights" onClick={() => clearSpotlight()}><Icon name="close" /> Clear highlights</button>}
+        <span class="chip"><Icon name="select" /> {t("Talking about: {place}", { place: chat?.regionLabel ? t(chat.regionLabel) : t("This page") })}</span>
+        {highlights > 0 && <button class="pz-btn pz-btn--small" type="button" data-testid="clear-highlights" onClick={() => clearSpotlight()}><Icon name="close" /> {t("Clear highlights")}</button>}
         {chat?.sessionContext
-          ? <span class="chip"><Icon name="person" /> Helping someone else <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:session", text: "" })}>Stop</button></span>
-          : <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => setHelping(!helping)} aria-expanded={helping}>I'm helping someone else</button>}
+          ? <span class="chip"><Icon name="person" /> {t("Helping someone else")} <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:session", text: "" })}>{t("Stop")}</button></span>
+          : <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => setHelping(!helping)} aria-expanded={helping}>{t("I'm helping someone else")}</button>}
       </div>
       {helping && !chat?.sessionContext && (
         <div class="chat__compose">
-          <label class="pz-field"><span>Who are you helping? Add anything useful.</span>
-            <input class="pz-input" value={helpingText} placeholder="My mum, Joan Ellis, 81, lives in Leeds" onInput={(e) => setHelpingText((e.target as HTMLInputElement).value)} />
+          <label class="pz-field"><span>{t("Who are you helping? Add anything useful.")}</span>
+            <input class="pz-input" value={helpingText} placeholder={t("My mum, Joan Ellis, 81, lives in Leeds")} onInput={(e) => setHelpingText((e.target as HTMLInputElement).value)} />
           </label>
-          <button class="pz-btn pz-btn--small" type="button" onClick={() => { send({ type: "chat:session", text: helpingText }); setHelping(false); }}>Use just for now</button>
+          <button class="pz-btn pz-btn--small" type="button" onClick={() => { send({ type: "chat:session", text: helpingText }); setHelping(false); }}>{t("Use just for now")}</button>
         </div>
       )}
       <div class="chat__log" ref={logRef} aria-live="polite" data-testid="chat-log">
         {(!chat || chat.messages.length === 0) && (
-          <p class="pz-muted" style="margin:0">Ask about this page, or tell Prism what to do.</p>
+          <p class="pz-muted" style="margin:0">{t("Ask about this page, or tell Prism what to do.")}</p>
         )}
         {chat?.messages.map((m) => {
           if (m.kind === "confirm") return null;
           if (m.kind === "action") return <div class="msg msg--action"><Icon name="check" /> {m.text}</div>;
-          return <div class={`msg msg--${m.kind}`}>{m.kind === "prism" || m.kind === "question" ? <Rich text={m.text} /> : m.text}</div>;
+          if (m.kind === "prism" || m.kind === "question") {
+            return <div class={`msg msg--${m.kind}`}><Rich text={m.text} /><span class="msg__speak"><SpeakButton text={m.text} /></span></div>;
+          }
+          return <div class={`msg msg--${m.kind}`}>{m.text}</div>;
         })}
         {waitingConfirm && (
-          <div class="confirm" role="alertdialog" aria-label="Prism needs your permission" data-testid="chat-confirm">
-            <span class="pz-label">Prism needs your OK</span>
+          <div class="confirm" role="alertdialog" aria-label={t("Prism needs your permission")} data-testid="chat-confirm">
+            <span class="pz-label">{t("Prism needs your OK")}</span>
             <span class="confirm__what">{chat!.pending!.description}</span>
             <div class="confirm__row">
-              <button class="pz-btn pz-btn--primary" type="button" data-testid="confirm-yes" onClick={() => send({ type: "chat:confirm", approved: true })}>Yes, do it</button>
-              <button class="pz-btn" type="button" data-testid="confirm-no" onClick={() => send({ type: "chat:confirm", approved: false })}>No, stop here</button>
+              <button class="pz-btn pz-btn--primary" type="button" data-testid="confirm-yes" onClick={() => send({ type: "chat:confirm", approved: true })}>{t("Yes, do it")}</button>
+              <button class="pz-btn" type="button" data-testid="confirm-no" onClick={() => send({ type: "chat:confirm", approved: false })}>{t("No, stop here")}</button>
             </div>
           </div>
         )}
@@ -876,19 +936,19 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
       {(busy || waitingConfirm) && (
         <div class="chat__status" role="status">
           {busy && <div class="pz-progress" style="flex:1" aria-hidden="true" />}
-          <span>{chat?.status === "thinking" ? "Thinking…" : chat?.status === "acting" ? "Working on the page…" : "Waiting for you"}</span>
-          <button class="pz-btn pz-btn--danger pz-btn--small" type="button" data-testid="chat-stop" onClick={() => send({ type: "chat:stop" })}><Icon name="stop" /> Stop</button>
+          <span>{chat?.status === "thinking" ? t("Thinking…") : chat?.status === "acting" ? t("Working on the page…") : t("Waiting for you")}</span>
+          <button class="pz-btn pz-btn--danger pz-btn--small" type="button" data-testid="chat-stop" onClick={() => send({ type: "chat:stop" })}><Icon name="stop" /> {t("Stop")}</button>
         </div>
       )}
       <form class="chat__compose" onSubmit={submit}>
-        <label class="pz-sr" for="pz-chat-input">Message to Prism</label>
-        <textarea id="pz-chat-input" ref={inputRef} class="pz-input" value={text} placeholder="Type your question or what you'd like done…"
+        <label class="pz-sr" for="pz-chat-input">{t("Message to Prism")}</label>
+        <textarea id="pz-chat-input" ref={inputRef} class="pz-input" value={text} placeholder={t("Type your question or what you'd like done…")}
           onInput={(e) => setText((e.target as HTMLTextAreaElement).value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) submit(e); }} data-testid="chat-input" />
         <div class="chat__row">
-          <label class="toggle"><input type="checkbox" checked={includeScreen} onChange={(e) => setIncludeScreen((e.target as HTMLInputElement).checked)} /> Include the whole screen</label>
+          <label class="toggle"><input type="checkbox" checked={includeScreen} onChange={(e) => setIncludeScreen((e.target as HTMLInputElement).checked)} /> {t("Include the whole screen")}</label>
           <MicButton small onError={talkError} onText={(t) => { setText(addSpoken(text, t)); inputRef.current?.focus(); }} testId="chat-talk" />
-          <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!text.trim() || !!busy} data-testid="chat-send">Send</button>
+          <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!text.trim() || !!busy} data-testid="chat-send">{t("Send")}</button>
         </div>
       </form>
     </section>

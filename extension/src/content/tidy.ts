@@ -3,6 +3,7 @@
  * and a mutation governor for dynamic pages and SPA route changes.
  */
 import { hash, pageKeyFor } from "../shared/hash";
+import { t } from "../shared/i18n";
 import {
   getCachedPlan, getSettings, getSitePrefs, PLAN_VERSION, putCachedPlan, saveSitePrefs, touchCachedPlan,
 } from "../shared/storage";
@@ -104,18 +105,18 @@ export class TidyEngine {
     this.detectLayout();
     this.pageKey = pageKeyFor(location.href);
     await this.applyStyle(this.pickedStyle ?? styleId, settings);
-    this.emit({ status: "base", styleId: this.pickedStyle ?? styleId, message: "Tidied with Prism's basic clean-up.", steps: [], folds: [] });
+    this.emit({ status: "base", styleId: this.pickedStyle ?? styleId, message: t("Tidied with Prism's basic clean-up."), steps: [], folds: [] });
 
     if (!this.healthy(beforeWidth)) {
-      await this.disable("Prism couldn't tidy this page safely, so it's showing the original.");
-      this.emit({ status: "error", message: "Prism couldn't tidy this page safely, so it's showing the original." });
+      await this.disable(t("Prism couldn't tidy this page safely, so it's showing the original."));
+      this.emit({ status: "error", message: t("Prism couldn't tidy this page safely, so it's showing the original.") });
       return;
     }
     this.startGovernor();
     // The AI layout arrives in the background; callers (like the popup switch) don't wait for it.
     this.loadPlan(Boolean(opts.fromScratch || site.fromScratch)).catch((err) => {
       console.warn("Prism: plan failed", err);
-      this.emit({ status: "base", message: "Tidied with Prism's basic clean-up." });
+      this.emit({ status: "base", message: t("Tidied with Prism's basic clean-up.") });
     });
   }
 
@@ -353,22 +354,22 @@ export class TidyEngine {
         this.applyPlan(cached.plan);
         this.planFingerprint = analysis.structureHash;
         await touchCachedPlan(cached);
-        this.emit({ status: "cached", cacheHit: true, message: "Tidied using this page's saved layout." });
+        this.emit({ status: "cached", cacheHit: true, message: t("Tidied using this page's saved layout.") });
         return;
       }
     }
     if (analysis.outline.elements.length < 3) {
-      this.emit({ status: "base", message: "This page has very little Prism can organise, so it kept the basic clean-up." });
+      this.emit({ status: "base", message: t("This page has very little Prism can organise, so it kept the basic clean-up.") });
       return;
     }
     if (!this.budgetLeft()) {
-      this.emit({ status: "base", message: "Kept the basic clean-up (Prism limits how often it asks the AI on one page)." });
+      this.emit({ status: "base", message: t("Kept the basic clean-up (Prism limits how often it asks the AI on one page).") });
       return;
     }
     this.aiCallTimes.push(Date.now());
     this.debug.planRequests++;
     this.debug.planReasons.push(`${reason} ${location.pathname}`);
-    this.emit({ status: "planning", message: "Prism is studying the page…", aiCalls: this.state.aiCalls + 1, cacheHit: false });
+    this.emit({ status: "planning", message: t("Prism is studying the page…"), aiCalls: this.state.aiCalls + 1, cacheHit: false });
     const started = performance.now();
     const settings = this.settings!;
     const result = (await chrome.runtime.sendMessage({
@@ -377,14 +378,14 @@ export class TidyEngine {
     })) as Result<{ plan: TidyPlan }>;
     if (seq !== this.requestSeq || !this.active) return; // superseded or turned off meanwhile
     if (!result?.ok) {
-      this.emit({ status: "base", message: `${result?.error?.message ?? "Prism's AI isn't available."} The basic clean-up is still on.` });
+      this.emit({ status: "base", message: t("{error} The basic clean-up is still on.", { error: result?.error?.message ?? t("Prism's AI isn't available.") }) });
       return;
     }
     // The service worker validated this plan against TidyPlanSchema (background/api.ts), so page code
     // doesn't bundle the validator; applyPlan still ignores any id that isn't on the page.
     const plan = result.value.plan as TidyPlan | undefined;
     if (!plan || !Array.isArray(plan.roles)) {
-      this.emit({ status: "base", message: "Prism kept a simple tidy for this page." });
+      this.emit({ status: "base", message: t("Prism kept a simple tidy for this page.") });
       return;
     }
     const applied = this.applyPlan(plan);
@@ -393,7 +394,7 @@ export class TidyEngine {
     if (applied.rejectedRatio > 0.3) {
       // Too much of the plan didn't fit this page; keep the safe base tidy and don't cache.
       this.clearPlanAttrs();
-      this.emit({ status: "base", message: "Prism kept a simple tidy for this page.", lastPlanMs });
+      this.emit({ status: "base", message: t("Prism kept a simple tidy for this page."), lastPlanMs });
       return;
     }
     await putCachedPlan({
@@ -402,7 +403,7 @@ export class TidyEngine {
       plan, createdAt: Date.now(), lastUsedAt: Date.now(), hits: 0,
     });
     if (fromScratch) await saveSitePrefs(location.origin, { fromScratch: undefined });
-    this.emit({ status: "planned", message: "Tidied by Prism.", lastPlanMs });
+    this.emit({ status: "planned", message: t("Tidied by Prism."), lastPlanMs });
   }
 
   private clearPlanAttrs() {
@@ -479,7 +480,7 @@ export class TidyEngine {
       members.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
       const outer = members.filter((m) => !members.some((o) => o !== m && o.contains(m)));
       members.splice(0, members.length, ...outer);
-      const label = group.label || "More";
+      const label = group.label || t("More");
       const host = document.createElement("prism-fold");
       host.setAttribute("data-gid", gid);
       members[0].before(host);
@@ -650,8 +651,11 @@ function renderFold(host: HTMLElement, label: string, count: number, open: boole
   button.type = "button";
   button.setAttribute("aria-expanded", String(open));
   button.innerHTML = `<span class="dot" aria-hidden="true"></span>`;
-  button.append(`${open ? "Hide" : "Show"} ${label.toLowerCase()} (${count})`);
-  button.setAttribute("aria-label", `${open ? "Hide" : "Show"} ${label.toLowerCase()}, ${count} ${count === 1 ? "item" : "items"}`);
+  const vars = { label: label.toLowerCase(), count };
+  button.append(open ? t("Hide {label} ({count})", vars) : t("Show {label} ({count})", vars));
+  button.setAttribute("aria-label", open
+    ? (count === 1 ? t("Hide {label}, {count} item", vars) : t("Hide {label}, {count} items", vars))
+    : (count === 1 ? t("Show {label}, {count} item", vars) : t("Show {label}, {count} items", vars)));
   button.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();

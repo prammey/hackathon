@@ -3,6 +3,7 @@
  * State machine: idle → armed → dragging → complete (or cancelled on Esc/blur/tiny drag).
  * Rects are kept in document coordinates so scrolling mid-drag works; emitted rects are viewport CSS px.
  */
+import { t } from "../shared/i18n";
 import type { Rect, ShortcutId } from "../shared/types";
 
 export type SelPhase = "idle" | "armed" | "dragging" | "complete";
@@ -19,9 +20,9 @@ type Listener = (s: SelState) => void;
 const MIN_SIZE = 8;
 
 export function shortcutLabel(id: ShortcutId, mac: boolean): string {
-  if (id === "alt") return mac ? "Option ⌥" : "Alt";
-  if (id === "shift-alt") return mac ? "Shift + Option ⌥" : "Shift + Alt";
-  return mac ? "Control + Shift" : "Ctrl + Shift";
+  if (id === "alt") return mac ? t("Option ⌥") : t("Alt");
+  if (id === "shift-alt") return mac ? t("Shift + Option ⌥") : t("Shift + Alt");
+  return mac ? t("Control + Shift") : t("Ctrl + Shift");
 }
 
 export class SelectionController {

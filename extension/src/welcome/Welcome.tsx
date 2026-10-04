@@ -7,33 +7,58 @@ import { useEffect, useState } from "preact/hooks";
 import { getSettings, saveSettings } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
 import type { StyleId } from "../shared/types";
-import { allowMicrophone, Brand, Icon, isMac } from "../ui/components";
+import { t, tj, k, UI_LANGUAGES } from "../shared/i18n";
+import { allowMicrophone, Brand, Icon, isMac, useLanguage } from "../ui/components";
 import { MiniPreview } from "../options/preview";
 
 /** Hard-to-use but important real websites that Prism visibly improves (checked October 2026). */
 const DEMO_SITES = [
-  { name: "Illinois Human Services", what: "Cash, food and medical help", kind: "Benefits", url: "https://www.dhs.state.il.us/page.aspx?item=29719" },
-  { name: "Mississippi Medicaid", what: "Apply for Medicaid", kind: "Healthcare", url: "https://medicaid.ms.gov/" },
-  { name: "craigslist", what: "Local classifieds, jobs and housing", kind: "Classifieds", url: "https://www.craigslist.org/" },
-  { name: "Berkshire Hathaway", what: "Company reports and letters", kind: "Investing", url: "https://www.berkshirehathaway.com/" },
-  { name: "Cook County Court Clerk", what: "Court services and records", kind: "Courts", url: "https://www.cookcountyclerkofcourt.org/" },
-  { name: "California EDD", what: "Unemployment benefits", kind: "Benefits", url: "https://edd.ca.gov/en/unemployment/" },
-  { name: "Indian Health Service", what: "Federal health program", kind: "Healthcare", url: "https://www.ihs.gov/" },
-  { name: "TRICARE", what: "Military health insurance", kind: "Insurance", url: "https://www.tricare.mil/" },
-  { name: "Indiana FSSA", what: "Medicaid, SNAP and family help", kind: "Benefits", url: "https://www.in.gov/fssa/" },
-  { name: "Social Security POMS", what: "How benefit claims are decided", kind: "Social Security", url: "https://secure.ssa.gov/poms.nsf/home!readform" },
-  { name: "OPM Retirement Center", what: "Federal retirement", kind: "Retirement", url: "https://www.opm.gov/retirement-center/" },
-  { name: "Social Security Actuaries", what: "Benefit calculators and data", kind: "Social Security", url: "https://www.ssa.gov/oact/" },
+  { name: "Illinois Human Services", what: k("Cash, food and medical help"), kind: k("Benefits"), url: "https://www.dhs.state.il.us/page.aspx?item=29719" },
+  { name: "Mississippi Medicaid", what: k("Apply for Medicaid"), kind: k("Healthcare"), url: "https://medicaid.ms.gov/" },
+  { name: "craigslist", what: k("Local classifieds, jobs and housing"), kind: k("Classifieds"), url: "https://www.craigslist.org/" },
+  { name: "Berkshire Hathaway", what: k("Company reports and letters"), kind: k("Investing"), url: "https://www.berkshirehathaway.com/" },
+  { name: "Cook County Court Clerk", what: k("Court services and records"), kind: k("Courts"), url: "https://www.cookcountyclerkofcourt.org/" },
+  { name: "California EDD", what: k("Unemployment benefits"), kind: k("Benefits"), url: "https://edd.ca.gov/en/unemployment/" },
+  { name: "Indian Health Service", what: k("Federal health program"), kind: k("Healthcare"), url: "https://www.ihs.gov/" },
+  { name: "TRICARE", what: k("Military health insurance"), kind: k("Insurance"), url: "https://www.tricare.mil/" },
+  { name: "Indiana FSSA", what: k("Medicaid, SNAP and family help"), kind: k("Benefits"), url: "https://www.in.gov/fssa/" },
+  { name: "Social Security POMS", what: k("How benefit claims are decided"), kind: k("Social Security"), url: "https://secure.ssa.gov/poms.nsf/home!readform" },
+  { name: "OPM Retirement Center", what: k("Federal retirement"), kind: k("Retirement"), url: "https://www.opm.gov/retirement-center/" },
+  { name: "Social Security Actuaries", what: k("Benefit calculators and data"), kind: k("Social Security"), url: "https://www.ssa.gov/oact/" },
 ];
 
-type Choices = { styleId: StyleId; dictation: boolean };
+type Choices = { styleId: StyleId; dictation: boolean; languageChosen?: boolean };
+
+/** First thing a new person sees: their language, in their language. */
+function LanguagePicker({ onPick }: { onPick: (english: string) => void }) {
+  return (
+    <main class="page lang-pick" style="max-width:960px" aria-labelledby="lang-pick-h">
+      <Brand size={44} />
+      <h1 id="lang-pick-h"><Icon name="globe" /> Choose your language</h1>
+      <p class="lang-pick__sub">Elige tu idioma · Choisissez votre langue · 选择您的语言 · अपनी भाषा चुनें · اختر لغتك</p>
+      <div class="lang-pick__grid">
+        {UI_LANGUAGES.map((l) => (
+          <button type="button" class="lang-pick__btn" lang={l.code} dir={l.rtl ? "rtl" : "ltr"} onClick={() => onPick(l.english)} data-lang={l.code}>
+            <span class="lang-pick__native">{l.native}</span>
+            {l.code !== "en" && <span class="lang-pick__english">{l.english}</span>}
+          </button>
+        ))}
+      </div>
+      <p class="pz-hint">You can change this later in Prism's settings.</p>
+    </main>
+  );
+}
 
 export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?: ComponentChildren }) {
+  useLanguage();
   const { web } = props;
   const [settings, setChoices] = useState<Choices | null>(web ? { styleId: "soft", dictation: false } : null);
   const [talkProblem, setTalkProblem] = useState("");
   useEffect(() => { if (!web) getSettings().then((s) => { setChoices(s); saveSettings({ onboarded: true }); }); }, []);
   if (!settings) return null;
+  if (!web && !settings.languageChosen) {
+    return <LanguagePicker onPick={async (english) => setChoices(await saveSettings({ translateTo: english, languageChosen: true }))} />;
+  }
   // On the website there's nothing to save to, so choices only change what's shown.
   const choose = async (patch: Partial<Choices>) => setChoices(web ? { ...settings, ...patch } : await saveSettings(patch));
   const extLink = (href: string) => (web ? "#install" : href);
@@ -42,97 +67,110 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
     <main class="page" style="max-width:960px">
       <section class="welcome-hero" aria-labelledby="w-h">
         {props.top ? <div class="hero-top"><Brand size={44} />{props.top}</div> : <Brand size={44} />}
-        <h1 id="w-h">Websites, made <em>calm</em> and clear.</h1>
-        <p>Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.</p>
-        <p>No setup needed.</p>
+        <h1 id="w-h">{tj("Websites, made {calm} and clear.", { calm: <em>{t("calm")}</em> })}</h1>
+        <p>{t("Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.")}</p>
+        <p>{t("No setup needed.")}</p>
         <div class="practice" aria-labelledby="try-h">
-          <h2 id="try-h" class="practice__title"><Icon name="sparkle" /> Practice websites</h2>
-          <p class="practice__hint">Open one, then click the Prism button and turn on <strong>Tidy this page</strong>.</p>
+          <h2 id="try-h" class="practice__title"><Icon name="sparkle" /> {t("Practice websites")}</h2>
+          <p class="practice__hint">{tj("Open one, then click the Prism button and turn on {tidy}.", { tidy: <strong>{t("Tidy this page")}</strong> })}</p>
           <ul class="demo-sites" data-testid="demo-sites">
             {DEMO_SITES.map((site) => (
-              <li><a class="demo-site" href={site.url} target="_blank" rel="noopener" title={`${site.kind}: ${site.what}`}>{site.name}</a></li>
+              <li><a class="demo-site" href={site.url} target="_blank" rel="noopener" title={`${t(site.kind)}: ${t(site.what)}`}>{site.name}</a></li>
             ))}
           </ul>
         </div>
       </section>
 
       <section class="section" aria-labelledby="how-h">
-        <h2 id="how-h">How to use Prism</h2>
+        <h2 id="how-h">{t("How to use Prism")}</h2>
         <div class="steps-big">
-          <div class="step-card"><span class="step-num">1</span><b>Tidy a page</b>
-            <span>Click the Prism button <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" /> in your browser's toolbar, then turn on <strong>Tidy this page</strong>.</span>
-            <span class="pz-hint">Can't see it? Click the jigsaw-piece icon and pin Prism.</span></div>
-          <div class="step-card"><span class="step-num">2</span><b>Point at anything</b>
-            <span>Hold <strong>{key}</strong> and drag a box around something confusing. Choose <strong>Define</strong>, <strong>Translate</strong>, <strong>Fill out</strong> or <strong>Chat</strong>.</span>
-            <span class="pz-hint">Or use the Prism button → Point at something.</span></div>
-          <div class="step-card"><span class="step-num">3</span><b>Go back any time</b>
-            <span><strong>Refresh</strong> <span class="kbd-icon" role="img" aria-label="refresh button"><Icon name="restore" /></span> the page, or switch off <strong>Tidy this page</strong>, to see the website exactly as it was.</span>
-            <span class="pz-hint">Nothing on the website is deleted.</span></div>
+          <div class="step-card"><span class="step-num">1</span><b>{t("Tidy a page")}</b>
+            <span>{tj("Click the Prism button {icon} in your browser's toolbar, then turn on {tidy}.", {
+              icon: <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" />,
+              tidy: <strong>{t("Tidy this page")}</strong>,
+            })}</span>
+            <span class="pz-hint">{t("Can't see it? Click the jigsaw-piece icon and pin Prism.")}</span></div>
+          <div class="step-card"><span class="step-num">2</span><b>{t("Point at anything")}</b>
+            <span>{tj("Hold {key} and drag a box around something confusing. Choose {define}, {translate}, {fill} or {chat}.", {
+              key: <strong>{key}</strong>,
+              define: <strong>{t("Define")}</strong>,
+              translate: <strong>{t("Translate")}</strong>,
+              fill: <strong>{t("Fill out")}</strong>,
+              chat: <strong>{t("Chat")}</strong>,
+            })}</span>
+            <span class="pz-hint">{t("Or use the Prism button → Point at something.")}</span></div>
+          <div class="step-card"><span class="step-num">3</span><b>{t("Go back any time")}</b>
+            <span>{tj("{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.", {
+              refresh: <strong>{t("Refresh")}</strong>,
+              icon: <span class="kbd-icon" role="img" aria-label={t("refresh button")}><Icon name="restore" /></span>,
+              tidy: <strong>{t("Tidy this page")}</strong>,
+            })}</span>
+            <span class="pz-hint">{t("Nothing on the website is deleted.")}</span></div>
         </div>
       </section>
 
       <section class="section" aria-labelledby="style-h">
-        <h2 id="style-h">Pick a style (you can change it later)</h2>
-        <div class="style-cards" role="radiogroup" aria-label="Style">
+        <h2 id="style-h">{t("Pick a style (you can change it later)")}</h2>
+        <div class="style-cards" role="radiogroup" aria-label={t("Style")}>
           {STYLE_ORDER.map((id) => (
             <button type="button" class="style-card" role="radio" aria-checked={settings.styleId === id} aria-pressed={settings.styleId === id}
               onClick={() => choose({ styleId: id })}>
               <MiniPreview t={STYLES[id]} />
-              <span class="style-card__name">{STYLES[id].name}{settings.styleId === id && <span class="pz-label" style="color:var(--pz-violet)"><Icon name="check" /> Chosen</span>}</span>
-              <span class="style-card__tag">{STYLES[id].tagline}</span>
+              <span class="style-card__name">{STYLES[id].name}{settings.styleId === id && <span class="pz-label" style="color:var(--pz-violet)"><Icon name="check" /> {t("Chosen")}</span>}</span>
+              <span class="style-card__tag">{t(STYLES[id].tagline)}</span>
             </button>
           ))}
         </div>
       </section>
 
       <section class="section" aria-labelledby="next-h">
-        <h2 id="next-h">Never lose your place</h2>
+        <h2 id="next-h">{t("Never lose your place")}</h2>
         <div class="feature">
           <div class="feature__demo" aria-hidden="true">
             <div class="demo-page">
               <span class="demo-line" /><span class="demo-line demo-line--short" />
-              <span class="demo-cta">Start your application →</span>
+              <span class="demo-cta">{t("Start your application →")}</span>
               <span class="demo-line" />
             </div>
-            <div class="demo-dock"><span class="demo-dock__label">NEXT STEP</span><span>Start your application</span><span class="demo-dock__btn">Show me</span></div>
+            <div class="demo-dock"><span class="demo-dock__label">{t("NEXT STEP")}</span><span>{t("Start your application")}</span><span class="demo-dock__btn">{t("Show me")}</span></div>
           </div>
           <div class="feature__text">
-            <p><strong>Prism always shows you what to do next.</strong> On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.</p>
-            <p>The <strong>Next step</strong> bar in the bottom-left corner names it too — press <strong>Show me</strong> and Prism takes you right there.</p>
+            <p>{tj("{lead} On every tidied page, the most important next step gets a gently breathing outline so your eyes go straight to it.", { lead: <strong>{t("Prism always shows you what to do next.")}</strong> })}</p>
+            <p>{tj("The {nextStep} bar in the bottom-left corner names it too — press {showMe} and Prism takes you right there.", { nextStep: <strong>{t("Next step")}</strong>, showMe: <strong>{t("Show me")}</strong> })}</p>
           </div>
         </div>
       </section>
 
       <section class="section" aria-labelledby="talk-h">
-        <h2 id="talk-h">Talk instead of typing</h2>
-        <p>Press <strong>Talk</strong> next to any box — on websites, in Chat, anywhere Prism helps — and say what you want to write.</p>
+        <h2 id="talk-h">{t("Talk instead of typing")}</h2>
+        <p>{tj("Press {talk} next to any box — on websites, in Chat, anywhere Prism helps — and say what you want to write.", { talk: <strong>{t("Talk")}</strong> })}</p>
         <div class="row">
           {settings.dictation
-            ? <span class="pz-label" style="color:var(--pz-violet)" data-testid="talk-on"><Icon name="check" /> Talking is turned on</span>
+            ? <span class="pz-label" style="color:var(--pz-violet)" data-testid="talk-on"><Icon name="check" /> {t("Talking is turned on")}</span>
             : web
-              ? <a class="pz-btn pz-btn--primary" href="#install"><Icon name="mic" /> Turn on talking</a>
+              ? <a class="pz-btn pz-btn--primary" href="#install"><Icon name="mic" /> {t("Turn on talking")}</a>
               : <button class="pz-btn pz-btn--primary" type="button" data-testid="talk-allow" onClick={async () => {
                   const error = await allowMicrophone();
                   if (error) setTalkProblem(error);
                   else choose({ dictation: true });
-                }}><Icon name="mic" /> Turn on talking</button>}
+                }}><Icon name="mic" /> {t("Turn on talking")}</button>}
         </div>
         {talkProblem && <p class="pz-hint" role="alert">{talkProblem}</p>}
       </section>
 
       <section class="section" aria-labelledby="you-h">
-        <h2 id="you-h">Want more personal help?</h2>
-        <p>Tell Prism a little about yourself — like your name, language and what you're trying to do — and it can explain things your way and suggest answers for forms. It's optional and stays on this computer.</p>
+        <h2 id="you-h">{t("Want more personal help?")}</h2>
+        <p>{t("Tell Prism a little about yourself — like your name, language and what you're trying to do — and it can explain things your way and suggest answers for forms. It's optional and stays on this computer.")}</p>
         <div class="row">
-          <a class="pz-btn" href={extLink("options.html#about")}><Icon name="person" /> Tell Prism about you</a>
-          <a class="pz-btn pz-btn--quiet" href={extLink("options.html#import")}>Import from ChatGPT or Claude</a>
+          <a class="pz-btn" href={extLink("options.html#about")}><Icon name="person" /> {t("Tell Prism about you")}</a>
+          <a class="pz-btn pz-btn--quiet" href={extLink("options.html#import")}>{t("Import from ChatGPT or Claude")}</a>
         </div>
       </section>
 
       <section class="section" aria-labelledby="priv-h">
-        <h2 id="priv-h">Your privacy</h2>
-        <p>Prism can see the websites you choose to tidy or ask about, so it can help with them. When you ask for help, only what's needed is sent to Google's Gemini AI. Prism never sends passwords or card details, and never sends a form without asking you. <a href={extLink("options.html#privacy")}>Read more</a>.</p>
-        <p class="pz-hint">To limit which websites Prism can use, right-click the Prism button and choose “This can read and change site data”.</p>
+        <h2 id="priv-h">{t("Your privacy")}</h2>
+        <p>{tj("Prism can see the websites you choose to tidy or ask about, so it can help with them. When you ask for help, only what's needed is sent to Google's Gemini AI. Prism never sends passwords or card details, and never sends a form without asking you. {readMore}.", { readMore: <a href={extLink("options.html#privacy")}>{t("Read more")}</a> })}</p>
+        <p class="pz-hint">{t("To limit which websites Prism can use, right-click the Prism button and choose “This can read and change site data”.")}</p>
       </section>
       {props.bottom}
     </main>

@@ -164,6 +164,8 @@ test("Helping someone else: chat override is temporary and the saved profile is 
 test("Welcome page renders and offers a practice page", async ({ context, extensionId }) => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/welcome.html`);
+  // First run: choose a language, then the welcome page appears in it.
+  await page.locator("[data-lang=en]").click();
   await expect(page.getByRole("heading", { name: "Websites, made calm and clear." })).toBeVisible();
   await expect(page.getByText("Nothing on the website is deleted.")).toBeVisible();
   await expect(page.getByRole("img", { name: "refresh button" })).toBeVisible();

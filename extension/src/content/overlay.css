@@ -158,3 +158,28 @@
 .field__value { flex-wrap: wrap; }
 .page-talk { position: fixed; pointer-events: auto; z-index: 3; }
 .page-talk .pz-btn { box-shadow: var(--pz-shadow); }
+
+/* ---------- Guide me ---------- */
+.guide { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+.guide__dim { position: fixed; inset: 0; background: rgba(12, 10, 22, 0.66); pointer-events: auto; }
+.guide__dim--light { background: rgba(12, 10, 22, 0.32); }
+.guide__ring { position: fixed; pointer-events: none; border: 4px solid #6D4AFF; border-radius: 18px; box-shadow: 0 0 0 6px rgba(109, 74, 255, 0.28), 0 0 40px rgba(109, 74, 255, 0.55); animation: guide-breathe 1.8s ease-in-out infinite; }
+@keyframes guide-breathe { 0%, 100% { box-shadow: 0 0 0 4px rgba(109, 74, 255, 0.30), 0 0 30px rgba(109, 74, 255, 0.45); } 50% { box-shadow: 0 0 0 14px rgba(109, 74, 255, 0.10), 0 0 50px rgba(109, 74, 255, 0.65); } }
+:host([data-reduce-motion]) .guide__ring { animation: none; }
+@media (prefers-reduced-motion: reduce) { .guide__ring { animation: none; } }
+.guide-card { position: fixed; pointer-events: auto; width: min(420px, calc(100vw - 24px)); padding: 18px 20px; display: grid; gap: 10px; border: 1px solid rgba(167, 139, 250, 0.5) !important; box-shadow: var(--pz-shadow), 0 0 40px rgba(109, 74, 255, 0.35) !important; z-index: 6; }
+.guide-card--center { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 24px)); }
+.guide-card--caution { border-color: #F59E0B !important; }
+.guide-card__step, .guide-card__goal { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pz-violet); }
+.guide-card__goal { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--pz-muted); font-weight: 600; }
+.guide-card__text { margin: 0; font-size: 21px; font-weight: 700; line-height: 1.3; color: var(--pz-text); display: flex; gap: 10px; align-items: center; }
+.guide-card__detail { margin: 0; font-size: 16px; color: var(--pz-muted); line-height: 1.45; }
+.guide-card__caution { margin: 0; font-size: 15px; font-weight: 600; color: #FBBF24; display: flex; gap: 8px; align-items: center; }
+.guide-card__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.guide-card__row .pz-input { flex: 1; min-width: 140px; }
+.guide-card__choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.guide-card__choices .pz-btn { font-size: 16px; }
+.guide-card .pz-progress { width: 22px; flex: none; }
+
+.msg__speak { display: block; margin-top: 6px; }
+.msg__speak .pz-btn { font-size: 12px; padding: 4px 10px; min-height: 0; }

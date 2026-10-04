@@ -216,3 +216,29 @@ class TranscribeRequest(BaseModel):
   audio: str = Field(min_length=100, max_length=2_800_000)  # base64, about 60 s of speech at most
   mime: Literal["audio/webm", "audio/ogg", "audio/mp4", "audio/wav"] = "audio/webm"
   language: str = Field(default="", max_length=40)  # a hint only; the person may speak any language
+
+
+# ---------- Guide me ----------
+
+class GuideStepDone(BaseModel):
+  instruction: str = Field(default="", max_length=300)
+  result: str = Field(default="", max_length=200)  # what happened after it (clicked, typed, page changed)
+
+
+class GuideRequest(BaseModel):
+  goal: str = Field(min_length=2, max_length=400)
+  pageState: str = Field(default="", max_length=20000)  # empty when starting from a blank tab
+  history: list[GuideStepDone] = Field(default_factory=list, max_length=40)
+  answers: list[str] = Field(default_factory=list, max_length=10)  # replies to earlier questions
+  profile: str = Field(default="", max_length=6000)
+  language: str = Field(default="English", max_length=40)
+
+
+class GuideStep(BaseModel):
+  kind: Literal["click", "type", "choose", "read", "go", "ask", "done", "stuck"]
+  id: str  # element id from the page state for click/type/choose/read, else ""
+  instruction: str  # one short instruction shown big on screen
+  detail: str  # optional one-sentence extra help, may be ""
+  url: str  # for kind "go": the https website to open, else ""
+  choices: list[str]  # for kind "ask": up to 5 short answers, else []
+  caution: bool  # true when the click submits, pays, sends, signs or deletes something

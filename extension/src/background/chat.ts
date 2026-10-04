@@ -6,6 +6,7 @@
 import {
   type ActionCheck, type ActionOutcome, type ChatState, MAX_MS, MAX_STEPS, newMessage,
 } from "../shared/chat";
+import { t } from "../shared/i18n";
 import { getProfile, getSettings, profileText } from "../shared/storage";
 import type { ChatAction, ChatReply, ChatTurn } from "../shared/types";
 import { callHelper } from "./api";
@@ -73,7 +74,7 @@ export async function startChat(tabId: number, opts: {
       };
   state.regionLabel = opts.regionLabel;
   if (opts.regionText || opts.image) {
-    state.messages.push(newMessage("notice", `Attached: ${opts.regionLabel}`));
+    state.messages.push(newMessage("notice", t("Attached: {label}", { label: opts.regionLabel })));
     state.turns.push({
       role: "user",
       text: `The person selected this part of the page to talk about:\n${opts.regionText || "(see picture)"}`,
@@ -88,21 +89,21 @@ export async function startChat(tabId: number, opts: {
 }
 
 export async function setSessionContext(tabId: number, text: string): Promise<void> {
-  const state = (await loadState(tabId)) ?? (await startChat(tabId, { regionLabel: "This page", regionText: "" }));
+  const state = (await loadState(tabId)) ?? (await startChat(tabId, { regionLabel: t("This page"), regionText: "" }));
   state.sessionContext = text.slice(0, 2500);
-  state.messages.push(newMessage("notice", text ? "Helping someone else — using their details for this chat." : "Back to your own details."));
+  state.messages.push(newMessage("notice", text ? t("Helping someone else — using their details for this chat.") : t("Back to your own details.")));
   await save(state);
 }
 
 export async function sendUserMessage(tabId: number, text: string, includeScreen?: boolean): Promise<void> {
-  const state = (await loadState(tabId)) ?? (await startChat(tabId, { regionLabel: "This page", regionText: "" }));
+  const state = (await loadState(tabId)) ?? (await startChat(tabId, { regionLabel: t("This page"), regionText: "" }));
   if (includeScreen !== undefined) state.includeScreen = includeScreen;
   if (state.status === "waiting-user") state.status = "idle";
   // "I'm helping my mum…" — keep it as session context, never as a silent profile edit.
   const helping = text.match(/\b(i'?m|i am)\s+(helping|filling (this|it) (in|out) for|doing this for)\s+(.{2,120})/i);
   if (helping && !state.sessionContext) {
     state.sessionContext = `The person is helping someone else: ${helping[4]}. Details they mention in this chat are about that person.\nWhat they said: “${text.slice(0, 600)}”`;
-    state.messages.push(newMessage("notice", "Helping someone else — using their details for this chat."));
+    state.messages.push(newMessage("notice", t("Helping someone else — using their details for this chat.")));
   }
   state.messages.push(newMessage("user", text));
   let image: string | undefined;
@@ -132,7 +133,7 @@ export async function stopChat(tabId: number): Promise<void> {
   state.status = "stopped";
   state.pending = undefined;
   state.pendingQueue = [];
-  state.messages.push(newMessage("notice", "Stopped."));
+  state.messages.push(newMessage("notice", t("Stopped.")));
   // The model turn that asked for actions needs matching responses before the next message.
   closeOpenCalls(state, "The person stopped Prism.");
   await save(state);
@@ -150,7 +151,7 @@ export async function confirmPending(tabId: number, approved: boolean): Promise<
   const { action, description } = state.pending;
   state.pending = undefined;
   if (!approved) {
-    state.messages.push(newMessage("notice", `OK, I didn't do that: ${description}`));
+    state.messages.push(newMessage("notice", t("OK, I didn't do that: {description}", { description })));
     state.pendingQueue = [];
     addToolResults(state, [{ id: action.id, name: action.name, response: { ok: false, message: "The person said no. Do not try again; ask what they want instead." } }]);
     state.status = "idle";
@@ -224,8 +225,8 @@ async function runLoop(state: ChatState): Promise<void> {
       closeOpenCalls(state, "Limit reached.");
       state.status = "done";
       state.messages.push(newMessage("notice", state.failures >= 3
-        ? "I stopped because several steps didn't work. You can tell me what to try next."
-        : "I stopped because this is taking many steps. Tell me if you'd like me to continue."));
+        ? t("I stopped because several steps didn't work. You can tell me what to try next.")
+        : t("I stopped because this is taking many steps. Tell me if you'd like me to continue.")));
       await save(state);
       return;
     }
@@ -280,7 +281,7 @@ async function runLoop(state: ChatState): Promise<void> {
 async function handleAction(state: ChatState, action: ChatAction): Promise<boolean> {
   if (action.name === "finish") {
     addToolResults(state, [{ id: action.id, name: action.name, response: { ok: true } }]);
-    state.messages.push(newMessage("prism", String(action.args.summary ?? "Done.")));
+    state.messages.push(newMessage("prism", String(action.args.summary ?? t("Done."))));
     closeOpenCalls(state, "Skipped because the task finished.");
     state.pendingQueue = [];
     state.status = "done";
@@ -292,7 +293,7 @@ async function handleAction(state: ChatState, action: ChatAction): Promise<boole
   if (action.name === "ask_user") {
     addToolResults(state, [{ id: action.id, name: action.name, response: { ok: true, message: "Question shown to the person; their reply will follow." } }]);
     closeOpenCalls(state, "Waiting for the person's answer.");
-    state.messages.push(newMessage("question", String(action.args.question ?? "Could you tell me more?")));
+    state.messages.push(newMessage("question", String(action.args.question ?? t("Could you tell me more?"))));
     state.pendingQueue = [];
     state.turns.push({ role: "model", raw: { role: "model", parts: [{ text: String(action.args.question ?? "") }] } });
     state.status = "waiting-user";
@@ -310,7 +311,8 @@ async function handleAction(state: ChatState, action: ChatAction): Promise<boole
     return true;
   }
   if (!check.ok || check.risk === "forbidden") {
-    state.messages.push(newMessage("notice", check.reason ?? `I can't do that: ${check.description}`));
+    // check.reason stays English for the model below; only the person's copy is translated.
+    state.messages.push(newMessage("notice", check.reason !== undefined ? t(check.reason) : t("I can't do that: {description}", { description: check.description })));
     addToolResults(state, [{ id: action.id, name: action.name, response: { ok: false, message: check.reason ?? "Not allowed." } }]);
     state.failures++;
     return true;

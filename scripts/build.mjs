@@ -73,6 +73,11 @@ function copyStatic() {
     fs.copyFileSync(path.join(root, "node_modules", file), path.join(out, "fonts", `${name}.woff2`));
   }
   fs.copyFileSync(path.join(ext, "assets/fonts-LICENSE.txt"), path.join(out, "fonts", "LICENSE.txt"));
+  // Prism's own words in each language (English needs no file: the text is the key).
+  fs.mkdirSync(path.join(out, "locales"), { recursive: true });
+  for (const f of fs.readdirSync(path.join(ext, "src/locales")).filter((n) => /^[a-z]{2}\.json$/.test(n))) {
+    fs.copyFileSync(path.join(ext, "src/locales", f), path.join(out, "locales", f));
+  }
   for (const f of fs.readdirSync(path.join(ext, "assets/icons"))) {
     fs.copyFileSync(path.join(ext, "assets/icons", f), path.join(out, "icons", f));
   }
@@ -93,7 +98,7 @@ function manifest() {
     action: { default_popup: "popup.html", default_title: "Prism", default_icon: icons },
     background: { service_worker: "background.js", type: "module" },
     options_ui: { page: "options.html", open_in_tab: true },
-    permissions: ["storage", "unlimitedStorage", "activeTab", "scripting", "contextMenus", "offscreen"],
+    permissions: ["storage", "unlimitedStorage", "activeTab", "scripting", "contextMenus", "offscreen", "tts"],
     host_permissions: ["<all_urls>"],
     content_scripts: [
       { matches: ["http://*/*", "https://*/*"], js: ["early.js"], run_at: "document_start" },
