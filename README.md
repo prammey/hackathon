@@ -1,5 +1,7 @@
 # Prism
 
+**Website: [prism-helper.vercel.app](https://prism-helper.vercel.app)** · [How it's built](https://prism-helper.vercel.app/how-its-built.html)
+
 **Websites, made calm and clear.** Prism is a free Chrome extension for anyone who finds the web confusing,
 from a grandmother ordering a scarf to a 20-year-old booking their first DMV appointment. It makes cluttered
 pages easier to read, explains anything you point at in plain words, and can walk you through a task one
