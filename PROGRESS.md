@@ -3,11 +3,13 @@
 Read this first when resuming work. Specs in `specs/` are the source of truth; implementation changes
 are recorded in `specs/02-architecture.md` §9.
 
-## Current state (2026-10-03)
-- **Phase 2 complete.** All milestones implemented and verified; online helper deployed.
+## Current state (2026-10-04)
+- **v1.0.0.** Post-hackathon product release: Guide me, Read aloud, 12 interface languages, light touch
+  vs full makeover, five-section Settings, minified release build.
 - Online service: https://prism-helper-677745474657.us-central1.run.app (`/health`, `/demo/`).
-- Release zip: `npm run package` → `release/prism-extension-v0.1.0.zip`.
-- Test commands and evidence locations: see README → For developers.
+- Website and download: https://prism-helper.vercel.app (`release/Prism.zip`).
+- Test commands and evidence locations: see README → For developers. Guide me on real sites:
+  `node tools/guide-run.mjs <tasks.json> <outDir>`; design review screenshots: `tools/review-scan.mjs`.
 
 ## Milestones
 | # | Milestone | Status |
@@ -82,3 +84,12 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
   bigger, bold, highlighted, breathing outline; works tidied or not; Clear highlights). Settings simplified
   to four sections (How pages look + text size, Talking instead of typing, Your language, About you basics)
   with everything else under "More settings". Helper redeployed.
+- 2026-10-04 — v1.0.0: Guide me (spotlight; the person does every action; caution only on final presses;
+  follows new tabs; re-plans when the page changes or redraws; dropdown lists and search suggestions stay
+  usable; replies in the person's language). Read aloud (chrome.tts). 12 interface languages with a
+  first-run picker and right-to-left Arabic. "Never make a site worse": well-designed sites get a light
+  touch (bigger text, darker faint text, ads hidden, next step highlighted), old/chaotic pages the full
+  makeover; two design-review rounds over ~50 real sites. Real-site Guide me runs: CA DMV home → appointment
+  time (11 steps, stops at Confirm); MS Medicaid into the application form (12 steps); usa.gov in Spanish;
+  weather.com from a blank tab (done); Amazon scarf into the basket (done). Full suite 76 tests (one flaky
+  settings test fixed); Vitest 25/25; pytest 10/10.

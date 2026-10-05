@@ -1,122 +1,154 @@
 # Prism
 
-**Websites, made calm and clear.** Prism is a browser extension that tidies confusing websites so they're
-easier to read, explains anything you point at in plain words, helps you fill in forms, and can carry
-out a task step by step — always asking before anything important happens.
+**Websites, made calm and clear.** Prism is a free Chrome extension for anyone who finds the web confusing,
+from a grandmother ordering a scarf to a 20-year-old booking their first DMV appointment. It makes cluttered
+pages easier to read, explains anything you point at in plain words, and can walk you through a task one
+step at a time. You stay in control: Prism points, you click.
 
-It's designed first for people who find the web stressful — for example an older adult who is new to
-technology — and to be pleasant for everyone.
+![Guide me walking someone through booking a California DMV appointment, one spotlight at a time](docs/images/guide-me-dmv.gif)
 
-| Before | After (Neo-Brutalist) |
-| --- | --- |
-| ![A chaotic canvas-layout shop](evidence/glowup/canvas-0-original.png) | ![The same page restructured by Prism](evidence/glowup/canvas-1-bold.png) |
+*Guide me on the real California DMV website: "book an appointment to renew my driver's license", from the
+home page to picking a time. Prism dims everything except the one thing to press, and says what it is.*
 
-| Feature | What it does |
-| --- | --- |
-| **Tidy this page** | Restyles the live page: readable text, clear hierarchy, obvious buttons, clutter tucked away. The website keeps working, and **Show original page** puts it back exactly. Layouts are remembered so the page looks the same next time. |
-| **Four styles** | **Clean Flat**, **Modern Minimalist**, **Neo-Brutalist** and **Neumorphism** — complete design systems, not colour filters. |
-| **Restructures chaotic pages** | On pages built as a pinned "canvas" (like arngren.net) or with layout tables, Prism reflows the pieces into a padded, rounded card grid in reading order, groups each product's picture, name and price, and turns long link lists into pills. |
-| **Always readable** | After tidying, Prism measures every piece of text against what's really behind it and fixes anything below WCAG AA (white on white, grey on grey, colour on the same colour). Boxes that blend in get an outline. Adverts are hidden, not faded. |
-| **Clear next step** | The page's main action becomes the biggest, gently glowing button, and a *Next step* bar shows what to do next with **Show me**. |
-| **Point at something** | Hold **Option ⌥** (Mac) or **Alt** (Windows) and drag a box around anything. Choose **Define**, **Translate**, **Fill out** or **Chat**. Works on text *and* words inside pictures. |
-| **Fill out** | Explains each question and suggests answers from what you've told Prism, showing where each answer came from. Puts answers in only when you say so, never sends the form, and can undo. |
-| **Chat** | Ask about the page, or ask Prism to do a task ("report my missed bin"). It works step by step, and stops to ask before sending, submitting, paying, agreeing or deleting. **Stop** is always there. |
-| **About you** | Optional details (name, language, reading needs, address for forms, people you help). Import from ChatGPT or Claude by pasting or with an export file. Stays in your browser. |
+**[Download Prism](https://prism-helper.vercel.app)** · installs in less than a minute · no account needed
 
 ---
 
-## Install (less than a minute, no account needed)
+## What it does
 
-Prism isn't in the Chrome Web Store yet, so you add it the way developers do. It's safe and easy to
-remove later.
+### Guide me
+Tell Prism what you want to do, typed or spoken ("send an email to my son", "renew my driver's licence").
+Prism dims the page, shines a spotlight on the one button or box you need, and tells you what to do with it.
+You do the clicking and typing yourself, so you learn the website as you go.
 
-1. **Download** `Prism.zip` from https://prism-helper.vercel.app (or build it — see below) and **unzip** it.
-   You'll get a folder called `Prism` with `HOW TO INSTALL.txt` and a `prism-extension` folder.
-2. In Google Chrome, go to **`chrome://extensions`** (type it in the address bar and press Enter).
-3. Turn on **Developer mode** (switch at the top right).
+- **Works from anywhere**, even a blank new tab: Prism opens the right website for you.
+- **Follows you** across pages and into new tabs, and answers in your language.
+- **Never presses for you.** Before anything final (send, pay, place order, confirm, agree) it adds
+  *"Check everything is right before you press it."*
+- **Back** and **Stop** are always there.
+
+### Tidy this page
+One switch makes the page easier to read without breaking how it works.
+
+- **Well-made sites keep their look.** Prism makes small text bigger, darkens faint grey text, hides adverts
+  and gently highlights the page's main next step.
+- **Old or chaotic pages get a full makeover** in your chosen style: calm cards, a clear reading order,
+  readable text everywhere.
+- **Four styles:** Neumorphism, Clean Flat, Modern Minimalist and Neo-Brutalist.
+- **Nothing is lost.** Switch it off, or refresh, and the website is exactly as it was.
+
+Before on the left, with Prism on the right:
+
+![A chaotic old-style shop page, and the same page as calm, tidy product cards](docs/images/tidy-shop.png)
+
+*A chaotic shop page (a local test page modelled on real ones) gets the full makeover.*
+
+![Berkshire Hathaway's plain 1990s home page, and the same page with bigger, spaced-out text](docs/images/tidy-berkshire.png)
+
+*Berkshire Hathaway: tiny print becomes readable, with room to breathe.*
+
+![Mississippi Medicaid's home page, kept as it is, with "Apply for Medicaid" highlighted as the next step](docs/images/tidy-medicaid.png)
+
+*Mississippi Medicaid keeps its design. Prism enlarges the small text and points at "Apply for Medicaid".*
+
+### Point at anything
+Hold **Option ⌥** (Mac) or **Alt** (Windows) and drag a box around anything confusing, including words
+inside pictures. Choose:
+
+- **Define:** what it means, in plain words.
+- **Translate:** into your language.
+- **Fill out:** what each question is asking, with suggested answers from what you've told Prism. You
+  choose which answers go in, and Prism never sends the form.
+- **Chat:** ask anything about the page.
+
+### Read aloud
+Press **Read aloud** on any answer, or **Read this page to me**, and Prism reads it in your language
+using your computer's own voices.
+
+### Your language
+Prism speaks 12 languages: English, Español, Français, Português, 中文, हिन्दी, বাংলা, العربية, Tiếng Việt,
+Tagalog, 한국어 and Русский. You choose on the first screen and can change it any time. Explanations and
+translations work in many more.
+
+### Talk instead of typing
+Press **Talk** next to any box, on websites or in Prism, and say what you want to write.
+
+---
+
+## Install (less than a minute)
+
+Prism isn't in the Chrome Web Store yet, so you add it the way developers do. It's safe and easy to remove.
+
+1. **Download** `Prism.zip` from **https://prism-helper.vercel.app** and **unzip** it.
+2. In Google Chrome, go to **`chrome://extensions`**.
+3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and choose the `prism-extension` folder.
-5. A welcome page opens. Click the jigsaw-piece icon in the toolbar and **pin Prism** so its button is
-   always visible.
+5. Pick your language. Then click the jigsaw-piece icon in the toolbar and **pin Prism**.
 
-That's it — Prism uses its online service automatically. Try it on the practice page linked from the
-welcome page.
+Also works in Microsoft Edge and Brave (`edge://extensions`, `brave://extensions`).
 
-Also works in Microsoft Edge and Brave (`edge://extensions` / `brave://extensions`), though those
-browsers weren't part of automated testing.
+## How to use it
 
-## How to use Prism
-
-- **Tidy a page:** click the Prism button → turn on **Tidy this page**. Tick **Tidy … automatically every
-  time** to keep it on for that website.
-- **Choose a style:** in the Prism button's **Style** section, or Settings → Style for your default.
-- **Point at something:** hold **Option ⌥/Alt** and drag a box. Or click the Prism button → **Point at
-  something** and drag without holding keys. Or right-click → **Ask Prism about this**. Keyboard only:
-  **Alt+Shift+P**, then arrow keys and Enter. **Esc** always cancels.
-- **Talk instead of typing:** turn it on once (welcome page or Settings), then press **Talk** next to any
-  box — on websites, in Chat, in the Next step box — and say what you want to write.
-- **Find something on a page:** in Chat, say e.g. "emphasize the link about pro guitarists" — Prism makes
-  it big, bold and highlighted. Or open **Next step → More** and type or say what you want to do next.
-- **Get help with a form:** point at the questions → **Fill out** → tick the answers you want →
-  **Put answers in**. Check them, then send the form yourself.
-- **Tell Prism about you:** Settings → **About you** (all optional). To bring in what ChatGPT or Claude
-  know about you: Settings → **Import from ChatGPT or Claude**.
-- **Helping someone else:** in Chat, press **I'm helping someone else** or just say "I'm helping my mum
-  Joan". Prism uses their details for that chat only and won't change your saved profile.
-- **Go back to the original:** Prism button → turn off **Tidy this page**, or the **Show original page**
-  button on Prism's side tab. **Tidy again from scratch** makes a fresh layout.
+| To… | Do this |
+|---|---|
+| Get walked through a task | Click the Prism button, type or say what you want to do, press **Guide me** |
+| Tidy a page | Prism button → **Tidy this page**. Tick *Tidy … automatically every time* to keep it on for that site |
+| Give a site the full makeover | The Prism button at the bottom of the page → **Full makeover** |
+| Explain something | Hold **Option ⌥ / Alt** and drag a box around it. Or Prism button → **Point at something**. Keyboard: **Alt+Shift+P** |
+| Hear a page | The Prism button at the bottom of the page → **Read this page to me** |
+| Go back to the original | Switch off **Tidy this page**, or refresh the page |
+| Change style, text size or language | Prism's **Settings** |
 
 ## Try it on real websites
 
-Important websites that are hard to use, and look clearly better with Prism (screened from 85+ candidates,
-October 2026). The same list is the purple Practice websites panel on Prism's welcome page.
+Important websites that are hard to use. These also appear as the practice websites on Prism's welcome page.
 
-| Website | What it's for | Kind |
-|---|---|---|
-| [Illinois Human Services](https://www.dhs.state.il.us/page.aspx?item=29719) | Cash, food and medical help | Benefits |
-| [Mississippi Medicaid](https://medicaid.ms.gov/) | Apply for Medicaid | Healthcare |
-| [craigslist](https://www.craigslist.org/) | Local classifieds, jobs and housing | Classifieds |
-| [Berkshire Hathaway](https://www.berkshirehathaway.com/) | Company reports and letters | Investing |
-| [Cook County Circuit Court Clerk](https://www.cookcountyclerkofcourt.org/) | Court services and records | Courts |
-| [California EDD](https://edd.ca.gov/en/unemployment/) | Unemployment benefits | Benefits |
-| [Indian Health Service](https://www.ihs.gov/) | Federal health program | Healthcare |
-| [TRICARE](https://www.tricare.mil/) | Military health insurance | Insurance |
-| [Indiana Family & Social Services](https://www.in.gov/fssa/) | Medicaid, SNAP and family help | Benefits |
-| [Social Security rules (POMS)](https://secure.ssa.gov/poms.nsf/home!readform) | How benefit claims are decided | Social Security |
-| [OPM Retirement Center](https://www.opm.gov/retirement-center/) | Federal retirement | Retirement |
-| [Social Security Actuarial Services](https://www.ssa.gov/oact/) | Benefit calculators and data | Social Security |
+| Website | What it's for |
+|---|---|
+| [Illinois Human Services](https://www.dhs.state.il.us/page.aspx?item=29719) | Cash, food and medical help |
+| [Mississippi Medicaid](https://medicaid.ms.gov/) | Apply for Medicaid |
+| [craigslist](https://www.craigslist.org/) | Local classifieds, jobs and housing |
+| [Berkshire Hathaway](https://www.berkshirehathaway.com/) | Company reports and letters |
+| [Cook County Circuit Court Clerk](https://www.cookcountyclerkofcourt.org/) | Court services and records |
+| [California EDD](https://edd.ca.gov/en/unemployment/) | Unemployment benefits |
+| [Indian Health Service](https://www.ihs.gov/) | Federal health program |
+| [TRICARE](https://www.tricare.mil/) | Military health insurance |
+| [Indiana Family & Social Services](https://www.in.gov/fssa/) | Medicaid, SNAP and family help |
+| [Social Security rules (POMS)](https://secure.ssa.gov/poms.nsf/home!readform) | How benefit claims are decided |
+| [OPM Retirement Center](https://www.opm.gov/retirement-center/) | Federal retirement |
+| [Social Security Actuarial Services](https://www.ssa.gov/oact/) | Benefit calculators and data |
 
 ## Privacy
 
-- Settings, About you, people you help and saved layouts stay in your browser (`chrome.storage.local`).
-  Chats are forgotten when you close the tab. Prism never saves what you type into websites, and never
-  saves pictures of pages.
-- When you ask for help, only what that request needs is sent to Google's **Gemini** model on
-  **Vertex AI** via Prism's small service: a page outline for tidying (no form values), the selected area
-  (and a picture of it when needed), and the relevant parts of About you.
-- Prism never reads passwords or card details into AI requests, never types them, and never sends a form
-  or makes a purchase without asking.
-- Settings → **Privacy & your data** lets you see, download or delete everything.
+- Your settings and anything you tell Prism about yourself stay in your browser. Chats are forgotten when
+  you close the tab. Prism never saves what you type into websites.
+- When you ask for help, only what that request needs is sent to Google's **Gemini** AI on **Vertex AI**
+  through Prism's small service: a page outline (no form values), the area you pointed at, and the
+  relevant parts of what you told Prism.
+- Prism never reads, types or sends passwords or card details, and never sends a form or buys anything.
+- Settings → **Your data** lets you see, download or delete everything.
 - Prism is an independent project, not affiliated with Google, OpenAI or Anthropic.
 
 ## How it works
 
 ```
-Browser extension (Chrome MV3, TypeScript + Preact)          Prism service (Python, FastAPI)
-  content script: analyse page → tag elements → 1 stylesheet   ─────►  Gemini on Vertex AI
-  selection overlay, cards, chat (closed Shadow DOM)                   (gemini-3.7-flash for page plans,
-  service worker: AI calls, capture/crop, chat action loop             gemini-3.8-flash for help/chat,
-  popup · settings · welcome                                            gemini-3.5-flash-lite fallback)
+Browser extension (Chrome MV3, TypeScript + Preact)              Prism service (Python, FastAPI, Cloud Run)
+  content script: read the page → tag elements → one stylesheet    ─────►  Gemini on Vertex AI
+  spotlight, selection box, cards, chat (closed Shadow DOM)
+  service worker: AI calls, Guide me loop, read aloud
+  popup · settings · welcome · 12 languages
 ```
 
-- **Tidy** never replaces the page or runs AI-written code. Gemini returns a validated *plan* (labels for
-  existing elements); Prism's own CSS does the styling, so links, forms, validation and app state keep
-  working, and removing Prism's attributes restores the page exactly.
-- **Caching:** plans are saved per page (keyed by page address, page structure and preferences) so an
-  unchanged page reloads into the same layout with no AI call. Stale plans fail safely.
-- **Actions** use a fixed set (click, type, choose, tick, scroll, open) executed by Prism's code with
-  risk checks. Website text is treated as untrusted data and can't instruct Prism.
+- **Tidying never replaces the page** or runs AI-written code. Prism decides how much to change (a light
+  touch for well-designed sites, a full makeover for old ones), the AI labels the page's existing parts,
+  and Prism's own CSS does the styling. Links, forms and logins keep working, and removing Prism's
+  attributes restores the page exactly.
+- **Guide me** reads the page, asks the AI for the single next step (only elements that really exist are
+  accepted), and draws a spotlight with a hole the person clicks through. When the page changes, it
+  plans again from the new page.
+- **Website text is untrusted.** It can't instruct Prism, and Prism's actions are a fixed, checked set.
 
-Full specifications are in [`specs/`](specs/); progress and acceptance evidence in [PROGRESS.md](PROGRESS.md).
+Design notes are in [`specs/`](specs/), and progress and test evidence in [PROGRESS.md](PROGRESS.md).
 
 ## For developers
 
@@ -128,7 +160,7 @@ npm run build          # → extension/dist (load unpacked)
 npm run package        # → release/prism-extension-v<version>.zip
 ```
 
-**Run the AI service on your own computer** (uses your Google sign-in; no keys in files):
+**Run the AI service on your own computer** (uses your Google sign-in, no keys in files):
 
 ```bash
 gcloud auth application-default login
@@ -136,30 +168,27 @@ python3 -m venv helper/.venv && helper/.venv/bin/pip install -r helper/requireme
 scripts/start-helper.sh            # http://127.0.0.1:8787
 ```
 
-Then Settings → Prism service → **A helper on this computer**. Configuration example: [`.env.example`](.env.example)
-(no secrets). The online service is deployed with `scripts/deploy-helper.sh` to Cloud Run using a
-dedicated service account (Vertex AI user only), per-install/IP rate limits and a daily cap.
+The online service is deployed to Cloud Run with `scripts/deploy-helper.sh`, using a service account that
+can only call Vertex AI, plus per-install and per-IP rate limits and a daily cap. Configuration example:
+[`.env.example`](.env.example) (no secrets).
 
 **Tests**
 
 ```bash
 npm run typecheck && npm run test:unit
 helper/.venv/bin/python -m pytest -q helper/tests
-npx playwright test                # loads the real extension in Chrome for Testing; needs the local helper
+npx playwright test                # the real extension in Chrome for Testing, real Gemini answers
 node scripts/secret-scan.mjs
-python3 scripts/contrast_check.py
+node tools/guide-run.mjs tasks.json out/   # Guide me on real websites, acting like a person
 ```
 
-End-to-end tests use local fictional fixtures (`fixtures/`, served by `npm run fixtures`) and real Gemini
-responses — no mocked AI. Screenshots land in `evidence/e2e/`.
+The end-to-end tests run on local test pages (`fixtures/`) with real AI answers, not mocked ones.
+`tools/review-scan.mjs` takes before and after screenshots of real sites for design review.
 
 ## Known limitations
 
-- Browser-protected pages (Chrome settings, new tab page, Chrome Web Store, built-in PDF viewer) can't be
-  changed; Prism explains this.
-- Embedded forms from other websites (e.g. payment boxes) and map/drawing apps can be explained but not
-  restyled or filled.
-- Some websites ignore script-entered values; Prism reports which fields need typing by hand.
-- Prism's own interface is in English; explanations and translations work in many languages.
-- Firefox and Safari aren't supported yet. Install is via Developer mode until a store listing exists.
-- See [specs/08-access-and-feasibility.md](specs/08-access-and-feasibility.md) for the full list.
+- Pages the browser protects (Chrome settings, the new tab page, the Chrome Web Store) can't be changed.
+  Guide me starts from the Prism button instead.
+- Payment boxes embedded from other websites, and map or drawing apps, can be explained but not restyled.
+- Guide me never signs in for you: when a site asks for a password, it points at the box and you type it.
+- Firefox and Safari aren't supported yet.
