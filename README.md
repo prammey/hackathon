@@ -152,6 +152,8 @@ Design notes are in [`specs/`](specs/), and progress and test evidence in [PROGR
 
 ## For developers
 
+**New to the code?** Start with [How Prism works](docs/HOW-PRISM-WORKS.md), a beginner-friendly tour with diagrams.
+
 Requirements: Node 20+, Python 3.11+, Google Cloud CLI.
 
 ```bash

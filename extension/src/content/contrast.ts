@@ -163,10 +163,6 @@ export function repairContrast(): RepairStats {
   return stats;
 }
 
-export function clearContrastFixes(): void {
-  for (const el of document.querySelectorAll(`[${FIX}],[${FIXBOX}]`)) { el.removeAttribute(FIX); el.removeAttribute(FIXBOX); }
-}
-
 /**
  * After styling, a control that grew can overlap its neighbours (common in cramped headers). Any
  * overlapping controls are made compact; repeats until nothing overlaps (max 3 passes).

@@ -28,8 +28,8 @@ are recorded in `specs/02-architecture.md` §9.
 
 ## Acceptance criteria
 Evidence = Playwright test in `tests/e2e/` run against the real unpacked extension in Chrome for Testing
-153 with live Gemini responses, plus screenshots in `evidence/e2e/`. Final full-suite result:
-[`evidence/e2e/final-run-summary.txt`](evidence/e2e/final-run-summary.txt) — 40/41 on the final build; the one
+153 with live Gemini responses. Screenshots are written to `evidence/` on your computer when the tests run (not kept
+in git). Hackathon final full-suite result: 40/41 on the final build; the one
 failure was the public-site test's paragraph picker (an animated Wikipedia element), fixed and re-run green.
 
 | ID | Criterion | Status | Evidence |

@@ -1,7 +1,0 @@
-{ "manifest_version": 3, "name": "Prism Probe", "version": "0.0.1",
-  "action": { "default_popup": "popup.html" },
-  "background": { "service_worker": "sw.js", "type": "module" },
-  "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
-  "host_permissions": ["<all_urls>"],
-  "side_panel": { "default_path": "panel.html" },
-  "content_scripts": [{ "matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_idle" }] }

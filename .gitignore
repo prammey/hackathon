@@ -22,7 +22,8 @@ playwright-report/
 .vscode/
 
 extension/dist-test/
-evidence/e2e/results.json
+# Test screenshots: every run rewrites them, so they live only on your computer
+evidence/
 
 helper/demo/
 

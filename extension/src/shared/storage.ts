@@ -1,4 +1,4 @@
-import type { CachedPlan, Person, Profile, Settings, SitePrefs } from "./types";
+import type { CachedPlan, Profile, Settings, SitePrefs } from "./types";
 
 export const DEFAULT_SETTINGS: Settings = {
   styleId: "soft",
@@ -139,7 +139,3 @@ export function profileText(profile: Profile, purpose: "define" | "translate" | 
   return lines.join("\n").slice(0, 5800);
 }
 
-export function personText(person: Person): string {
-  return profileText({ ...EMPTY_PROFILE, ...person }, "fill") +
-    (person.relationship ? `\nRelationship to the user: ${person.relationship}` : "");
-}
