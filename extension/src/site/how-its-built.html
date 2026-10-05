@@ -10,11 +10,11 @@
   <style>
     /* The guide is written in Markdown (docs/HOW-PRISM-WORKS.md) and drawn here in Prism's own style. */
     .doc-page { max-width: 920px; gap: 28px; }
-    .doc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .doc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .doc-top a.pz-brand { text-decoration: none; }
     .doc-top img { width: 40px; height: 40px; border-radius: 22%; }
     .doc-top .pz-wordmark { font-size: 38px; }
-    .doc-top__links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .doc-top__links { display: flex; gap: 10px; align-items: center; }
     .doc-hero { padding: 36px 40px; border-radius: 28px; border: 1px solid rgba(167, 139, 250, 0.25);
       background: radial-gradient(120% 140% at 0% 0%, rgba(109, 74, 255, 0.28), transparent 60%), var(--pz-surface); }
     .doc-hero h1 { margin: 0 0 10px; font-family: var(--pz-display); font-style: italic; font-weight: 400; font-size: 56px; line-height: 1.02; letter-spacing: -0.02em; }
@@ -72,8 +72,10 @@
     <header class="doc-top">
       <a class="pz-brand" href="./"><img src="icons/icon-128.png" alt="" width="40" height="40"><span class="pz-wordmark">Prism</span></a>
       <nav class="doc-top__links" aria-label="Links">
-        <a class="pz-btn" href="https://github.com/prammey/hackathon" rel="noopener">Read the code on GitHub</a>
         <a class="pz-btn pz-btn--primary" href="./#install">Install Prism</a>
+        <a class="pz-btn gh-btn" href="https://github.com/prammey/hackathon" rel="noopener" aria-label="Prism's code on GitHub" title="Prism's code on GitHub">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56l-.02-1.96c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14l-.01 3.18c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        </a>
       </nav>
     </header>
     <section class="doc-hero" aria-labelledby="doc-h">
