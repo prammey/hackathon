@@ -13,7 +13,7 @@ at a glance, followed by a short explanation.
 ## 1. The big picture
 
 ```mermaid
-flowchart LR
+flowchart TB
     You(["🧑 You, in Chrome"])
     subgraph Browser["Your computer: the Chrome extension (TypeScript)"]
         Page["Content script<br/><i>Prism's hands on the web page</i>"]
@@ -274,7 +274,7 @@ email app) so results don't change when real websites do.
 ## 11. From code to the user's browser
 
 ```mermaid
-flowchart LR
+flowchart TB
     Code["TypeScript source"] -- "npm run build<br/>(esbuild)" --> Dist["extension/dist/<br/>plain JS + manifest.json"]
     Dist -- "npm run package" --> Zip["Prism.zip"]
     Zip -- "node scripts/build-site.mjs<br/>+ vercel deploy" --> Web["prism-helper.vercel.app"]

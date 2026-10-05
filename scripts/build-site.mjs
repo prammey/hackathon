@@ -44,4 +44,8 @@ fs.writeFileSync(path.join(out, "index.html"), `<!doctype html>
 </body>
 </html>
 `);
+// "How it's built": the beginner's guide from docs/, drawn in the site's style.
+fs.copyFileSync(path.join(root, "docs/HOW-PRISM-WORKS.md"), path.join(out, "how-its-built.md"));
+fs.writeFileSync(path.join(out, "how-its-built.html"),
+  fs.readFileSync(path.join(root, "extension/src/site/how-its-built.html"), "utf8").replaceAll("__VERSION__", pkg.version));
 console.log(`Website built → ${path.relative(root, out)}`);

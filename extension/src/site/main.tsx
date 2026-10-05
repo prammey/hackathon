@@ -31,6 +31,11 @@ function InstallSteps() {
 }
 
 render(
-  <Welcome web top={<a class="pz-btn pz-btn--primary install-top" href="#install" data-testid="install-top"><Icon name="download" /> {t("Install Prism")}</a>} bottom={<InstallSteps />} />,
+  <Welcome web bottom={<InstallSteps />} top={
+    <div class="hero-actions">
+      <a class="pz-btn pz-btn--primary install-top" href="#install" data-testid="install-top"><Icon name="download" /> {t("Install Prism")}</a>
+      <a class="pz-btn install-top" href="how-its-built.html" data-testid="how-built"><Icon name="code" /> {t("How it's built")}</a>
+    </div>
+  } />,
   document.getElementById("app")!,
 );

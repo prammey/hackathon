@@ -46,6 +46,7 @@ const paths: Record<string, string> = {
   guide: "M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z",
   warning: "M12 3l10 18H2zM12 10v5M12 18v.5",
   read: "M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6",
+  code: "M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16",
 };
 
 export function Icon({ name, label }: { name: keyof typeof paths | string; label?: string }) {

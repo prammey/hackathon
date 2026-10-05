@@ -147,6 +147,7 @@ pre, code { color: var(--pz-text); }
 /* Website: install button and steps */
 .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .install-top { font-size: 16px; padding: 12px 22px; }
+.hero-actions { display: grid; gap: 10px; }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 .install-steps { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
