@@ -38,6 +38,16 @@ function chromeBin() {
 }
 
 const EXT = path.join(root, "extension/dist-test");
+
+// Safety limits, so a stalled or abandoned session can never pile up browsers and overload the computer:
+// it closes itself after 8 idle minutes or 45 minutes in total, and no command may run longer than 60 s.
+const IDLE_MS = 8 * 60_000;
+const MAX_LIFE_MS = 45 * 60_000;
+const COMMAND_MS = 60_000;
+let lastCommand = Date.now();
+const shutdown = async (why) => { console.log(`persona browser closing: ${why}`); try { await ctx.close(); } catch {} process.exit(0); };
+setTimeout(() => shutdown("time limit reached"), MAX_LIFE_MS).unref();
+setInterval(() => { if (Date.now() - lastCommand > IDLE_MS) shutdown("idle"); }, 30_000).unref();
 const ctx = await chromium.launchPersistentContext("", {
   executablePath: chromeBin(), headless: true, viewport: { width, height },
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
@@ -153,16 +163,20 @@ const handlers = {
   async stop() { setTimeout(async () => { await ctx.close(); process.exit(0); }, 100); return { ok: true }; },
 };
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   const name = url.pathname.slice(1);
   const q = Object.fromEntries(url.searchParams);
   let body;
+  lastCommand = Date.now();
   try {
-    body = handlers[name] ? await handlers[name](q) : { error: `unknown command ${name}`, commands: Object.keys(handlers) };
+    const run = handlers[name] ? handlers[name](q) : Promise.resolve({ error: `unknown command ${name}`, commands: Object.keys(handlers) });
+    body = await Promise.race([run, new Promise((_, reject) => setTimeout(() => reject(new Error(`"${name}" took over 60 s`)), COMMAND_MS))]);
   } catch (e) {
     body = { error: String(e.message ?? e).slice(0, 400), hint: "Try /look to see the screen again." };
   }
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify(body, null, 1));
-}).listen(port, "127.0.0.1", () => console.log(`persona browser ready on http://127.0.0.1:${port} (screens in ${outDir})`));
+});
+server.on("error", (e) => shutdown(`port ${port} unavailable (${e.code}); another session is using it`));
+server.listen(port, "127.0.0.1", () => console.log(`persona browser ready on http://127.0.0.1:${port} (screens in ${outDir})`));

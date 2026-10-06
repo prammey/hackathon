@@ -104,3 +104,36 @@ def test_guide_notices_a_reply_in_the_wrong_script():
   assert wrong_script("Click here", "Chinese (Simplified)")
   assert not wrong_script('Haga clic en "Apply"', "Spanish")  # Latin-script languages aren't checked this way
   assert not wrong_script("", "Arabic")
+
+
+def test_guide_races_the_backup_model_when_the_first_is_slow(monkeypatch):
+  import time
+  from prism_helper import gemini
+  calls = []
+
+  def fake(model, contents, system, schema):
+    calls.append(model)
+    if model == gemini.PRIMARY_MODEL:
+      time.sleep(1.5)  # stuck, like a server error on its way
+      raise RuntimeError("503")
+    return {"step": "ok"}, model
+
+  monkeypatch.setattr(gemini, "_call_json", fake)
+  monkeypatch.setattr(gemini, "HEDGE_AFTER_S", 0.2)
+  started = time.monotonic()
+  result, model = gemini.generate_json_fast("x", "sys", object)
+  assert model == gemini.SECOND_MODEL and result == {"step": "ok"}
+  assert time.monotonic() - started < 1.0  # didn't wait out the slow model
+
+
+def test_guide_tries_every_model_before_giving_up(monkeypatch):
+  import pytest
+  from prism_helper import gemini
+
+  def fail(model, contents, system, schema):
+    raise RuntimeError(f"{model} down")
+
+  monkeypatch.setattr(gemini, "_call_json", fail)
+  monkeypatch.setattr(gemini, "HEDGE_AFTER_S", 0.05)
+  with pytest.raises(gemini.AIUnavailable):
+    gemini.generate_json_fast("x", "sys", object)

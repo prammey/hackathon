@@ -3,6 +3,7 @@ import base64
 import logging
 import os
 import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import Optional, Type
 
 from google import genai
@@ -99,3 +100,38 @@ def generate_json(contents, system: str, schema: Type[BaseModel], model: Optiona
     # One repair attempt: validate the raw text ourselves (the SDK returns None on schema mismatch).
     parsed = schema.model_validate_json(resp.text or "{}")
   return parsed, model
+
+
+# Guide me waits on the AI after every click. Answers normally take ~2 s; when one hasn't come after a few
+# seconds it is usually a server error on its way (seen taking 12+ s), so the backup model starts too and
+# the first good answer wins.
+HEDGE_AFTER_S = float(os.environ.get("PRISM_HEDGE_AFTER_S", "4"))
+_pool = ThreadPoolExecutor(max_workers=8)
+
+
+def _call_json(model: str, contents, system: str, schema: Type[BaseModel]):
+  started = time.monotonic()
+  resp = client().models.generate_content(model=model, contents=contents, config=_config(model, system, schema))
+  log.info("model=%s ok %.1fs (raced)", model, time.monotonic() - started)
+  return resp.parsed or schema.model_validate_json(resp.text or "{}"), model
+
+
+def generate_json_fast(contents, system: str, schema: Type[BaseModel]):
+  """Like generate_json, but races the backup model against a slow or failing primary."""
+  pending = {_pool.submit(_call_json, PRIMARY_MODEL, contents, system, schema)}
+  backups = [m for m in dict.fromkeys([SECOND_MODEL, FALLBACK_MODEL]) if m != PRIMARY_MODEL]
+  last_err: Exception | None = None
+  while pending:
+    done, pending = wait(pending, timeout=HEDGE_AFTER_S if backups else None, return_when=FIRST_COMPLETED)
+    failed = False
+    for future in done:
+      try:
+        return future.result()
+      except Exception as err:  # noqa: BLE001 — logged, and the next model is tried
+        last_err = err
+        failed = True
+        log.warning("raced call failed: %s", type(err).__name__)
+    # Too slow, or a call failed: bring in the next model alongside whatever is still running.
+    if backups and (failed or not done):
+      pending.add(_pool.submit(_call_json, backups.pop(0), contents, system, schema))
+  raise AIUnavailable(str(last_err))

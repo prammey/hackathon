@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from google.genai import types
 
 from . import prompts
-from .gemini import FALLBACK_MODEL, PLAN_MODEL, PRIMARY_MODEL, AIUnavailable, generate, generate_json, image_part
+from .gemini import FALLBACK_MODEL, PLAN_MODEL, PRIMARY_MODEL, AIUnavailable, generate, generate_json, generate_json_fast, image_part
 from .limits import Limiter
 from .schemas import (
   AssistRequest, ChatReply, ChatRequest, DefineAnswer, ExtractRequest, FillAnswer, PlanRequest,
@@ -260,11 +260,11 @@ def guide(req: GuideRequest):
   # The page is usually in English; the person may not be. Say it last so it wins.
   parts.append(f"Write instruction, detail and choices in {req.language}, even if the page is in another language. "
                "Keep button and link names in quotes exactly as they appear on the page.")
-  step, model = generate_json("\n\n".join(parts), system, GuideStep)
+  step, model = generate_json_fast("\n\n".join(parts), system, GuideStep)
   # A step in the wrong language is useless to someone who can't read English: ask once more, firmly.
   if wrong_script(step.instruction, req.language):
     parts.append(f"Your last answer was not in {req.language}. Write instruction and detail in {req.language} only.")
-    step, model = generate_json("\n\n".join(parts), system, GuideStep)
+    step, model = generate_json_fast("\n\n".join(parts), system, GuideStep)
   return bounded_guide_step(step, req.pageState) | {"model": model}
 
 
