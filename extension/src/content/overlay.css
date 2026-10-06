@@ -20,6 +20,8 @@
 @media (prefers-reduced-motion: reduce) { .tab__dot--off { background: var(--pz-muted); box-shadow: none; }
 .tab__dot--busy { animation: none; } }
 
+/* Prism's side panel and chat follow the person's Text size. */
+.panel, .chat { zoom: var(--pz-zoom, 1); }
 .panel { position: fixed; right: 14px; top: 14px; bottom: 14px; width: min(390px, calc(100vw - 28px)); pointer-events: auto; display: flex; flex-direction: column; overflow: hidden; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 16px 14px 18px; border-bottom: 1px solid var(--pz-line); }
 .panel__body { padding: 18px; overflow: auto; display: grid; gap: 18px; align-content: start; }

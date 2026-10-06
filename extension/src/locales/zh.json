@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "例如：“更新我的驾照并申请 Medicare”。",
   "“Download a copy” saves all of it as a file.": "“下载一份副本”会把所有内容保存成一个文件。",
   "Change": "更改",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism 无法整理此页面，但可以从这里使用“引导我”：说出您想做的事。"
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism 无法整理此页面，但可以从这里使用“引导我”：说出您想做的事。",
+  "From {name}'s saved details": "来自 {name} 保存的资料",
+  "Getting the page ready to read…": "正在准备朗读此页面…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Prism 暂时无法翻译此页面，因此按原文朗读。",
+  "Reading this page aloud.": "正在朗读此页面。",
+  "Still to fill in yourself:": "还需要您自己填写："
 }

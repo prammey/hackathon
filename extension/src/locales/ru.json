@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "например: «Продлить водительские права и записаться на Medicare».",
   "“Download a copy” saves all of it as a file.": "«Скачать копию» сохраняет всё это в файл.",
   "Change": "Изменить",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism не может упорядочить эту страницу, но «Проведите меня» работает и отсюда: скажите, что вы хотите сделать."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism не может упорядочить эту страницу, но «Проведите меня» работает и отсюда: скажите, что вы хотите сделать.",
+  "From {name}'s saved details": "Из сохранённых данных: {name}",
+  "Getting the page ready to read…": "Готовлю страницу к чтению…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Prism сейчас не смог перевести эту страницу, поэтому она читается как написано.",
+  "Reading this page aloud.": "Читаю эту страницу вслух.",
+  "Still to fill in yourself:": "Осталось заполнить вам самим:"
 }

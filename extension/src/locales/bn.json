@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "যেমন: “আমার ড্রাইভিং লাইসেন্স নবায়ন করতে চাই আর Medicare-এ নাম লেখাতে চাই”।",
   "“Download a copy” saves all of it as a file.": "“একটি কপি ডাউনলোড করুন” সবকিছু একটি ফাইলে সংরক্ষণ করে।",
   "Change": "বদলান",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism এই পাতাটি গুছাতে পারে না, তবে এখান থেকে “পথ দেখান” কাজ করে: আপনি কী করতে চান বলুন।"
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism এই পাতাটি গুছাতে পারে না, তবে এখান থেকে “পথ দেখান” কাজ করে: আপনি কী করতে চান বলুন।",
+  "From {name}'s saved details": "{name}-এর সংরক্ষিত তথ্য থেকে",
+  "Getting the page ready to read…": "পাতাটি পড়ার জন্য তৈরি করা হচ্ছে…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Prism এখন এই পাতাটি অনুবাদ করতে পারেনি, তাই যেমন লেখা আছে তেমনই পড়া হচ্ছে।",
+  "Reading this page aloud.": "এই পাতাটি পড়ে শোনানো হচ্ছে।",
+  "Still to fill in yourself:": "এখনও আপনাকে নিজে পূরণ করতে হবে:"
 }

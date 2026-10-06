@@ -114,6 +114,13 @@ export function GuideLayer() {
     return () => chrome.runtime.onMessage.removeListener(onMsg);
   }, []);
 
+  // "You're done" steps aside on its own after a while, so it never sits on top of other buttons.
+  useEffect(() => {
+    if (state?.status !== "done") return;
+    const timer = setTimeout(() => send({ type: "guide:stop" }), 15000);
+    return () => clearTimeout(timer);
+  }, [state?.status]);
+
   // Find the element for the current step, bring it into view, enlarge it gently.
   const step = state?.status === "showing" ? state.step : undefined;
   useEffect(() => {
@@ -164,8 +171,10 @@ export function GuideLayer() {
     const onLeave = () => { leaving = true; };
     addEventListener("pagehide", onLeave);
     const inside = (e: Event) => e.composedPath().includes(el) || (!!view && e.composedPath().includes(view));
-    // A press inside the spotlight counts even if the page swapped the element out from under it.
+    // A press inside the spotlight counts only if the page swapped the element out from under it; while
+    // it's still there, a press on something next to it isn't the step.
     const inHole = (e: Event) => {
+      if (el.isConnected) return false;
       const b = boxRef.current;
       const { clientX: x, clientY: y } = e as MouseEvent;
       return !!b && !!(x || y) && x >= b.left - 4 && x <= b.right + 4 && y >= b.top - 4 && y <= b.bottom + 4;
@@ -180,7 +189,17 @@ export function GuideLayer() {
       // another page gets longer to start loading, so the guide doesn't plan the next step twice.
       const link = (el.closest("a[href]") as HTMLAnchorElement | null)?.getAttribute("href") ?? "";
       const leavesPage = !!link && !/^(#|javascript:)/i.test(link);
-      setTimeout(() => { if (!leaving) send({ type: "guide:advanced", result: "clicked it" }); }, leavesPage ? 4000 : 700);
+      // Tell the planner whether the click visibly did anything, so "it worked" is never assumed.
+      const before = location.href;
+      let changes = 0;
+      const watch = new MutationObserver((records) => { changes += records.length; });
+      watch.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+      setTimeout(() => {
+        watch.disconnect();
+        if (leaving) return;
+        const result = location.href !== before ? "clicked it; the page changed" : changes > 2 ? "clicked it; something on the page changed" : "clicked it, but nothing on the page changed";
+        send({ type: "guide:advanced", result });
+      }, leavesPage ? 4000 : 1200);
     };
     // Typing may bring up suggestions below the box (towns, addresses): they need to be clickable.
     const onInput = () => { setTyped(!!(el as HTMLInputElement).value); setEngaged(true); };
@@ -272,7 +291,9 @@ export function GuideLayer() {
   const order = caution ? ["left", "right", "below", "above"]
     : step.kind === "choose" || step.kind === "type" ? ["right", "left", "above", "below"]
     : ["below", "above", "right", "left"];
-  const spot = spots ? order.map((k) => spots[k as keyof typeof spots]).find(Boolean) ?? { left: clampX(vw / 2 - CW / 2), top: 12 } : { left: vw / 2 - CW / 2, top: vh / 2 - CH / 2 };
+  // No room beside it (a big block to read): use the screen edge farthest from it, so the card never sits on top.
+  const farEdge = hole && hole.y + hole.h / 2 < vh / 2 ? vh - CH - 12 : 12;
+  const spot = spots ? order.map((k) => spots[k as keyof typeof spots]).find(Boolean) ?? { left: clampX(vw / 2 - CW / 2), top: farEdge } : { left: vw / 2 - CW / 2, top: vh / 2 - CH / 2 };
   // Custom dropdowns don't always say when something was picked, so choosing has a Done button too.
   const needsDone = step.kind === "type" || step.kind === "read" || step.kind === "choose";
 

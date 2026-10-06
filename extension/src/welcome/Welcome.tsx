@@ -55,6 +55,8 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
   const [settings, setChoices] = useState<Choices | null>(web ? { styleId: "soft", dictation: false, textScale: 1 } : null);
   const [talkProblem, setTalkProblem] = useState("");
   useEffect(() => { if (!web) getSettings().then((s) => { setChoices(s); saveSettings({ onboarded: true }); }); }, []);
+  // Choosing a text size shows it immediately, on the website too.
+  useEffect(() => { if (web && settings) document.documentElement.style.zoom = String(settings.textScale ?? 1); }, [settings?.textScale]);
   if (!settings) return null;
   if (!web && !settings.languageChosen) {
     return <LanguagePicker onPick={async (english) => setChoices(await saveSettings({ translateTo: english, languageChosen: true }))} />;
@@ -89,13 +91,14 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
               icon: <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" />,
               guide: <strong>{t("Guide me")}</strong>,
             })}</span>
+            <span>{t("Can't see the Prism button? Click the puzzle-piece icon at the top right of Chrome, then the pin next to Prism.")}</span>
             <span class="pz-hint">{t("Works from a new, empty tab too.")}</span></div>
           <div class="step-card"><span class="step-num">2</span><b>{t("Tidy a page")}</b>
             <span>{tj("Click the Prism button {icon} at the top right of Chrome, then turn on {tidy}.", {
               icon: <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" />,
               tidy: <strong>{t("Tidy this page")}</strong>,
             })}</span>
-            <span class="pz-hint">{t("Can't see the Prism button? Click the puzzle-piece icon at the top right of Chrome, then the pin next to Prism.")}</span></div>
+</div>
           <div class="step-card"><span class="step-num">3</span><b>{t("Point at anything")}</b>
             <span>{tj("Hold {key} and drag a box around something confusing. Choose {define}, {translate}, {fill} or {chat}.", {
               key: <strong>{key}</strong>,

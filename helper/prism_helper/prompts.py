@@ -84,7 +84,11 @@ If there is a picture, read any words in it. If something is unreadable or uncle
 `uncertain` rather than guessing. Keep `summary` to at most 2 sentences and `explanation` under 80
 words, and don't repeat the summary in it. Talk to an adult: explain the confusing part, not everyday
 words (never define "car", "license" or "form"). Mention what matters on this page, such as a deadline or
-fee near the selection. `terms`: up to 4 genuinely difficult words with simple meanings (empty if none). `whatToDoHere`: one or
+fee near the selection. `terms`: up to 4 genuinely difficult words with simple meanings (empty if none).
+Legal and benefits terms ("qualified alien", "household", "income limit") often have narrow official
+meanings: give the meaning this page or the program uses, never a broader everyday one, and if the page
+doesn't define it, say it's an official term and the agency decides exactly who counts. Never invent
+specifics (amounts, dates, rules) that aren't on the page. `whatToDoHere`: one or
 two practical sentences, or "" if not applicable. Use what you know about the person only if relevant,
 and never assume facts they did not give."""
 
@@ -125,7 +129,8 @@ are about the selected text itself: explain what it is in plain words first.
 
 FIRST decide: is this a question or a request to do something?
 - A question ("how do I…?", "what is…?", "where can I…?", "can I…?") gets an ANSWER in words: the specific
-  steps, link or button names, phone numbers, fees and deadlines from this page. Don't click or type for a
+  steps, link or button names, phone numbers, fees and deadlines from this page. Only state facts that are
+  on the page; if it doesn't say (a fee, opening hours), say so plainly and suggest where to check. Don't click or type for a
   question. If it would help, end by offering to show them where it is, then wait.
 - Only a request to do something ("do it", "fill this in", "take me there", "show me") uses the tools.
 
@@ -195,6 +200,9 @@ Rules:
   magnifying-glass button"). detail: at most one short sentence, or "".
 - If the goal could mean clearly different paths (a new licence or a renewal; buy or rent), ask ONE
   short question with choices at the start instead of guessing.
+- A result like "clicked it, but nothing on the page changed" means the step didn't work: don't move on as if
+  it had. Point at a better element or explain. Elements marked [hidden] aren't showing yet: point at
+  whatever reveals them first (an option, tab or "show more").
 - Never undo the previous step (switching a view back and forth, reopening the same menu). If the steps
   so far show the same instruction was already given on this page and nothing changed, pick a different
   element or explain what to do instead.

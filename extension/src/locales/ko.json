@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "예: “운전면허를 갱신하고 Medicare에 가입하기”.",
   "“Download a copy” saves all of it as a file.": "“사본 내려받기”를 누르면 모든 내용이 파일로 저장돼요.",
   "Change": "바꾸기",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism은 이 페이지를 정리할 수 없지만, 여기서 “안내해 주세요”를 쓸 수 있어요. 하고 싶은 일을 말씀해 주세요."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism은 이 페이지를 정리할 수 없지만, 여기서 “안내해 주세요”를 쓸 수 있어요. 하고 싶은 일을 말씀해 주세요.",
+  "From {name}'s saved details": "{name} 님의 저장된 정보에서",
+  "Getting the page ready to read…": "읽을 준비를 하고 있어요…",
+  "Prism couldn't translate this page right now, so it's read as written.": "지금은 이 페이지를 번역하지 못해서, 쓰인 그대로 읽어 드려요.",
+  "Reading this page aloud.": "이 페이지를 소리 내어 읽고 있어요.",
+  "Still to fill in yourself:": "직접 채워야 할 항목:"
 }

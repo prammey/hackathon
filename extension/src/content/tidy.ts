@@ -256,7 +256,10 @@ export class TidyEngine {
       const label = labelOf(e);
       return /\b(report|feedback|survey|how this image|edited or created|cookie|privacy|terms|accessibility|share|print|subscribe|newsletter|sign up for (email|updates)|request sound|mute|unmute|volume|captions|full ?screen|transcript)\b/i.test(label) ||
         /^(learn more( here)?|read more|click here|more|see more|details|here|view more|find out more|more info|view all|see all|go|start here)\.?$/i.test(label.trim()) ||
-        label.split(/\s+/).length > 8 || (e.matches("a[href]") && inRunningText(e));
+        // Long labels are usually side links, but government sites spell out their main action in full
+        // ("Apply For Cash, SNAP (Food Stamps) & Medical Assistance").
+        (label.split(/\s+/).length > 8 && !/^\s*(apply|start|begin|renew|register|book|claim|request|sign up|get started)\b/i.test(label)) ||
+        (e.matches("a[href]") && inRunningText(e));
     };
     // A site search is never "the next step": demote it if the plan marked it as the main action.
     const isSearch = (e: Element) => !!e.closest("[role=search],form:has(input[type=search]),form:has(input[name=q]),form:has(input[name*=search i])") ||
@@ -411,7 +414,11 @@ export class TidyEngine {
     this.aiCallTimes.push(Date.now());
     this.debug.planRequests++;
     this.debug.planReasons.push(`${reason} ${location.pathname}`);
-    this.emit({ status: "planning", message: t("Prism is studying the page…"), aiCalls: this.state.aiCalls + 1, cacheHit: false });
+    // On a well-designed site the light touch is already in place: finish quietly, with no "studying" wait.
+    const studying = this.touch === "light"
+      ? t("This site is already well designed, so Prism keeps its look and just makes it easier to read and use.")
+      : t("Prism is studying the page…");
+    this.emit({ status: "planning", message: studying, aiCalls: this.state.aiCalls + 1, cacheHit: false });
     const started = performance.now();
     const settings = this.settings!;
     const result = (await chrome.runtime.sendMessage({

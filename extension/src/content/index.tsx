@@ -67,6 +67,7 @@ function main() {
       host.setAttribute("lang", lang.code);
     });
     selection.shortcut = s.shortcut;
+    host.style.setProperty("--pz-zoom", String(s.textScale || 1)); // the person's Text size, for Prism's own panels
     if (s.reduceMotion === "on") host.setAttribute("data-reduce-motion", "");
     else host.removeAttribute("data-reduce-motion");
     bus.emit("settings", s);
@@ -88,6 +89,8 @@ function main() {
       case "prism:toggle":
         // Always answer with the real state, even if something went wrong, so the popup never gets stuck.
         (msg.on ? engine.enable() : engine.disable("Showing the original page.")).catch((err) => console.warn("Prism:", err)).finally(() => reply(engine.state));
+        // Turned on by hand: keep tidying this website's pages in this tab until it's turned off.
+        chrome.runtime.sendMessage({ type: "tidy:remember", origin: location.origin, on: !!msg.on }).catch(() => {});
         return true;
       case "prism:set-style": engine.setStyle(msg.styleId as StyleId).catch(() => {}).finally(() => reply(engine.state)); return true;
       case "prism:set-touch": engine.setTouch(msg.touch === "light" ? "light" : "full").catch(() => {}).finally(() => reply(engine.state)); return true;
@@ -121,8 +124,9 @@ function main() {
 
   // Tidy automatically on sites the person chose (or everywhere), using the saved layout if any.
   (async () => {
-    const [settings, site] = await Promise.all([getSettings(), getSitePrefs(location.origin)]);
-    if (site.tidy === "always" || (settings.tidyEverywhere && site.tidy !== "never")) {
+    const [settings, site, keptOn] = await Promise.all([getSettings(), getSitePrefs(location.origin),
+      chrome.runtime.sendMessage({ type: "tidy:remembered", origin: location.origin }).catch(() => false)]);
+    if (site.tidy === "always" || keptOn === true || (settings.tidyEverywhere && site.tidy !== "never")) {
       const start = () => engine.enable();
       if (document.readyState === "complete") start();
       else addEventListener("load", start, { once: true });

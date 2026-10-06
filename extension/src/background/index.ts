@@ -109,6 +109,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   for (const k of [...appliedCss.keys()]) if (k.startsWith(`${tabId}:`)) appliedCss.delete(k);
   clearChat(tabId);
   stopGuide(tabId);
+  chrome.storage.session.get(null).then((all) => chrome.storage.session.remove(Object.keys(all).filter((k) => k.startsWith(`tidyTab:${tabId}:`))));
 });
 
 // ---------- Dictation ----------
@@ -186,6 +187,13 @@ const handlers: Record<string, Handler> = {
   "guide:retry": (msg, sender) => { guideRetry(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
   "guide:lost": (msg, sender) => { guideLost(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
   "guide:goback": (msg, sender) => { guideGoBack(msg.tabId ?? sender.tab!.id!); return { ok: true }; },
+  // "Tidy this page" stays on for the rest of that website in that tab (forgotten when the browser closes).
+  "tidy:remember": async (msg, sender) => {
+    const k = `tidyTab:${sender.tab?.id}:${String(msg.origin)}`;
+    if (msg.on) await chrome.storage.session.set({ [k]: true }); else await chrome.storage.session.remove(k);
+    return { ok: true };
+  },
+  "tidy:remembered": async (msg, sender) => !!(await chrome.storage.session.get(`tidyTab:${sender.tab?.id}:${String(msg.origin)}`))[`tidyTab:${sender.tab?.id}:${String(msg.origin)}`],
   "guide:stop": (msg, sender) => stopGuide(msg.tabId ?? sender.tab!.id!).then(() => ({ ok: true })),
   // Read aloud with the computer's own voices (free, offline). One reading at a time across Prism.
   "tts:speak": (msg, sender) => {

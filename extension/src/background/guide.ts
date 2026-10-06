@@ -192,7 +192,7 @@ export async function guideAnswer(tabId: number, answer: string): Promise<void> 
   await nextStep(tabId);
 }
 
-const LOST = "that wasn't on the page any more";
+const LOST = "that wasn't showing on the page (it may appear only after choosing something first, like a size, colour or price option)";
 
 /** The page no longer has the step's element (it changed or redrew itself): plan again, once. */
 export async function guideLost(tabId: number): Promise<void> {

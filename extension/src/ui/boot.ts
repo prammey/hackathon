@@ -8,8 +8,15 @@ export async function applyLanguage(name: string | undefined): Promise<void> {
   document.documentElement.dir = lang.rtl ? "rtl" : "ltr";
 }
 
+/** Prism's own pages (popup, Settings, welcome) follow the person's Text size. */
+function applyTextSize(scale: number | undefined): void {
+  document.documentElement.style.zoom = String(scale || 1);
+}
+
 export async function bootPage(draw: () => void): Promise<void> {
-  await applyLanguage((await getSettings()).translateTo).catch(() => {});
+  const settings = await getSettings();
+  applyTextSize(settings.textScale);
+  await applyLanguage(settings.translateTo).catch(() => {});
   draw();
   // Changing the language anywhere (Settings, the first-run picker) redraws every open Prism page.
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -17,6 +24,7 @@ export async function bootPage(draw: () => void): Promise<void> {
       const next = (changes.settings.newValue as { translateTo?: string } | undefined)?.translateTo;
       const prev = (changes.settings.oldValue as { translateTo?: string } | undefined)?.translateTo;
       if (next !== prev) applyLanguage(next);
+      applyTextSize((changes.settings.newValue as { textScale?: number } | undefined)?.textScale);
     }
   });
 }

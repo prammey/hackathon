@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "par ex. « Renouveler mon permis de conduire et m'inscrire à Medicare ».",
   "“Download a copy” saves all of it as a file.": "« Télécharger une copie » enregistre tout dans un fichier.",
   "Change": "Changer",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism ne peut pas ranger cette page, mais « Guidez-moi » fonctionne d’ici : dites ce que vous voulez faire."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism ne peut pas ranger cette page, mais « Guidez-moi » fonctionne d’ici : dites ce que vous voulez faire.",
+  "From {name}'s saved details": "Des informations enregistrées de {name}",
+  "Getting the page ready to read…": "Préparation de la page pour la lecture…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Prism n’a pas pu traduire cette page pour le moment ; elle est donc lue telle qu’elle est écrite.",
+  "Reading this page aloud.": "Lecture de cette page à voix haute.",
+  "Still to fill in yourself:": "À remplir vous-même :"
 }

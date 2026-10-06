@@ -14,6 +14,7 @@ interface PageStatus {
   styleId: StyleId;
   message: string;
   pagePurpose: string;
+  touch?: "light" | "full";
   origin: string;
   url: string;
 }
@@ -189,7 +190,7 @@ function Popup() {
         <span>{tj("Tidy {host} automatically every time", { host: <strong>{host}</strong> })}</span>
       </label>
       {page.message && (
-        <p class="pz-muted" role="status" style="margin:0">{page.status === "planning" ? t("Prism is studying the page…") : page.message}</p>
+        <p class="pz-muted" role="status" style="margin:0">{page.status === "planning" && page.touch !== "light" ? t("Prism is studying the page…") : page.message}</p>
       )}
       {/* One line until the person wants to change it, so the popup fits Chrome's 600px limit. */}
       <div class="popup__style">

@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "مثلًا: «تجديد رخصة القيادة والتسجيل في Medicare».",
   "“Download a copy” saves all of it as a file.": "«تنزيل نسخة» يحفظ كل ذلك في ملف.",
   "Change": "تغيير",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "لا يستطيع Prism ترتيب هذه الصفحة، لكن «أرشدني» يعمل من هنا: قل ما تريد فعله."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "لا يستطيع Prism ترتيب هذه الصفحة، لكن «أرشدني» يعمل من هنا: قل ما تريد فعله.",
+  "From {name}'s saved details": "من بيانات {name} المحفوظة",
+  "Getting the page ready to read…": "جارٍ تجهيز الصفحة للقراءة…",
+  "Prism couldn't translate this page right now, so it's read as written.": "لم يتمكن Prism من ترجمة هذه الصفحة الآن، لذلك تُقرأ كما هي مكتوبة.",
+  "Reading this page aloud.": "تتم قراءة هذه الصفحة بصوت عالٍ.",
+  "Still to fill in yourself:": "ما زال عليك ملؤه بنفسك:"
 }

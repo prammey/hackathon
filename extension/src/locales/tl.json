@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "hal. “I-renew ang aking driver's license at mag-sign up sa Medicare”.",
   "“Download a copy” saves all of it as a file.": "Sine-save ng “Mag-download ng kopya” ang lahat ng ito bilang isang file.",
   "Change": "Palitan",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Hindi maaayos ng Prism ang pahinang ito, pero gumagana rito ang “Gabayan ako”: sabihin kung ano ang gusto mong gawin."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Hindi maaayos ng Prism ang pahinang ito, pero gumagana rito ang “Gabayan ako”: sabihin kung ano ang gusto mong gawin.",
+  "From {name}'s saved details": "Mula sa naka-save na detalye ni {name}",
+  "Getting the page ready to read…": "Inihahanda ang pahina para basahin…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Hindi maisalin ng Prism ang pahinang ito ngayon, kaya babasahin ito kung paano ito nakasulat.",
+  "Reading this page aloud.": "Binabasa nang malakas ang pahinang ito.",
+  "Still to fill in yourself:": "Kailangan mo pang punan:"
 }

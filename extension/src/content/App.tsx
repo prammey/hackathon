@@ -55,7 +55,13 @@ export function App({ engine, selection, bus, setHidden }: Props) {
   const [card, setCard] = useState<CardState | null>(null);
   const [chat, setChat] = useState<PublicChat | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [toast, setToast] = useState<{ text: string; tone?: "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{ text: string; tone?: "error" | "info"; reading?: number } | null>(null);
+  // The reading toast goes away when the voice finishes.
+  useEffect(() => {
+    const onMsg = (msg: { type?: string; id?: number }) => { if (msg?.type === "tts:ended") setToast((cur) => (cur?.reading === msg.id ? null : cur)); };
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => chrome.runtime.onMessage.removeListener(onMsg);
+  }, []);
   const [settings, setSettings] = useState<Settings | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -76,7 +82,16 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     const offs = [
       bus.on("chat:update", (state: PublicChat) => { setChat(state); }),
       bus.on("open-chat", () => openChat(null)),
-      bus.on("read-page", () => { readPage(); }),
+      // Started from the popup: show that it's reading, with a way to stop.
+      bus.on("read-page", async () => {
+        setToast({ text: t("Getting the page ready to read…"), reading: -1 });
+        let untranslated = false;
+        const id = await readPage((phase) => {
+          if (phase === "untranslated") untranslated = true;
+          setToast({ text: phase === "translating" ? t("Translating, then reading…") : t("Reading this page aloud."), reading: -1 });
+        });
+        setToast({ text: untranslated ? t("Prism couldn't translate this page right now, so it's read as written.") : t("Reading this page aloud."), reading: id });
+      }),
       bus.on("toast", (t) => setToast(t)),
       bus.on("settings", (s: Settings) => setSettings(s)),
       bus.on("context-ask", (rect: Rect) => { setCard(null); setMenuRect(rect); }),
@@ -258,7 +273,9 @@ export function App({ engine, selection, bus, setHidden }: Props) {
       {toast && (
         <div class="toast pz-card" role={toast.tone === "error" ? "alert" : "status"}>
           <span>{toast.text}</span>
-          <button class="pz-btn pz-btn--small" type="button" onClick={() => setToast(null)}>{t("OK")}</button>
+          {toast.reading !== undefined
+            ? <button class="pz-btn pz-btn--small" type="button" onClick={() => { send({ type: "tts:stop" }); setToast(null); }} data-testid="toast-stop-reading"><Icon name="stop" /> {t("Stop reading")}</button>
+            : <button class="pz-btn pz-btn--small" type="button" onClick={() => setToast(null)}>{t("OK")}</button>}
         </div>
       )}
     </div>
@@ -603,7 +620,7 @@ function SpeakButton({ text, lang, label, block }: { text: string | (() => strin
  * "Read this page to me", in the person's language: when the page is written in another language, the
  * main part is translated first (a Spanish speaker on an English page hears Spanish).
  */
-async function readPage(onPhase?: (phase: "translating" | "speaking") => void): Promise<number> {
+async function readPage(onPhase?: (phase: "translating" | "untranslated" | "speaking") => void): Promise<number> {
   const ui = currentLanguage();
   const pageCode = (document.documentElement.lang || "en").slice(0, 2).toLowerCase();
   let words = pageText();
@@ -618,6 +635,7 @@ async function readPage(onPhase?: (phase: "translating" | "speaking") => void): 
       },
     });
     if (result?.ok) { words = result.value.answer.lines.map((l) => l.translation).join("\n"); lang = ui.code; }
+    else onPhase?.("untranslated");
   }
   const id = ++speakCounter;
   onPhase?.("speaking");
@@ -636,7 +654,7 @@ function ReadPageButton() {
   }, [id]);
   const toggle = async () => {
     if (phase !== "idle") { send({ type: "tts:stop" }); setPhase("idle"); return; }
-    setId(await readPage(setPhase));
+    setId(await readPage((phase) => phase !== "untranslated" && setPhase(phase)));
   };
   return (
     <button class="pz-btn pz-btn--small pz-btn--block" type="button" aria-pressed={phase !== "idle"} onClick={toggle} data-testid="read-aloud">
@@ -687,8 +705,8 @@ function TranslateView({ data }: { data: TranslateAnswer }) {
   );
 }
 
-function sourceLabel(s: FieldSuggestion): string {
-  if (s.source === "profile") return t("From About you");
+function sourceLabel(s: FieldSuggestion, forName?: string): string {
+  if (s.source === "profile") return forName ? t("From {name}'s saved details", { name: forName }) : t("From About you");
   if (s.source === "session") return t("From what you told Prism just now");
   if (s.source === "page") return t("Shown on the page");
   if (s.source === "inference") return t("Prism's guess — please check");
@@ -705,6 +723,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(card.data.fields.map((f) => [f.id, f.optionValues.join(", ") || f.value])));
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const forName = people.find((p) => p.id === card.forPersonId)?.name;
   const suggestions = card.data.fields.filter((f) => f.hasSuggestion);
   const explainOnly = card.data.fields.filter((f) => !f.hasSuggestion);
   const count = Object.values(chosen).filter(Boolean).length;
@@ -739,6 +758,17 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
           {r.changed.map((c) => <li class="field"><span class="field__name">{c.label}</span><span>{c.value}</span></li>)}
           {r.failed.map((f) => <li class="field"><span class="field__name">{f.label}</span><span class="pz-muted">{f.reason}</span></li>)}
         </ul>
+        {/* What's left, so nothing is missed before sending the form. */}
+        {(() => {
+          const done = new Set([...r.changed.map((c) => c.label), ...r.failed.map((f) => f.label)]);
+          const left = card.data.fields.map((f) => labelOf(card, f.id)).filter((l) => l && !done.has(l));
+          return left.length > 0 && (
+            <div class="question" data-testid="fill-left">
+              <strong>{t("Still to fill in yourself:")}</strong>
+              <ul class="fields">{left.map((l) => <li class="field"><span class="field__name">{l}</span></li>)}</ul>
+            </div>
+          );
+        })()}
         <div>
           <button class="pz-btn" type="button" data-testid="fill-undo" onClick={() => { undoFill(r.undo); props.onUpdate({ ...card, result: undefined }); }}>
             <Icon name="undo" /> {t("Undo — put the old answers back")}
@@ -777,7 +807,7 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
                       aria-label={t("Answer for {field}", { field: labelOf(card, f.id) })} />
                     <MicButton small label={t("Say it")} onError={talkError} onText={(t) => { setValues({ ...values, [f.id]: t }); setChosen({ ...chosen, [f.id]: true }); }} /></>}
               </label>
-              {sourceLabel(f) && <span><span class={`source source--${f.source}`}>{sourceLabel(f)}</span>{f.evidence && <span class="pz-hint"> · “{f.evidence}”</span>}</span>}
+              {sourceLabel(f, forName) && <span><span class={`source source--${f.source}`}>{sourceLabel(f, forName)}</span>{f.evidence && <span class="pz-hint"> · “{f.evidence}”</span>}</span>}
             </li>
           ))}
         </ul>

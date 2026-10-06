@@ -509,5 +509,10 @@
   "e.g. “Renew my driver's license and sign up for Medicare”.": "ví dụ: “Gia hạn bằng lái xe và đăng ký Medicare”.",
   "“Download a copy” saves all of it as a file.": "“Tải một bản về” sẽ lưu tất cả vào một tệp.",
   "Change": "Đổi",
-  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism không thể sắp xếp trang này, nhưng “Hướng dẫn tôi” vẫn hoạt động từ đây: hãy nói điều bạn muốn làm."
+  "Prism can't tidy this page, but Guide me works from here: say what you want to do.": "Prism không thể sắp xếp trang này, nhưng “Hướng dẫn tôi” vẫn hoạt động từ đây: hãy nói điều bạn muốn làm.",
+  "From {name}'s saved details": "Từ thông tin đã lưu của {name}",
+  "Getting the page ready to read…": "Đang chuẩn bị đọc trang…",
+  "Prism couldn't translate this page right now, so it's read as written.": "Prism chưa dịch được trang này lúc này, nên sẽ đọc nguyên văn.",
+  "Reading this page aloud.": "Đang đọc to trang này.",
+  "Still to fill in yourself:": "Bạn vẫn cần tự điền:"
 }

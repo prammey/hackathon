@@ -349,6 +349,10 @@ export function observePage(): string {
     if (!el) continue;
     let line = `[${item.id}] ${item.role || item.tag}`;
     if (item.name) line += ` “${item.name}”`;
+    // What a person actually reads on it, when its accessible name says something else (a hidden title,
+    // two labels run together): guides must name what's on screen.
+    const shown = clean((el as HTMLElement).innerText ?? "", 60);
+    if (shown && item.name && !item.name.toLowerCase().includes(shown.toLowerCase())) line += ` (on screen: “${shown}”)`;
     if (item.text) line += `: ${item.text}`;
     if (item.field) {
       const sensitive = isSensitiveField(el);
@@ -361,6 +365,9 @@ export function observePage(): string {
       if (el.getAttribute("aria-invalid") === "true") line += " [invalid]";
     }
     if ((el as HTMLButtonElement).disabled) line += " [disabled]";
+    // Present in the page but not showing (e.g. "Add to cart" before a price option is chosen).
+    const labelShows = [...((el as HTMLInputElement).labels ?? [])].some((l) => l.checkVisibility());
+    if (!el.checkVisibility({ checkVisibilityCSS: true }) && !labelShows) line += " [hidden: not showing; something else must be chosen or opened first]";
     if (el.closest("[data-prism-collapsed]:not([data-prism-open])")) line += " [tucked away by Prism]";
     lines.push(line);
     size += line.length;
