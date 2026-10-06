@@ -65,7 +65,7 @@
 .pz-btn--danger { color: var(--pz-danger); border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.08); }
 .pz-btn--danger:hover { background: rgba(248, 113, 113, 0.16); }
 .pz-btn--block { display: flex; width: 100%; }
-.pz-btn--small { min-height: 36px; padding: 6px 12px; font-size: 14px; border-radius: var(--pz-radius-xs); }
+.pz-btn--small { min-height: 40px; padding: 7px 13px; font-size: 14px; border-radius: var(--pz-radius-xs); }
 .pz-icon { width: 20px; height: 20px; flex: none; }
 
 /* ---------- Surfaces ---------- */

@@ -97,6 +97,7 @@ function main() {
         reply({ ok: true });
         return false;
       case "prism:open-chat": bus.emit("open-chat"); reply({ ok: true }); return false;
+      case "prism:read-page": bus.emit("read-page"); reply({ ok: true }); return false;
       case "prism:guide": chrome.runtime.sendMessage({ type: "guide:start", goal: String(msg.goal ?? "") }).then(() => reply({ ok: true }), () => reply({ ok: false })); return true;
       case "prism:open-panel": bus.emit("panel", true); reply({ ok: true }); return false;
       case "prism:context-ask": bus.emit("context-ask", contextRect(msg.selectionText, msg.srcUrl)); reply({ ok: true }); return false;

@@ -61,6 +61,8 @@ export function guidePageReady(tabId: number): void {
   readyWaiters.delete(tabId);
   // A page that loads mid-guide (the person's click opened it) continues the guide there.
   loadGuide(tabId).then(async (state) => {
+    // A finished guide doesn't follow the person onto the next page.
+    if (state?.status === "done") { await chrome.storage.session.remove(key(tabId)); return; }
     if (!state || (state.status !== "showing" && state.status !== "thinking")) return;
     if (state.status === "showing") {
       state.history.push({ instruction: state.step?.instruction ?? "", result: "a new page opened" });
@@ -226,6 +228,21 @@ export async function guideBack(tabId: number): Promise<void> {
     return;
   }
   await save(state);
+}
+
+/** Stuck on a page that failed or blocked Prism: go back to the previous page and plan from there. */
+export async function guideGoBack(tabId: number): Promise<void> {
+  const state = await loadGuide(tabId);
+  if (!state) return;
+  state.history.push({ instruction: state.step?.instruction ?? "", result: "that page didn't work, so the person went back" });
+  state.status = "thinking";
+  state.step = undefined;
+  await save(state);
+  try {
+    await chrome.tabs.goBack(tabId); // the previous page announces itself and the guide plans from there
+  } catch {
+    await nextStep(tabId); // nothing to go back to: plan again from here
+  }
 }
 
 export async function stopGuide(tabId: number): Promise<void> {

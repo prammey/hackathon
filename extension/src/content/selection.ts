@@ -155,10 +155,15 @@ export class SelectionController {
   }
 
   private finish() {
-    const rect = this.state.rect ? clampRect(this.state.rect) : null;
+    let rect = this.state.rect ? clampRect(this.state.rect) : null;
     if (!rect || rect.width < MIN_SIZE || rect.height < MIN_SIZE) {
-      this.cancel(); // an accidental click: nothing happens, and the page never received it
-      return;
+      // A click instead of a drag (easier for shaky hands): point at the paragraph or question under it.
+      const block = this.current && this.state.mode !== "keyboard" ? blockAt(this.current.x, this.current.y) : null;
+      if (!block) {
+        this.cancel(); // nothing there to point at: nothing happens, and the page never received the click
+        return;
+      }
+      rect = block;
     }
     this.set({ phase: "complete", rect });
     for (const fn of this.completeListeners) fn(rect);
@@ -203,4 +208,18 @@ export function placeNear(rect: Rect, w: number, h: number, gap = 12, margin = 1
   if (fitsX(left)) return { x: left, y: clampY(rect.y), docked: false };
   // The selection covers most of the screen: dock to the bottom-right corner.
   return { x: clampX(vw - w - margin), y: clampY(vh - h - margin), docked: true };
+}
+
+/** The readable block (paragraph, list item, form question, heading…) under a point, as a selection box. */
+function blockAt(x: number, y: number): Rect | null {
+  const hit = document.elementsFromPoint(x, y).find((el) => !el.closest("prism-root") && el !== document.documentElement && el !== document.body);
+  if (!hit) return null;
+  const blocks = "p,li,dd,dt,td,th,label,legend,blockquote,figure,h1,h2,h3,h4,h5,h6,fieldset,[role=listitem],[role=row],.field,.form-group";
+  let el = hit.closest(blocks) ?? hit;
+  // A form field alone means little: take its whole question (label + box) when it's small enough.
+  const group = el.closest("fieldset,.field,.form-group,[role=group]");
+  if (group && group.getBoundingClientRect().height < innerHeight * 0.5) el = group;
+  const r = el.getBoundingClientRect();
+  if (r.width < 4 || r.height < 4 || r.height > innerHeight * 0.8) return null;
+  return clampRect({ x: r.left - 6, y: r.top - 6, width: r.width + 12, height: r.height + 12 });
 }

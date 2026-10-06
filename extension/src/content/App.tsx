@@ -2,9 +2,10 @@
 import { clearSpotlight, spotlightCount } from "./spotlight";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { ChatState } from "../shared/chat";
-import { getProfile, getSettings, profileText, saveProfile, saveSitePrefs } from "../shared/storage";
+import { getProfile, getSettings, personText, profileText, saveProfile, saveSitePrefs } from "../shared/storage";
 import type {
   AssistAction, DefineAnswer, FieldSuggestion, FillAnswer, Rect, Result, Settings, StyleId, TranslateAnswer,
+  Person,
 } from "../shared/types";
 import { Brand, Icon, isMac, Logo, MicButton, StylePicker, Switch, useLanguage } from "../ui/components";
 import { currentLanguage, t, tj, UI_LANGUAGES } from "../shared/i18n";
@@ -32,7 +33,7 @@ type CardState =
   | { kind: AssistAction; rect: Rect; status: "error"; message: string }
   | { kind: "define"; rect: Rect; status: "ready"; data: DefineAnswer; usedPicture: boolean }
   | { kind: "translate"; rect: Rect; status: "ready"; data: TranslateAnswer; usedPicture: boolean }
-  | { kind: "fill"; rect: Rect; status: "ready"; data: FillAnswer; elements: Map<string, Element[]>; result?: FillResult };
+  | { kind: "fill"; rect: Rect; status: "ready"; data: FillAnswer; elements: Map<string, Element[]>; result?: FillResult; forPersonId?: string };
 
 const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese (Simplified)", "Hindi", "Arabic", "Bengali", "Urdu", "Polish", "Vietnamese", "Korean", "Japanese", "Tagalog", "Russian", "Ukrainian", "Turkish"];
 
@@ -75,6 +76,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     const offs = [
       bus.on("chat:update", (state: PublicChat) => { setChat(state); }),
       bus.on("open-chat", () => openChat(null)),
+      bus.on("read-page", () => { readPage(); }),
       bus.on("toast", (t) => setToast(t)),
       bus.on("settings", (s: Settings) => setSettings(s)),
       bus.on("context-ask", (rect: Rect) => { setCard(null); setMenuRect(rect); }),
@@ -128,7 +130,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     }
   }
 
-  async function runAssist(kind: AssistAction, rect: Rect, extra: { targetLanguage?: string; question?: string; justForNow?: string } = {}) {
+  async function runAssist(kind: AssistAction, rect: Rect, extra: { targetLanguage?: string; question?: string; justForNow?: string; forPersonId?: string } = {}) {
     setMenuRect(null);
     selection.cancel();
     setCard({ kind, rect, status: "loading" });
@@ -154,6 +156,11 @@ export function App({ engine, selection, bus, setHidden }: Props) {
         ? `The user is filling this in for someone else. Use ONLY these details for answers, never the user's own:\n${chatState.sessionContext}`
         : `${profileText(profile, "translate")}\nJust for now: ${chatState.sessionContext}`;
     }
+    // Filling in a form for someone saved under "People you help": only their details, never the user's.
+    const forPerson = kind === "fill" && extra.forPersonId ? profile.people.find((p) => p.id === extra.forPersonId) : undefined;
+    if (forPerson) {
+      profileFacts = `The user is filling this in for ${forPerson.name || "someone they help"}. Use ONLY these details for answers, never the user's own:\n${personText(forPerson)}`;
+    }
     if (extra.justForNow) profileFacts += `\nJust for now, the person told Prism: ${extra.justForNow}`;
     const target = extra.targetLanguage ?? (await siteLanguage()) ?? (s.translateTo || profile.language || "English");
     const result = await send<Result<{ answer: unknown }>>({
@@ -170,7 +177,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
     const answer = result.value.answer;
     if (kind === "define") setCard({ kind, rect, status: "ready", data: answer as DefineAnswer, usedPicture: !!image });
     else if (kind === "translate") setCard({ kind, rect, status: "ready", data: answer as TranslateAnswer, usedPicture: !!image });
-    else setCard({ kind, rect, status: "ready", data: answer as FillAnswer, elements });
+    else setCard({ kind, rect, status: "ready", data: answer as FillAnswer, elements, forPersonId: forPerson?.id });
   }
 
   async function siteLanguage(): Promise<string | undefined> {
@@ -227,7 +234,8 @@ export function App({ engine, selection, bus, setHidden }: Props) {
               {!tidyOn && <span class="tab__status">{t("Original")}</span>}
             </button>
           )}
-          onAsk={async (goal) => { await openChat(null); await send({ type: "chat:send", text: goal, includeScreen: false }); }} />
+          // "Just show me" means point at it on this page, not a written answer.
+          onAsk={async (goal) => { await openChat(null); await send({ type: "chat:send", text: `${t("Show me on this page:")} ${goal}`, includeScreen: false }); }} />
       )}
       {panelOpen && (
         <PagePanel tidy={tidy} engine={engine} settings={settings}
@@ -287,7 +295,7 @@ function PagePanel(props: { tidy: TidyState; engine: TidyEngine; settings: Setti
           </button>
           <p class="pz-hint" style="margin:0">{tj("Or hold {key} and drag over anything on the page.", { key: <strong>{shortcutLabel(props.settings?.shortcut ?? "alt", mac)}</strong> })}</p>
           <button class="pz-btn pz-btn--block" type="button" onClick={props.onChat}><Icon name="chat" /> {t("Chat about this page")}</button>
-          <SpeakButton block text={pageText} lang={document.documentElement.lang?.slice(0, 2) || undefined} label={t("Read this page to me")} />
+          <ReadPageButton />
         </div>
         {tidy.status !== "off" && <div class="panel__section">
           <span class="pz-label">{t("Style for this website")}</span>
@@ -371,7 +379,7 @@ function SelectionLayer(props: { sel: SelState; selection: SelectionController; 
           <Icon name="select" />
           <span>{sel.mode === "keyboard"
             ? t("Use the arrow keys to move the box, Shift + arrows to resize it, then press Enter.")
-            : t("Drag a box around what you want help with.")}</span>
+            : t("Click a paragraph or question, or drag a box around what you want help with.")}</span>
           <button class="pz-btn pz-btn--small" type="button" onClick={() => selection.cancel()}>{t("Cancel (Esc)")}</button>
         </div>
       )}
@@ -591,6 +599,53 @@ function SpeakButton({ text, lang, label, block }: { text: string | (() => strin
   );
 }
 
+/**
+ * "Read this page to me", in the person's language: when the page is written in another language, the
+ * main part is translated first (a Spanish speaker on an English page hears Spanish).
+ */
+async function readPage(onPhase?: (phase: "translating" | "speaking") => void): Promise<number> {
+  const ui = currentLanguage();
+  const pageCode = (document.documentElement.lang || "en").slice(0, 2).toLowerCase();
+  let words = pageText();
+  let lang = pageCode;
+  if (ui.code !== pageCode && words) {
+    onPhase?.("translating");
+    const result = await send<Result<{ answer: TranslateAnswer }>>({
+      type: "api", path: "/v1/assist",
+      body: {
+        action: "translate", targetLanguage: ui.english, explainLevel: "simple", profile: "", question: "",
+        region: { text: words.slice(0, 7500), surrounding: "", controls: [], imageCount: 0, pageTitle: document.title.slice(0, 300), pageUrl: location.href.slice(0, 600), pagePurpose: "" },
+      },
+    });
+    if (result?.ok) { words = result.value.answer.lines.map((l) => l.translation).join("\n"); lang = ui.code; }
+  }
+  const id = ++speakCounter;
+  onPhase?.("speaking");
+  send({ type: "tts:speak", id, text: words, lang });
+  return id;
+}
+
+function ReadPageButton() {
+  useLanguage();
+  const [phase, setPhase] = useState<"idle" | "translating" | "speaking">("idle");
+  const [id, setId] = useState<number | null>(null);
+  useEffect(() => {
+    const onMsg = (msg: { type?: string; id?: number }) => { if (msg?.type === "tts:ended" && msg.id === id) setPhase("idle"); };
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => chrome.runtime.onMessage.removeListener(onMsg);
+  }, [id]);
+  const toggle = async () => {
+    if (phase !== "idle") { send({ type: "tts:stop" }); setPhase("idle"); return; }
+    setId(await readPage(setPhase));
+  };
+  return (
+    <button class="pz-btn pz-btn--small pz-btn--block" type="button" aria-pressed={phase !== "idle"} onClick={toggle} data-testid="read-aloud">
+      <Icon name={phase === "idle" ? "speak" : "stop"} />{" "}
+      {phase === "translating" ? t("Translating, then reading…") : phase === "speaking" ? t("Stop reading") : t("Read this page to me")}
+    </button>
+  );
+}
+
 /** The page's main content as it reads on screen (folded-away clutter and hidden parts are skipped). */
 function pageText(): string {
   const main = document.querySelector("[data-prism-role=main],main,[role=main],article") ?? document.body;
@@ -640,9 +695,11 @@ function sourceLabel(s: FieldSuggestion): string {
   return "";
 }
 
-function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "ready" }>; onRetry: (extra?: { justForNow?: string }) => void; onUpdate: (c: CardState) => void }) {
+function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "ready" }>; onRetry: (extra?: { justForNow?: string; forPersonId?: string }) => void; onUpdate: (c: CardState) => void }) {
   useLanguage();
   const { card } = props;
+  const [people, setPeople] = useState<Person[]>([]);
+  useEffect(() => { getProfile().then((p) => setPeople(p.people.filter((x) => x.name.trim()))); }, []);
   const [chosen, setChosen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(card.data.fields.map((f) => [f.id, f.hasSuggestion && ["profile", "session", "page"].includes(f.source)])));
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(card.data.fields.map((f) => [f.id, f.optionValues.join(", ") || f.value])));
@@ -693,6 +750,17 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
 
   return (
     <>
+      {people.length > 0 && (
+        <div class="for-whom" role="radiogroup" aria-label={t("This form is for")} data-testid="fill-for">
+          <span class="pz-label">{t("This form is for")}</span>
+          {[{ id: undefined, name: t("Me") }, ...people].map((p) => (
+            <button class="pz-btn pz-btn--small" type="button" role="radio" aria-checked={card.forPersonId === p.id}
+              data-chosen={card.forPersonId === p.id ? "" : undefined} onClick={() => card.forPersonId !== p.id && props.onRetry({ forPersonId: p.id })}>
+              {card.forPersonId === p.id && <Icon name="check" />} {p.name}
+            </button>
+          ))}
+        </div>
+      )}
       {card.data.overview && <p class="lead">{card.data.overview}</p>}
       {suggestions.length > 0 && (
         <ul class="fields">
@@ -730,10 +798,10 @@ function FillView(props: { card: Extract<CardState, { kind: "fill"; status: "rea
             </label>
           ))}
           <div class="lang-row">
-            <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ justForNow: Object.entries(answers).map(([k, v]) => `${card.data.questions.find((q) => q.fieldId === k)?.question} ${v}`).join("; ") })}>
+            <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ forPersonId: card.forPersonId, justForNow: Object.entries(answers).map(([k, v]) => `${card.data.questions.find((q) => q.fieldId === k)?.question} ${v}`).join("; ") })}>
               {t("Use these answers just for now")}
             </button>
-            <button class="pz-btn pz-btn--small pz-btn--quiet" type="button" onClick={saveAnswers} disabled={saved}>{saved ? t("Saved to About you") : t("Save to About you")}</button>
+            {!card.forPersonId && <button class="pz-btn pz-btn--small pz-btn--quiet" type="button" onClick={saveAnswers} disabled={saved}>{saved ? t("Saved to About you") : t("Save to About you")}</button>}
           </div>
         </div>
       )}
@@ -921,6 +989,12 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
   const [includeScreen, setIncludeScreen] = useState(false);
   const [helping, setHelping] = useState(false);
   const [helpingText, setHelpingText] = useState("");
+  const [people, setPeople] = useState<Person[]>([]);
+  useEffect(() => { getProfile().then((p) => setPeople(p.people.filter((x) => x.name.trim()))); }, []);
+  const helpPerson = (p: Person) => {
+    send({ type: "chat:session", text: `The person is helping ${p.name}${p.relationship ? ` (${p.relationship})` : ""}. Use these saved details about ${p.name}, never the user's own:\n${personText(p)}` });
+    setHelping(false);
+  };
   const [highlights, setHighlights] = useState(spotlightCount());
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -946,7 +1020,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
     <section class="chat pz-card" role="dialog" aria-label={t("Chat with Prism")} data-testid="prism-chat" data-status={chat?.status ?? "idle"}>
       <div class="chat__head">
         <span style="flex:1"><Brand size={26} label={t("Chat")} /></span>
-        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => send({ type: "chat:clear" }).then(props.onClose)}>{t("New chat")}</button>
+        <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={() => { send({ type: "chat:clear" }); setText(""); inputRef.current?.focus(); }}>{t("New chat")}</button>
         <button class="pz-btn pz-btn--quiet pz-btn--small" type="button" onClick={props.onClose} aria-label={t("Close chat")}><Icon name="close" /> {t("Close")}</button>
       </div>
       <div class="chat__context">
@@ -958,8 +1032,13 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
       </div>
       {helping && !chat?.sessionContext && (
         <div class="chat__compose">
+          {people.length > 0 && (
+            <div class="for-whom" data-testid="chat-people">
+              {people.map((p) => <button class="pz-btn pz-btn--small" type="button" onClick={() => helpPerson(p)}><Icon name="person" /> {p.name}</button>)}
+            </div>
+          )}
           <label class="pz-field"><span>{t("Who are you helping? Add anything useful.")}</span>
-            <input class="pz-input" value={helpingText} placeholder={t("My mum, Joan Ellis, 81, lives in Leeds")} onInput={(e) => setHelpingText((e.target as HTMLInputElement).value)} />
+            <input class="pz-input" value={helpingText} placeholder={t("My mom, Joan Ellis, 81, lives in Chicago")} onInput={(e) => setHelpingText((e.target as HTMLInputElement).value)} />
           </label>
           <button class="pz-btn pz-btn--small" type="button" onClick={() => { send({ type: "chat:session", text: helpingText }); setHelping(false); }}>{t("Use just for now")}</button>
         </div>
@@ -970,7 +1049,7 @@ function ChatPanel(props: { chat: PublicChat | null; onClose: () => void }) {
         )}
         {chat?.messages.map((m) => {
           if (m.kind === "confirm") return null;
-          if (m.kind === "action") return <div class="msg msg--action"><Icon name="check" /> {m.text}</div>;
+          if (m.kind === "action") return <div class={`msg msg--action${m.failed ? " msg--failed" : ""}`}><Icon name={m.failed ? "warning" : "check"} /> {m.text}{m.failed && <span class="pz-sr"> ({t("didn't work")})</span>}</div>;
           if (m.kind === "prism" || m.kind === "question") {
             return <div class={`msg msg--${m.kind}`}><Rich text={m.text} /><span class="msg__speak"><SpeakButton text={m.text} /></span></div>;
           }

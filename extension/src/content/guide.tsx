@@ -176,8 +176,11 @@ export function GuideLayer() {
     const onClick = (e: Event) => {
       if (step.kind !== "click" || pressed || !(inside(e) || inHole(e))) return;
       pressed = true;
-      // If the click opens a new page, that page carries the guide on; otherwise report it here.
-      setTimeout(() => { if (!leaving) send({ type: "guide:advanced", result: "clicked it" }); }, 700);
+      // If the click opens a new page, that page carries the guide on; otherwise report it here. A link to
+      // another page gets longer to start loading, so the guide doesn't plan the next step twice.
+      const link = (el.closest("a[href]") as HTMLAnchorElement | null)?.getAttribute("href") ?? "";
+      const leavesPage = !!link && !/^(#|javascript:)/i.test(link);
+      setTimeout(() => { if (!leaving) send({ type: "guide:advanced", result: "clicked it" }); }, leavesPage ? 4000 : 700);
     };
     // Typing may bring up suggestions below the box (towns, addresses): they need to be clickable.
     const onInput = () => { setTyped(!!(el as HTMLInputElement).value); setEngaged(true); };
@@ -212,8 +215,8 @@ export function GuideLayer() {
 
   const stop = () => send({ type: "guide:stop" });
   const stepNo = state.shown.length || 1;
-  const panel = (body: preact.ComponentChildren, extra?: preact.ComponentChildren) => (
-    <div class="guide-card guide-card--center pz-card" role="dialog" aria-label={t("Guide me")} data-testid="guide-card">
+  const panel = (body: preact.ComponentChildren, extra?: preact.ComponentChildren, where = "center") => (
+    <div class={`guide-card guide-card--${where} pz-card`} role="dialog" aria-label={t("Guide me")} data-testid="guide-card">
       <span class="guide-card__goal">{t("Guide me")}: {state.goal}</span>
       {body}
       <div class="guide-card__row">
@@ -231,9 +234,16 @@ export function GuideLayer() {
   }
   if (state.status === "done" || state.status === "stuck") {
     const text = state.step?.instruction || state.error || t("I couldn't find the next step.");
+    // "Done" sits low on the screen so the result it's talking about stays visible.
     return panel(
       <p class="guide-card__text" data-testid="guide-final">{state.status === "done" ? <Icon name="check" /> : null} {text}</p>,
-      state.status === "stuck" ? <button class="pz-btn pz-btn--small" type="button" onClick={() => send({ type: "guide:retry" })}>{t("Try again")}</button> : null,
+      state.status === "stuck"
+        ? <>
+            <button class="pz-btn pz-btn--small" type="button" onClick={() => send({ type: "guide:goback" })} data-testid="guide-goback"><Icon name="back" /> {t("Go back a page")}</button>
+            <button class="pz-btn pz-btn--small" type="button" onClick={() => send({ type: "guide:retry" })}>{t("Try again")}</button>
+          </>
+        : null,
+      state.status === "done" ? "bottom" : "center",
     );
   }
   if (!step) return null;
@@ -279,7 +289,7 @@ export function GuideLayer() {
         {!hole && <p class="guide-card__detail">{t("Scroll the page until you see it.")}</p>}
         <div class="guide-card__row">
           {needsDone && (
-            <button class="pz-btn pz-btn--primary pz-btn--small" type="button" disabled={step.kind === "type" && !typed}
+            <button class="pz-btn pz-btn--primary pz-btn--small" type="button" data-typed={typed ? "" : undefined}
               onClick={() => send({ type: "guide:advanced", result: step.kind === "type" ? "typed it" : step.kind === "choose" ? "chose an option" : "read it" })} data-testid="guide-done">{t("Done")}</button>
           )}
           {state.shown.length > 1 && <button class="pz-btn pz-btn--small" type="button" onClick={() => send({ type: "guide:back" })} data-testid="guide-back">{t("Back")}</button>}

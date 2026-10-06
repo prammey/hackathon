@@ -24,8 +24,13 @@ function InstallSteps() {
           <span>{tj("Switch it on in the {corner} of that page.", { corner: <strong>{t("top-right corner")}</strong> })}</span></li>
         <li class="step-card"><span class="step-num">4</span><b>{t("Add Prism to Chrome")}</b>
           <span>{tj("Click {loadUnpacked} and choose the {folder} folder inside it.", { loadUnpacked: <strong>{t("Load unpacked")}</strong>, folder: <strong>prism-extension</strong> })}</span>
-          <span class="pz-hint">{t("Then click the jigsaw-piece icon and pin Prism.")}</span></li>
+          <span class="pz-hint">{t("Then click the puzzle-piece icon at the top right of Chrome, then the pin next to Prism.")}</span></li>
       </ol>
+      <div class="install-reassure">
+        <p><strong>{t("Is Developer mode safe?")}</strong> {t("Yes. It only lets Chrome add Prism from the folder you downloaded, and it doesn't change your other settings. Leave it on so Prism keeps working.")}</p>
+        <p>{t("Chrome may sometimes remind you that Prism isn't from the Chrome Web Store. That's expected: Prism will be in the store soon.")}</p>
+        <p>{t("Not comfortable doing this? Send this page to a family member or friend: it takes them about a minute.")}</p>
+      </div>
     </section>
   );
 }

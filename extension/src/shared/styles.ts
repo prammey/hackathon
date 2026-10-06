@@ -222,7 +222,8 @@ export function pageCss(styleId: StyleId, settings: Settings, reducedMotion: boo
     // Bars and controls grow only to a modest minimum, so menus and buttons don't overflow their space.
     ...Array.from({ length: Math.max(0, base - 6) }, (_, i) => i + 6).map((px) =>
       `${F} :is(${chrome} [data-prism-fs="${px}"],[data-prism-c][data-prism-fs="${px}"],[data-prism-c] [data-prism-fs="${px}"]){font-size:${Math.max(px, 15)}px!important}`),
-    `${L} :is(${below(15)}):not(${chrome} *):not([data-prism-c]):not([data-prism-c] *){font-size:${lightFloor}px!important}`,
+    // Light touch: small print grows to a comfortable size; a bigger Text size setting raises that floor.
+    `${L} :is(${below(settings.textScale > 1 ? lightFloor : 15)}):not(${chrome} *):not([data-prism-c]):not([data-prism-c] *){font-size:${lightFloor}px!important}`,
   ].join("\n");
   const notKeep = ":not([data-prism-s=keep] *)";
   const text = `:is(p,li,dd,dt,td,th,blockquote,figcaption,label,legend,summary,caption)${notKeep}`;

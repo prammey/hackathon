@@ -280,12 +280,21 @@ export class TidyEngine {
       // Picture cards and tiles get the breathing ring only; turning them into a big button breaks them.
       if (el && !isPictureOrTile(el)) el.setAttribute("data-prism-emphasis", "primary");
     }
+    // Still nothing: on many government pages the main action is a plain link ("Apply for Cash, SNAP…").
+    // It gets the breathing ring and the Next step bar, but keeps its own look.
+    if (!el) {
+      el = [...scope.querySelectorAll("a[href]")].find((e) => visible(e) && !inNav(e) && !sideAction(e)
+        && !e.closest("nav,header,footer,[role=navigation],aside") && /^\s*(apply|start|begin|renew|register|sign up|book|claim|request|get started)\b/i.test(labelOf(e)));
+    }
     if (el && isPictureOrTile(el)) el.removeAttribute("data-prism-emphasis");
     // Up to four other likely things to do: the plan's steps, other real actions, obvious buttons.
     const options: { label: string; el: Element }[] = [];
+    // Crisis lines and bereavement links are important, but not something to suggest as "what to do next".
+    const sensitive = /\b(suicide|crisis|988|funeral|burial|bereave|death|died|abuse|domestic violence)\b/i;
     const add = (e: Element | null | undefined, label?: string) => {
       if (!e || e === el || options.length >= 4 || !visible(e) || isSearch(e) || inNav(e) || sideAction(e) || options.some((o) => o.el === e)) return;
       const text = clean(label || labelOf(e), 60);
+      if (sensitive.test(text)) return;
       if (!text || options.some((o) => o.label.toLowerCase() === text.toLowerCase())) return;
       options.push({ label: text, el: e });
     };
@@ -436,7 +445,10 @@ export class TidyEngine {
       plan, createdAt: Date.now(), lastUsedAt: Date.now(), hits: 0,
     });
     if (fromScratch) await saveSitePrefs(location.origin, { fromScratch: undefined });
-    this.emit({ status: "planned", message: t("Tidied by Prism."), lastPlanMs });
+    this.emit({
+      status: "planned", lastPlanMs,
+      message: this.touch === "light" ? t("This site is already well designed, so Prism keeps its look and just makes it easier to read and use.") : t("Tidied by Prism."),
+    });
   }
 
   private clearPlanAttrs() {

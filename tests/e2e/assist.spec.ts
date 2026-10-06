@@ -83,16 +83,19 @@ test("Translate: Spanish page text, selection with key released first", async ({
   await shot(page, "assist-05-translate-dom");
 });
 
-test("Selection: Esc cancels, tiny drag does nothing, page never gets the click", async ({ context, sw }) => {
+test("Selection: Esc cancels, a click points at the paragraph under it, page never gets the click", async ({ context, sw }) => {
   const page = await context.newPage();
   await page.goto(`${FIXTURES}/cluttered-info/`);
   await prismReady(page);
   await page.evaluate(() => { (window as any).__clicks = 0; document.addEventListener("click", () => (window as any).__clicks++, true); });
   const link = (await page.locator("a.btn-apply").boundingBox())!;
-  // Tiny drag on a link with Alt held: nothing opens, page doesn't navigate.
+  // A click (tiny drag) with Alt held points at the block under it, for people who can't drag precisely.
+  // The link itself never receives the click and the page doesn't navigate.
   await dragSelect(page, [link.x + 5, link.y + 5], [link.x + 8, link.y + 7]);
-  await expect(page.locator("[data-testid=prism-menu]")).toHaveCount(0);
+  await expect(page.locator("[data-testid=prism-menu]")).toBeVisible();
   expect(page.url()).toContain("/cluttered-info/");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("[data-testid=prism-menu]")).toHaveCount(0);
   // Esc mid-drag cancels.
   await page.mouse.move(300, 300);
   await page.keyboard.down("Alt");
@@ -171,4 +174,35 @@ test("Fill out: suggestions from profile, applied with validation, never submitt
   await card.locator("[data-testid=fill-undo]").click();
   expect(await page.locator("#full-name").inputValue()).toBe("");
   void from; void to;
+});
+
+test("Fill out for someone you help: choose them, only their saved details are used, never saved as yours", async ({ context, sw }) => {
+  const joan = {
+    id: "joan", relationship: "My mom", name: "Joan Miller", formOfAddress: "Joan", ageRange: "70 or over", country: "United States",
+    city: "Springfield", language: "English", otherLanguages: "", readingNeeds: "", background: "", goals: "",
+    addressLine1: "12 Oak Street", addressLine2: "", postcode: "62701", phone: "", email: "", dateOfBirth: "1951-03-03",
+  };
+  await sw.evaluate((profile) => chrome.storage.local.set({ profile }), { ...SYNTHETIC_PROFILE, people: [joan] });
+  const page = await context.newPage();
+  await page.goto(`${FIXTURES}/benefits-form/`);
+  await prismReady(page);
+  await page.setViewportSize({ width: 1280, height: 1300 });
+  const [from, to] = await boxOf(page, "#step1", 4);
+  await dragSelect(page, from, to);
+  const card = await chooseAction(page, "fill");
+  // Prism asks who the form is for, then fills it with that person's saved details only.
+  const forWhom = card.locator("[data-testid=fill-for]");
+  await expect(forWhom).toBeVisible();
+  await forWhom.getByRole("radio", { name: /Joan Miller/ }).click();
+  await expect(forWhom.locator("[aria-checked=true]")).toContainText("Joan Miller", { timeout: 90_000 });
+  await expect(card).toHaveAttribute("data-status", "ready");
+  const text = await card.innerText();
+  expect(text).toContain("Joan");
+  expect(text).not.toContain("Margaret");
+  await expect(card.getByRole("button", { name: /Save to About you/ })).toHaveCount(0);
+  await card.locator("[data-testid=fill-apply]").click();
+  await expect(card.locator("[data-testid=fill-result]")).toBeVisible();
+  expect(await page.locator("#full-name").inputValue()).toContain("Joan Miller");
+  expect(await page.locator("#dob").inputValue()).toBe("1951-03-03"); // Joan's, not Margaret's (1951-03-27)
+  expect((await page.evaluate(() => (window as any).__fixture)).submits).toBe(0);
 });

@@ -110,20 +110,20 @@ function StyleSection({ settings, update }: { settings: Settings; update: (p: Pa
 
 // ---------- About you ----------
 
-const FIELDS: { key: keyof PersonDetails; label: string; hint?: string; type?: "text" | "tel" | "email" | "date" | "textarea"; group: string; options?: string[] }[] = [
-  { key: "name", label: k("Your name"), group: "talk" },
-  { key: "formOfAddress", label: k("What should Prism call you?"), hint: k("For example “Margaret” or “Mr Patel”."), group: "talk" },
+const FIELDS: { key: keyof PersonDetails; label: string; theirs?: string; hint?: string; type?: "text" | "tel" | "email" | "date" | "textarea"; group: string; options?: string[] }[] = [
+  { key: "name", label: k("Your name"), theirs: k("Their name"), group: "talk" },
+  { key: "formOfAddress", label: k("What should Prism call you?"), theirs: k("What do they like to be called?"), hint: k("For example “Margaret” or “Mr Patel”."), group: "talk" },
   { key: "ageRange", label: k("Age range"), group: "talk", options: ["", k("Under 18"), "18–34", "35–54", "55–69", k("70 or over")] },
-  { key: "language", label: k("Language you prefer to read"), group: "talk", options: ["", ...LANGUAGES] },
-  { key: "otherLanguages", label: k("Other languages you understand"), group: "talk" },
+  { key: "language", label: k("Language you prefer to read"), theirs: k("Language they prefer to read"), group: "talk", options: ["", ...LANGUAGES] },
+  { key: "otherLanguages", label: k("Other languages you understand"), theirs: k("Other languages they understand"), group: "talk" },
   { key: "readingNeeds", label: k("Reading or accessibility needs"), hint: k("For example “I use a magnifier” or “Short sentences please”."), group: "talk" },
   { key: "country", label: k("Country"), group: "where" },
   { key: "city", label: k("Town or city"), group: "where" },
   { key: "background", label: k("About you"), hint: k("Anything that helps Prism explain things for you, e.g. “Retired nurse, not confident with computers”."), group: "goals", type: "textarea" },
-  { key: "goals", label: k("What are you trying to do online at the moment?"), hint: k("e.g. “Apply for a bus pass and sort out my pension”."), group: "goals", type: "textarea" },
+  { key: "goals", label: k("What are you trying to do online at the moment?"), hint: k("e.g. “Renew my driver's license and sign up for Medicare”."), group: "goals", type: "textarea" },
   { key: "addressLine1", label: k("Address line 1"), group: "forms" },
   { key: "addressLine2", label: k("Address line 2"), group: "forms" },
-  { key: "postcode", label: k("Postcode or ZIP code"), group: "forms" },
+  { key: "postcode", label: k("ZIP code"), group: "forms" },
   { key: "phone", label: k("Phone number"), group: "forms", type: "tel" },
   { key: "email", label: k("Email address"), group: "forms", type: "email" },
   { key: "dateOfBirth", label: k("Date of birth"), group: "forms", type: "date" },
@@ -131,7 +131,7 @@ const FIELDS: { key: keyof PersonDetails; label: string; hint?: string; type?: "
 
 const BASIC: (keyof PersonDetails)[] = ["name", "formOfAddress", "city"];
 
-function DetailsForm(props: { value: PersonDetails; onChange: (v: PersonDetails) => void; idPrefix: string; groups: string[]; only?: (keyof PersonDetails)[]; skip?: (keyof PersonDetails)[] }) {
+function DetailsForm(props: { value: PersonDetails; onChange: (v: PersonDetails) => void; idPrefix: string; groups: string[]; only?: (keyof PersonDetails)[]; skip?: (keyof PersonDetails)[]; someoneElse?: boolean }) {
   useLanguage();
   return (
     <div class="grid2">
@@ -140,7 +140,7 @@ function DetailsForm(props: { value: PersonDetails; onChange: (v: PersonDetails)
         const set = (v: string) => props.onChange({ ...props.value, [f.key]: v });
         return (
           <label class="pz-field" style={f.type === "textarea" ? "grid-column:1 / -1" : ""} for={id}>
-            <span>{t(f.label)}</span>
+            <span>{t(props.someoneElse && f.theirs ? f.theirs : f.label)}</span>
             {f.hint && <span class="pz-hint">{t(f.hint)}</span>}
             {f.options
               ? <select id={id} class="pz-input" value={props.value[f.key]} onChange={(e) => set((e.target as HTMLSelectElement).value)}>{f.options.map((o) => <option value={o}>{!o ? t("Prefer not to say") : f.key === "language" ? o : t(o)}</option>)}</select>
@@ -187,10 +187,26 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         </ul>
         <div class="row">
           <label class="pz-sr" for="new-fact">{t("New fact")}</label>
-          <input id="new-fact" class="pz-input" style="flex:1;min-width:240px" placeholder={t("e.g. I receive Pension Credit")} value={newFact} onInput={(e) => setNewFact((e.target as HTMLInputElement).value)} />
+          <input id="new-fact" class="pz-input" style="flex:1;min-width:240px" placeholder={t("e.g. I get Social Security")} value={newFact} onInput={(e) => setNewFact((e.target as HTMLInputElement).value)} />
           <MicButton onText={(text) => setNewFact(text)} />
           <button class="pz-btn" type="button" disabled={!newFact.trim()} onClick={() => { setDraft({ ...draft, extraFacts: [...draft.extraFacts, { id: crypto.randomUUID(), text: newFact.trim(), source: "typed", addedAt: Date.now() }] }); setNewFact(""); }}>{t("Add")}</button>
         </div>
+      </div>
+      <div class="group">
+        <h3>{t("People you help")}</h3>
+        <p class="pz-hint" style="margin:0">{t("Filling in forms or asking for someone else, like a parent? Add them here. Fill out and Chat will let you choose them, and their details are never mixed up with yours.")}</p>
+        {draft.people.map((p, i) => (
+          <div class="group">
+            <div class="row" style="justify-content:space-between">
+              <strong>{p.name || t("Person {number}", { number: i + 1 })}</strong>
+              <button class="pz-btn pz-btn--small" type="button" onClick={() => setDraft({ ...draft, people: draft.people.filter((x) => x.id !== p.id) })}>{t("Remove")}</button>
+            </div>
+            <label class="pz-field"><span>{t("How do you know them?")}</span><input class="pz-input" value={p.relationship} placeholder={t("e.g. My mom")} onInput={(e) => setDraft({ ...draft, people: draft.people.map((x) => x.id === p.id ? { ...x, relationship: (e.target as HTMLInputElement).value } : x) })} /></label>
+            <DetailsForm value={p} idPrefix={`person-${i}`} groups={["talk", "where", "forms"]} someoneElse
+              onChange={(v) => setDraft({ ...draft, people: draft.people.map((x) => x.id === p.id ? { ...x, ...v } : x) })} />
+          </div>
+        ))}
+        <div class="row"><button class="pz-btn" type="button" onClick={addPerson}><Icon name="person" /> {t("Add a person")}</button></div>
       </div>
       <details class="more-about" open={location.hash === "#about" || location.hash === "#import"}>
       <summary>{t("More about you")}</summary>
@@ -201,22 +217,6 @@ function AboutSection({ profile, onSaved }: { profile: Profile; onSaved: (p: Pro
         <h3>{t("For filling in forms")}</h3>
         <p class="pz-hint" style="margin:0">{tj("Only used to suggest answers when you choose {fillOut}. Prism always shows suggestions first and never sends a form.", { fillOut: <strong>{t("Fill out")}</strong> })}</p>
         <DetailsForm value={draft} onChange={(v) => setDraft({ ...draft, ...v })} idPrefix="me" groups={["forms"]} />
-      </div>
-      <div class="group">
-        <h3>{t("People you help")}</h3>
-        <p class="pz-hint" style="margin:0">{t("If you fill in forms for someone else, add them here. In a chat you can say “I'm helping Joan” — Prism will use their details just for that chat and won't change yours.")}</p>
-        {draft.people.map((p, i) => (
-          <div class="group">
-            <div class="row" style="justify-content:space-between">
-              <strong>{p.name || t("Person {number}", { number: i + 1 })}</strong>
-              <button class="pz-btn pz-btn--small" type="button" onClick={() => setDraft({ ...draft, people: draft.people.filter((x) => x.id !== p.id) })}>{t("Remove")}</button>
-            </div>
-            <label class="pz-field"><span>{t("How do you know them?")}</span><input class="pz-input" value={p.relationship} placeholder={t("e.g. My mum")} onInput={(e) => setDraft({ ...draft, people: draft.people.map((x) => x.id === p.id ? { ...x, relationship: (e.target as HTMLInputElement).value } : x) })} /></label>
-            <DetailsForm value={p} idPrefix={`person-${i}`} groups={["talk", "where", "forms"]}
-              onChange={(v) => setDraft({ ...draft, people: draft.people.map((x) => x.id === p.id ? { ...x, ...v } : x) })} />
-          </div>
-        ))}
-        <div class="row"><button class="pz-btn" type="button" onClick={addPerson}><Icon name="person" /> {t("Add a person")}</button></div>
       </div>
       <ImportSection profile={profile} onSaved={onSaved} />
       </details>
@@ -290,11 +290,27 @@ function LanguageSection({ settings, update }: { settings: Settings; update: (p:
 
 // ---------- Privacy ----------
 
+/** Everything Prism keeps, in plain words (the download has the full detail). */
+async function storedSummary(layouts: number, siteCount: number): Promise<{ label: string; value: string }[]> {
+  const settings = await getSettings();
+  const profile = await getProfile();
+  const about = FIELDS.filter((f) => profile[f.key]?.trim()).map((f) => `${t(f.label)}: ${profile[f.key]}`);
+  const size = { 1: t("Normal"), 1.15: t("Large"), 1.3: t("Larger"), 1.5: t("Largest") }[settings.textScale] ?? "";
+  return [
+    { label: t("Your settings"), value: [settings.translateTo || "English", STYLES[settings.styleId].name, size, settings.dictation ? t("Talking is turned on") : ""].filter(Boolean).join(" · ") },
+    { label: t("About you"), value: about.length ? about.join(" · ") : t("Nothing yet") },
+    { label: t("Anything else Prism should know"), value: profile.extraFacts.length ? profile.extraFacts.map((f) => f.text).join(" · ") : t("Nothing yet") },
+    { label: t("People you help"), value: profile.people.length ? profile.people.map((p) => p.name || t("Unnamed")).join(", ") : t("Nobody yet") },
+    { label: t("Saved page layouts"), value: String(layouts) },
+    { label: t("Websites with their own settings"), value: String(siteCount) },
+  ];
+}
+
 function DataSection({ onCleared }: { onCleared: () => void }) {
   useLanguage();
   const [plans, setPlans] = useState<CachedPlan[]>([]);
   const [sites, setSites] = useState<[string, SitePrefs][]>([]);
-  const [view, setView] = useState<string | null>(null);
+  const [view, setView] = useState<{ label: string; value: string }[] | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState("");
   const refresh = async () => { setPlans(await listCachedPlans()); setSites(await listSitePrefs()); };
@@ -317,7 +333,7 @@ function DataSection({ onCleared }: { onCleared: () => void }) {
       <div class="group">
         <div class="row">
           <button class="pz-btn" type="button" disabled={!plans.length} onClick={async () => { await deleteCachedPlans(() => true); refresh(); }}>{t("Forget saved page layouts ({count})", { count: plans.length })}</button>
-          <button class="pz-btn" type="button" onClick={async () => setView(view ? null : JSON.stringify(await chrome.storage.local.get(["settings", "profile"]), null, 2))}>{view ? t("Hide what Prism stores") : t("See what Prism stores")}</button>
+          <button class="pz-btn" type="button" onClick={async () => setView(view ? null : await storedSummary(plans.length, sites.length))}>{view ? t("Hide what Prism stores") : t("See what Prism stores")}</button>
           <button class="pz-btn" type="button" onClick={exportData}>{t("Download a copy")}</button>
           {!confirming
             ? <button class="pz-btn pz-btn--danger" type="button" onClick={() => setConfirming(true)}>{t("Delete everything")}</button>
@@ -326,7 +342,12 @@ function DataSection({ onCleared }: { onCleared: () => void }) {
                 <button class="pz-btn" type="button" onClick={() => setConfirming(false)}>{t("Cancel")}</button></span>}
         </div>
         {message && <Notice tone="ok">{message}</Notice>}
-        {view && <pre style="margin:0;max-height:320px;overflow:auto;background:var(--pz-bg);padding:14px;border-radius:14px;font-size:13px;border:1px solid var(--pz-line)">{view}</pre>}
+        {view && (
+          <dl class="stored" data-testid="stored">
+            {view.map((row) => <div><dt>{row.label}</dt><dd>{row.value}</dd></div>)}
+            <p class="pz-hint" style="margin:0">{t("“Download a copy” saves all of it as a file.")}</p>
+          </dl>
+        )}
         {chosen.length > 0 && (
           <table class="simple">
             <tbody>

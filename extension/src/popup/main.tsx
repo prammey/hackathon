@@ -3,6 +3,7 @@ import { render } from "preact";
 import { bootPage } from "../ui/boot";
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, getSitePrefs, saveSitePrefs } from "../shared/storage";
+import { STYLES } from "../shared/styles";
 import type { Settings, SitePrefs, StyleId } from "../shared/types";
 import { t, tj } from "../shared/i18n";
 import { Brand, Icon, MicButton, Notice, StylePicker, Switch, useLanguage } from "../ui/components";
@@ -74,11 +75,13 @@ function GuideBox({ tabId }: { tabId: number }) {
   return (
     <form class="guide-box" onSubmit={start}>
       <label class="pz-label" for="guide-goal">{t("What do you want to do?")}</label>
+      {/* Full width and two lines, so the whole goal stays readable while typing. Enter starts; Shift+Enter is a new line. */}
+      <textarea id="guide-goal" class="pz-input guide-box__goal" rows={2} value={goal} placeholder={t("For example: send an email to my son")}
+        onInput={(e) => setGoal((e.target as HTMLTextAreaElement).value)} data-testid="popup-guide-goal"
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); start(); } }} />
       <div class="guide-box__row">
-        <input id="guide-goal" class="pz-input" value={goal} placeholder={t("For example: send an email to my son")}
-          onInput={(e) => setGoal((e.target as HTMLInputElement).value)} data-testid="popup-guide-goal" />
-        <MicButton small iconOnly onText={(text) => setGoal(text)} />
-        <button class="pz-btn pz-btn--primary pz-btn--small" type="submit" disabled={!goal.trim()} data-testid="popup-guide-start"><Icon name="guide" /> {t("Guide me")}</button>
+        <MicButton small onText={(text) => setGoal(text)} />
+        <button class="pz-btn pz-btn--primary guide-box__start" type="submit" disabled={!goal.trim()} data-testid="popup-guide-start"><Icon name="guide" /> {t("Guide me")}</button>
       </div>
     </form>
   );
@@ -91,6 +94,7 @@ function Popup() {
   const [site, setSite] = useState<SitePrefs>({});
   const [health, setHealth] = useState<{ ok: boolean; mode?: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showStyles, setShowStyles] = useState(false);
 
   async function refresh() {
     // ?tabId= lets automated tests (which open the popup as a normal tab) point it at a page.
@@ -100,7 +104,9 @@ function Popup() {
     if (!tab?.id || !tab.url || !/^https?:/.test(tab.url)) {
       // A blank new tab needs no warning: "What do you want to do?" is all there is to say there.
       const blankTab = !!tab?.url && /^(chrome|edge):\/\/(newtab|new-tab-page)|^about:blank/.test(tab.url);
-      const reason = tab?.url?.startsWith("file:")
+      // Chrome hides the address of both a new tab and its own pages, so say only what's true for both.
+      const reason = !tab?.url ? t("Prism can't tidy this page, but Guide me works from here: say what you want to do.")
+        : tab.url.startsWith("file:")
         ? t("To use Prism on files on your computer, turn on “Allow access to file URLs” for Prism in your browser's extension settings.")
         : t("Prism can't change this page — the browser protects pages like this one (for example settings pages, the new tab page and extension stores).");
       setLoad({ kind: "restricted", reason: blankTab ? "" : reason, tabId: tab?.id });
@@ -185,10 +191,15 @@ function Popup() {
       {page.message && (
         <p class="pz-muted" role="status" style="margin:0">{page.status === "planning" ? t("Prism is studying the page…") : page.message}</p>
       )}
-      <div style="display:grid;gap:8px">
+      {/* One line until the person wants to change it, so the popup fits Chrome's 600px limit. */}
+      <div class="popup__style">
         <span class="pz-label" id="style-label">{t("Style")}</span>
-        <StylePicker value={page.styleId} label={t("Style")} onChange={(id) => tabMsg({ type: "prism:set-style", styleId: id })} />
+        <span class="popup__style-name">{STYLES[page.styleId]?.name}</span>
+        <button class="pz-btn pz-btn--small" type="button" aria-expanded={showStyles} onClick={() => setShowStyles(!showStyles)} data-testid="popup-style-toggle">
+          {showStyles ? t("Done") : t("Change")}
+        </button>
       </div>
+      {showStyles && <StylePicker value={page.styleId} label={t("Style")} onChange={(id) => tabMsg({ type: "prism:set-style", styleId: id })} />}
       <div style="display:grid;gap:6px">
         <div class="popup__actions">
           <button class="pz-btn pz-btn--primary" type="button" data-testid="popup-point"
@@ -200,6 +211,10 @@ function Popup() {
             <Icon name="chat" /> {t("Chat")}
           </button>
         </div>
+        <button class="pz-btn pz-btn--block" type="button" data-testid="popup-read"
+          onClick={async () => { await chrome.tabs.sendMessage(tabId, { type: "prism:read-page" }); window.close(); }}>
+          <Icon name="speak" /> {t("Read this page to me")}
+        </button>
       </div>
       <div class="popup__foot">
         <HelperStatus health={health} />

@@ -142,7 +142,7 @@ export function ImportSection({ onSaved }: { profile: Profile; onSaved: (p: Prof
           <h3>{t("Paste from {source}", { source: sourceName(stage.source) })}</h3>
           <label class="pz-field" for="paste-box"><span>{t("Paste the text here")}</span>
             <textarea id="paste-box" class="pz-input" style="min-height:180px" value={paste} onInput={(e) => setPaste((e.target as HTMLTextAreaElement).value)}
-              placeholder={t("For example:\n- Lives in Leeds, UK\n- Prefers short, simple explanations\n- Is applying for Pension Credit")} data-testid="paste-box" /></label>
+              placeholder={t("For example:\n- Lives in Columbus, Ohio\n- Prefers short, simple explanations\n- Is applying for SNAP food help")} data-testid="paste-box" /></label>
           <div class="row">
             <button class="pz-btn pz-btn--primary" type="button" disabled={!paste.trim()} data-testid="paste-find"
               onClick={() => review(stage.source, candidatesFromText(paste, t("Pasted text"), 120), false)}>{t("Find facts about me")}</button>

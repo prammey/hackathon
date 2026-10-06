@@ -6,7 +6,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, saveSettings } from "../shared/storage";
 import { STYLE_ORDER, STYLES } from "../shared/styles";
-import type { StyleId } from "../shared/types";
+import type { Settings, StyleId } from "../shared/types";
 import { t, tj, k, UI_LANGUAGES } from "../shared/i18n";
 import { allowMicrophone, Brand, Icon, isMac, useLanguage } from "../ui/components";
 import { MiniPreview } from "../options/preview";
@@ -27,7 +27,7 @@ const DEMO_SITES = [
   { name: "Social Security Actuaries", what: k("Benefit calculators and data"), kind: k("Social Security"), url: "https://www.ssa.gov/oact/" },
 ];
 
-type Choices = { styleId: StyleId; dictation: boolean; languageChosen?: boolean };
+type Choices = { styleId: StyleId; dictation: boolean; languageChosen?: boolean; textScale?: Settings["textScale"] };
 
 /** First thing a new person sees: their language, in their language. */
 function LanguagePicker({ onPick }: { onPick: (english: string) => void }) {
@@ -52,7 +52,7 @@ function LanguagePicker({ onPick }: { onPick: (english: string) => void }) {
 export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?: ComponentChildren }) {
   useLanguage();
   const { web } = props;
-  const [settings, setChoices] = useState<Choices | null>(web ? { styleId: "soft", dictation: false } : null);
+  const [settings, setChoices] = useState<Choices | null>(web ? { styleId: "soft", dictation: false, textScale: 1 } : null);
   const [talkProblem, setTalkProblem] = useState("");
   useEffect(() => { if (!web) getSettings().then((s) => { setChoices(s); saveSettings({ onboarded: true }); }); }, []);
   if (!settings) return null;
@@ -69,7 +69,7 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
         {props.top ? <div class="hero-top"><Brand size={44} />{props.top}</div> : <Brand size={44} />}
         <h1 id="w-h">{tj("Websites, made {calm} and clear.", { calm: <em>{t("calm")}</em> })}</h1>
         <p>{t("Prism tidies cluttered websites so they're easier to read, explains anything you point at in plain words, and helps you fill in forms — always asking before anything important happens.")}</p>
-        <p>{t("No setup needed.")}</p>
+        {!web && <p>{t("No setup needed.")}</p>}
         <div class="practice" aria-labelledby="try-h">
           <h2 id="try-h" class="practice__title"><Icon name="sparkle" /> {t("Practice websites")}</h2>
           <p class="practice__hint">{tj("Open one, then click the Prism button and turn on {tidy}.", { tidy: <strong>{t("Tidy this page")}</strong> })}</p>
@@ -83,14 +83,20 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
 
       <section class="section" aria-labelledby="how-h">
         <h2 id="how-h">{t("How to use Prism")}</h2>
-        <div class="steps-big">
-          <div class="step-card"><span class="step-num">1</span><b>{t("Tidy a page")}</b>
-            <span>{tj("Click the Prism button {icon} in your browser's toolbar, then turn on {tidy}.", {
+        <div class="steps-big steps-big--four">
+          <div class="step-card"><span class="step-num">1</span><b>{t("Get walked through a task")}</b>
+            <span>{tj("Click the Prism button {icon} at the top right of Chrome, say or type what you want to do, and press {guide}. Prism lights up one thing at a time; you do the clicking.", {
+              icon: <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" />,
+              guide: <strong>{t("Guide me")}</strong>,
+            })}</span>
+            <span class="pz-hint">{t("Works from a new, empty tab too.")}</span></div>
+          <div class="step-card"><span class="step-num">2</span><b>{t("Tidy a page")}</b>
+            <span>{tj("Click the Prism button {icon} at the top right of Chrome, then turn on {tidy}.", {
               icon: <img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:middle" />,
               tidy: <strong>{t("Tidy this page")}</strong>,
             })}</span>
-            <span class="pz-hint">{t("Can't see it? Click the jigsaw-piece icon and pin Prism.")}</span></div>
-          <div class="step-card"><span class="step-num">2</span><b>{t("Point at anything")}</b>
+            <span class="pz-hint">{t("Can't see the Prism button? Click the puzzle-piece icon at the top right of Chrome, then the pin next to Prism.")}</span></div>
+          <div class="step-card"><span class="step-num">3</span><b>{t("Point at anything")}</b>
             <span>{tj("Hold {key} and drag a box around something confusing. Choose {define}, {translate}, {fill} or {chat}.", {
               key: <strong>{key}</strong>,
               define: <strong>{t("Define")}</strong>,
@@ -98,8 +104,8 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
               fill: <strong>{t("Fill out")}</strong>,
               chat: <strong>{t("Chat")}</strong>,
             })}</span>
-            <span class="pz-hint">{t("Or use the Prism button → Point at something.")}</span></div>
-          <div class="step-card"><span class="step-num">3</span><b>{t("Go back any time")}</b>
+            <span class="pz-hint">{t("No steady hand needed: choose Point at something in the Prism button, then just click a paragraph or question.")}</span></div>
+          <div class="step-card"><span class="step-num">4</span><b>{t("Go back any time")}</b>
             <span>{tj("{refresh} {icon} the page, or switch off {tidy}, to see the website exactly as it was.", {
               refresh: <strong>{t("Refresh")}</strong>,
               icon: <span class="kbd-icon" role="img" aria-label={t("refresh button")}><Icon name="restore" /></span>,
@@ -110,7 +116,7 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
       </section>
 
       <section class="section" aria-labelledby="style-h">
-        <h2 id="style-h">{t("Pick a style (you can change it later)")}</h2>
+        <h2 id="style-h">{t("Pick a style and text size (you can change them later)")}</h2>
         <div class="style-cards" role="radiogroup" aria-label={t("Style")}>
           {STYLE_ORDER.map((id) => (
             <button type="button" class="style-card" role="radio" aria-checked={settings.styleId === id} aria-pressed={settings.styleId === id}
@@ -119,6 +125,13 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
               <span class="style-card__name">{STYLES[id].name}{settings.styleId === id && <span class="pz-label" style="color:var(--pz-violet)"><Icon name="check" /> {t("Chosen")}</span>}</span>
               <span class="style-card__tag">{t(STYLES[id].tagline)}</span>
             </button>
+          ))}
+        </div>
+        <div class="text-size" role="radiogroup" aria-label={t("Text size")}>
+          <span class="text-size__label">{t("Text size")}</span>
+          {([1, 1.15, 1.3, 1.5] as const).map((v) => (
+            <button type="button" class="text-size__btn" role="radio" aria-checked={(settings.textScale ?? 1) === v} onClick={() => choose({ textScale: v })}
+              style={`font-size:${Math.round(16 * v)}px`}>{v === 1 ? t("Normal") : v === 1.15 ? t("Large") : v === 1.3 ? t("Larger") : t("Largest")}</button>
           ))}
         </div>
       </section>

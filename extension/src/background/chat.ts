@@ -194,7 +194,8 @@ function closeOpenCalls(state: ChatState, message: string) {
 
 async function execute(state: ChatState, action: ChatAction, description: string): Promise<ActionOutcome> {
   state.steps++;
-  state.messages.push(newMessage("action", description));
+  const message = newMessage("action", description);
+  state.messages.push(message);
   await save(state);
   const outcome = await toTab<ActionOutcome>(state.tabId, { type: "chat:exec", action });
   if (!outcome) {
@@ -208,7 +209,11 @@ async function execute(state: ChatState, action: ChatAction, description: string
     const ready = await waitForReady(state.tabId);
     if (!ready) return { ok: false, message: "The new page didn't finish loading, or Prism can't work on it." };
   }
-  if (!outcome.ok) state.failures++;
+  if (!outcome.ok) {
+    state.failures++;
+    message.failed = true;
+    await save(state);
+  }
   return outcome;
 }
 

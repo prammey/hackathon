@@ -8,6 +8,8 @@ export interface ChatMessage {
   kind: "user" | "prism" | "action" | "notice" | "question" | "confirm" | "error";
   text: string;
   detail?: string;
+  /** An action Prism tried that didn't work (shown with a warning instead of a tick). */
+  failed?: boolean;
   at: number;
 }
 

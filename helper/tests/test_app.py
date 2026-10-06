@@ -95,3 +95,12 @@ def test_guide_step_ids_and_links_are_checked():
 def test_guide_rejects_empty_goal_before_ai():
   r = client.post("/v1/guide", json={"goal": ""}, headers={"Origin": ORIGIN})
   assert r.status_code == 422
+
+
+def test_guide_notices_a_reply_in_the_wrong_script():
+  from prism_helper.app import wrong_script
+  assert wrong_script('Click "Apply"', "Hindi")
+  assert not wrong_script('"Apply" पर क्लिक करें', "Hindi")
+  assert wrong_script("Click here", "Chinese (Simplified)")
+  assert not wrong_script('Haga clic en "Apply"', "Spanish")  # Latin-script languages aren't checked this way
+  assert not wrong_script("", "Arabic")

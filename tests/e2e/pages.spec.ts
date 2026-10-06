@@ -16,7 +16,9 @@ test("Popup: tidy switch, style picker, auto-tidy checkbox, helper status", asyn
   await popup.screenshot({ path: path.join(EVIDENCE, "popup-01-off.png") });
   await popup.getByRole("switch", { name: /Tidy this page/ }).click();
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "true");
+  await popup.locator("[data-testid=popup-style-toggle]").click();
   await popup.locator("[data-style=bold]").click();
+  await popup.locator("[data-testid=popup-style-toggle]").click();
   await popup.getByLabel(/automatically every time/).check();
   await popup.screenshot({ path: path.join(EVIDENCE, "popup-02-on.png") });
   // Chrome caps popups at 600px tall: everything should fit without scrolling.
@@ -37,7 +39,8 @@ test("Popup on a protected page explains what's going on", async ({ context, ext
   const popup = await context.newPage();
   await popup.setViewportSize({ width: 360, height: 400 });
   await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${id}`);
-  await expect(popup.getByText(/browser protects pages like this/)).toBeVisible();
+  // Chrome hides this page's address from extensions, so the popup gives the message that's true for any such page.
+  await expect(popup.getByText(/browser protects pages like this|can't tidy this page, but Guide me works/)).toBeVisible();
   await popup.screenshot({ path: path.join(EVIDENCE, "popup-04-restricted.png") });
 });
 
@@ -205,12 +208,14 @@ test("Choosing a Style before tidying is remembered and applied when tidying tur
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${extensionId}/popup.html?tabId=${id}`);
   await expect(popup.getByRole("switch", { name: /Tidy this page/ })).toHaveAttribute("aria-checked", "false");
+  await popup.locator("[data-testid=popup-style-toggle]").click();
   await popup.locator("[data-style=bold]").click();
   await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
   await popup.waitForTimeout(1500); // survives the popup's status refresh
   await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
   expect(await page.evaluate(() => document.documentElement.hasAttribute("data-prism-on"))).toBe(false);
   await popup.reload();
+  await popup.locator("[data-testid=popup-style-toggle]").click();
   await expect(popup.locator("[data-style=bold]")).toHaveAttribute("aria-pressed", "true");
   await popup.getByRole("switch", { name: /Tidy this page/ }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-prism-style"))).toBe("bold");

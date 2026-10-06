@@ -120,6 +120,7 @@
 .msg--prism { justify-self: start; background: var(--pz-surface-2); border: 1px solid var(--pz-line); border-bottom-left-radius: 6px; }
 .msg--action { justify-self: stretch; max-width: 100%; display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 500; color: #D6D2E2; background: transparent; border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 12px; padding: 8px 12px; }
 .msg--action .pz-icon { color: var(--pz-ok); width: 18px; height: 18px; }
+.msg--failed .pz-icon { color: var(--pz-warn); }
 .msg--notice { justify-self: center; max-width: 100%; font-size: 13px; color: var(--pz-muted); text-align: center; padding: 2px 8px; }
 .msg--question { justify-self: start; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
 .msg--error { justify-self: stretch; max-width: 100%; background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.35); }
@@ -160,6 +161,8 @@
 .guide { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
 .guide__dim { position: fixed; inset: 0; background: rgba(12, 10, 22, 0.66); pointer-events: auto; }
 .guide__dim--light { background: rgba(12, 10, 22, 0.32); }
+/* The dim only shows the way: clicks anywhere still reach the page (a person may know a better path). */
+.guide__dim { pointer-events: none; }
 .guide__dim--open { background: transparent; pointer-events: none; transition: background .2s ease; }
 .guide__ring { position: fixed; pointer-events: none; border: 4px solid #6D4AFF; border-radius: 18px; box-shadow: 0 0 0 6px rgba(109, 74, 255, 0.28), 0 0 40px rgba(109, 74, 255, 0.55); animation: guide-breathe 1.8s ease-in-out infinite; }
 @keyframes guide-breathe { 0%, 100% { box-shadow: 0 0 0 4px rgba(109, 74, 255, 0.30), 0 0 30px rgba(109, 74, 255, 0.45); } 50% { box-shadow: 0 0 0 14px rgba(109, 74, 255, 0.10), 0 0 50px rgba(109, 74, 255, 0.65); } }
@@ -167,13 +170,15 @@
 @media (prefers-reduced-motion: reduce) { .guide__ring { animation: none; } }
 .guide-card { position: fixed; pointer-events: auto; width: min(420px, calc(100vw - 24px)); padding: 18px 20px; display: grid; gap: 10px; border: 1px solid rgba(167, 139, 250, 0.5) !important; box-shadow: var(--pz-shadow), 0 0 40px rgba(109, 74, 255, 0.35) !important; z-index: 6; }
 .guide-card--center { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 24px)); }
+.guide-card--bottom { left: 50%; bottom: 24px; transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); }
 .guide-card--caution { border-color: #F59E0B !important; }
 .guide-card__step, .guide-card__goal { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pz-violet); }
 .guide-card__goal { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--pz-muted); font-weight: 600; }
 .guide-card__text { margin: 0; font-size: 21px; font-weight: 700; line-height: 1.3; color: var(--pz-text); display: flex; gap: 10px; align-items: center; }
 .guide-card__detail { margin: 0; font-size: 16px; color: var(--pz-muted); line-height: 1.45; }
 .guide-card__caution { margin: 0; font-size: 15px; font-weight: 600; color: #FBBF24; display: flex; gap: 8px; align-items: center; }
-.guide-card__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.guide-card__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.guide-card .pz-btn--small { min-height: 44px; }
 .guide-card__row .pz-input { flex: 1; min-width: 140px; }
 .guide-card__choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .guide-card__choices .pz-btn { font-size: 16px; }
@@ -184,3 +189,7 @@
 
 .nextstep--tab { padding: 6px; }
 .nextstep--right { left: auto; right: 18px; }
+
+/* "This form is for: Me / Joan" (Fill out) and saved people in Chat's "I'm helping someone else" */
+.for-whom { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.for-whom [data-chosen] { border-color: var(--pz-violet); background: var(--pz-violet-soft); color: var(--pz-text); }

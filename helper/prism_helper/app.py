@@ -261,7 +261,23 @@ def guide(req: GuideRequest):
   parts.append(f"Write instruction, detail and choices in {req.language}, even if the page is in another language. "
                "Keep button and link names in quotes exactly as they appear on the page.")
   step, model = generate_json("\n\n".join(parts), system, GuideStep)
+  # A step in the wrong language is useless to someone who can't read English: ask once more, firmly.
+  if wrong_script(step.instruction, req.language):
+    parts.append(f"Your last answer was not in {req.language}. Write instruction and detail in {req.language} only.")
+    step, model = generate_json("\n\n".join(parts), system, GuideStep)
   return bounded_guide_step(step, req.pageState) | {"model": model}
+
+
+# Languages written in their own script: a reply with none of those letters is in the wrong language.
+SCRIPTS = {
+  "hindi": r"[\u0900-\u097F]", "bengali": r"[\u0980-\u09FF]", "arabic": r"[\u0600-\u06FF]",
+  "chinese": r"[\u4E00-\u9FFF]", "korean": r"[\uAC00-\uD7AF]", "russian": r"[\u0400-\u04FF]",
+}
+
+
+def wrong_script(text: str, language: str) -> bool:
+  pattern = next((p for name, p in SCRIPTS.items() if name in language.lower()), None)
+  return bool(pattern and text.strip() and not re.search(pattern, text))
 
 
 def bounded_guide_step(step: GuideStep, page_state: str) -> dict:
