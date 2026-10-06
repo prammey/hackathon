@@ -43,8 +43,20 @@ function GitHubLink() {
   );
 }
 
+function SiteFooter() {
+  useLanguage();
+  return (
+    <footer class="site-foot">
+      <a href="privacy.html">{t("Privacy policy")}</a>
+      <a href="how-its-built.html">{t("How it's built")}</a>
+      <a href="https://github.com/prammey/hackathon/blob/main/LICENSE" rel="noopener">{t("MIT License")}</a>
+      <a href="https://github.com/prammey/hackathon" rel="noopener">GitHub</a>
+    </footer>
+  );
+}
+
 render(
-  <Welcome web bottom={<InstallSteps />} top={
+  <Welcome web bottom={<><InstallSteps /><SiteFooter /></>} top={
     <div class="hero-end">
       <div class="hero-actions">
         <a class="pz-btn pz-btn--primary install-top" href="#install" data-testid="install-top"><Icon name="download" /> {t("Install Prism")}</a>

@@ -44,7 +44,10 @@ fs.writeFileSync(path.join(out, "index.html"), `<!doctype html>
 </body>
 </html>
 `);
-// "How it's built": the beginner's guide from docs/, drawn in the site's style.
+// Reading pages: "How it's built" (the beginner's guide from docs/) and the privacy policy, sharing doc.css.
+fs.copyFileSync(path.join(root, "extension/src/site/doc.css"), path.join(out, "doc.css"));
+fs.writeFileSync(path.join(out, "privacy.html"),
+  fs.readFileSync(path.join(root, "extension/src/site/privacy.html"), "utf8").replaceAll("__VERSION__", pkg.version));
 fs.copyFileSync(path.join(root, "docs/HOW-PRISM-WORKS.md"), path.join(out, "how-its-built.md"));
 fs.writeFileSync(path.join(out, "how-its-built.html"),
   fs.readFileSync(path.join(root, "extension/src/site/how-its-built.html"), "utf8").replaceAll("__VERSION__", pkg.version));

@@ -312,7 +312,8 @@ function DataSection({ onCleared }: { onCleared: () => void }) {
   return (
     <section id="privacy" class="section" aria-labelledby="priv-h">
       <h2 id="priv-h">{t("Your data")}</h2>
-      <p>{t("Everything Prism knows about you stays in this browser. When you ask for help, only what's needed is sent to Google's Gemini AI, never passwords or card details.")}</p>
+      <p>{t("Everything Prism knows about you stays in this browser. When you ask for help, only what's needed is sent to Google's Gemini AI, never passwords or card details.")}{" "}
+        <a href="https://prism-helper.vercel.app/privacy.html" target="_blank" rel="noopener">{t("Read the full privacy policy")}</a></p>
       <div class="group">
         <div class="row">
           <button class="pz-btn" type="button" disabled={!plans.length} onClick={async () => { await deleteCachedPlans(() => true); refresh(); }}>{t("Forget saved page layouts ({count})", { count: plans.length })}</button>

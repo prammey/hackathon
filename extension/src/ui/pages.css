@@ -151,6 +151,9 @@ pre, code { color: var(--pz-text); }
 .install-top { font-size: 16px; padding: 12px 22px; }
 .hero-actions { display: grid; gap: 10px; }
 .hero-end { display: contents; }
+.site-foot { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-top: 24px; border-top: 1px solid var(--pz-line); font-size: 15px; }
+.site-foot a { color: var(--pz-muted); }
+.site-foot a:hover { color: var(--pz-text); }
 @media (max-width: 760px) {
   .hero-top { grid-template-columns: 1fr auto; }
   .hero-actions { grid-row: 2; grid-column: 1 / -1; justify-self: start; }

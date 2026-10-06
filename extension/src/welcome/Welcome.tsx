@@ -169,7 +169,7 @@ export function Welcome(props: { web?: boolean; top?: ComponentChildren; bottom?
 
       <section class="section" aria-labelledby="priv-h">
         <h2 id="priv-h">{t("Your privacy")}</h2>
-        <p>{tj("Prism can see the websites you choose to tidy or ask about, so it can help with them. When you ask for help, only what's needed is sent to Google's Gemini AI. Prism never sends passwords or card details, and never sends a form without asking you. {readMore}.", { readMore: <a href={extLink("options.html#privacy")}>{t("Read more")}</a> })}</p>
+        <p>{tj("Prism can see the websites you choose to tidy or ask about, so it can help with them. When you ask for help, only what's needed is sent to Google's Gemini AI. Prism never sends passwords or card details, and never sends a form without asking you. {readMore}.", { readMore: <a href={web ? "privacy.html" : "options.html#privacy"}>{t("Read more")}</a> })}</p>
         <p class="pz-hint">{t("To limit which websites Prism can use, right-click the Prism button and choose “This can read and change site data”.")}</p>
       </section>
       {props.bottom}

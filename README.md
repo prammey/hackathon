@@ -130,6 +130,7 @@ Important websites that are hard to use. These also appear as the practice websi
 - Prism never reads, types or sends passwords or card details, and never sends a form or buys anything.
 - Settings → **Your data** lets you see, download or delete everything.
 - Prism is an independent project, not affiliated with Google, OpenAI or Anthropic.
+- Full policy: [prism-helper.vercel.app/privacy.html](https://prism-helper.vercel.app/privacy.html)
 
 ## How it works
 
@@ -196,3 +197,7 @@ The end-to-end tests run on local test pages (`fixtures/`) with real AI answers,
 - Payment boxes embedded from other websites, and map or drawing apps, can be explained but not restyled.
 - Guide me never signs in for you: when a site asks for a password, it points at the box and you type it.
 - Firefox and Safari aren't supported yet.
+
+## License
+
+[MIT](LICENSE) © 2026 Prameet Guha and Kundan Baliga

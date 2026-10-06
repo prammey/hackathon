@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism privacy policy</title>
+  <meta name="description" content="What the Prism browser extension stores, what it sends to its AI service, and how to delete it.">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png?v=__VERSION__">
+  <link rel="stylesheet" href="pages.css?v=__VERSION__">
+  <link rel="stylesheet" href="doc.css?v=__VERSION__">
+</head>
+<body class="pz-scope">
+  <main class="page doc-page">
+    <header class="doc-top">
+      <a class="pz-brand" href="./"><img src="icons/icon-128.png" alt="" width="40" height="40"><span class="pz-wordmark">Prism</span></a>
+      <nav class="doc-top__links" aria-label="Links">
+        <a class="pz-btn pz-btn--primary" href="./#install">Install Prism</a>
+        <a class="pz-btn gh-btn" href="https://github.com/prammey/hackathon" rel="noopener" aria-label="Prism's code on GitHub" title="Prism's code on GitHub">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56l-.02-1.96c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14l-.01 3.18c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        </a>
+      </nav>
+    </header>
+    <section class="doc-hero" aria-labelledby="doc-h">
+      <h1 id="doc-h">Your <em>privacy</em></h1>
+      <p>Prism is built to help, not to collect. This page explains, in plain words, what Prism keeps on your computer, what it sends to get an answer, and how to delete everything.</p>
+      <p class="doc-meta">Last updated 6 October 2026 · applies to the Prism browser extension and this website</p>
+    </section>
+    <article class="doc">
+      <blockquote><p><strong>The short version:</strong> Prism has no accounts, no ads and no tracking, and never sells data. What you tell Prism stays in your browser. When you ask for help, only what that request needs is sent to Prism's AI service to get the answer. Passwords and card numbers are never sent.</p></blockquote>
+
+      <h2>What stays on your computer</h2>
+      <p>These are stored only in your browser (Chrome's extension storage). They never leave your computer unless a request needs them, as described below.</p>
+      <ul>
+        <li><strong>Your settings:</strong> style, text size, language and talking on/off.</li>
+        <li><strong>About you</strong> (optional): anything you choose to tell Prism, such as your name or town, and details of people you help.</li>
+        <li><strong>Saved layouts:</strong> how each page you tidied was arranged, so it looks the same next time without asking the AI again.</li>
+        <li><strong>Per-site choices</strong>, such as "tidy this website automatically".</li>
+        <li><strong>Chats and Guide me steps</strong>, which are kept only while your browser is open and then forgotten.</li>
+        <li><strong>A random install number</strong>, which lets the AI service apply fair-use limits. It isn't linked to your name, email or Google account.</li>
+      </ul>
+      <p>Prism never saves what you type into websites and never saves pictures of pages.</p>
+
+      <h2>What is sent, and when</h2>
+      <p>Prism only sends something when you use a feature that needs the AI. It goes over an encrypted connection (HTTPS) to Prism's AI service, which runs on Google Cloud and asks Google's Gemini model on Vertex AI for the answer.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>When you…</th><th>What is sent</th></tr></thead>
+        <tbody>
+          <tr><td>Tidy a page Prism hasn't seen before</td><td>An outline of the page: headings, button and link labels, and the kinds of sections. Not what's typed in forms.</td></tr>
+          <tr><td>Point at something (Define, Translate, Fill out, Chat)</td><td>The words and form questions inside the box you drew, a little surrounding text, and a cropped picture of that area if it contains words in an image. For Fill out, the parts of "About you" that could answer the questions.</td></tr>
+          <tr><td>Use Guide me</td><td>Your goal, a list of the buttons, links and boxes on the current page, the steps so far and your answers to its questions.</td></tr>
+          <tr><td>Press Talk</td><td>A short recording of what you say, to turn it into text. Prism only listens while the Talk button shows it's listening.</td></tr>
+          <tr><td>Import from ChatGPT or Claude</td><td>The lines Prism picked out of your export as possible facts about you, so you can review them. Nothing is saved until you approve each one.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Every request also includes your chosen language and the random install number.</p>
+
+      <h2>What is never sent</h2>
+      <ul>
+        <li>Passwords, card numbers, security codes, bank account numbers or ID numbers. Prism detects these fields, leaves them out and never types into them.</li>
+        <li>What you type into websites, unless it's inside an area you deliberately point at.</li>
+        <li>Your browsing history. (Saved layouts are labelled with the page's address, but they stay on your computer.)</li>
+      </ul>
+
+      <h2>What happens on the server</h2>
+      <ul>
+        <li>Prism's service uses each request to get an answer and sends that answer back. It doesn't store the content of your requests.</li>
+        <li>Its technical logs record only which feature was used, whether it worked and how long it took, not what was in the request. Google Cloud may keep standard network logs (such as IP addresses) for security and abuse prevention.</li>
+        <li>Requests are processed by Google's Gemini model on Vertex AI. Under Google Cloud's terms, this data isn't used to train Google's models.</li>
+        <li>Fair-use limits are counted in memory using the install number and IP address, and are forgotten when the service restarts.</li>
+      </ul>
+
+      <h2>Read aloud</h2>
+      <p>Read aloud uses your browser's built-in voices. Depending on your computer, some of those voices are provided online by your browser's maker. Prism doesn't send the text anywhere itself.</p>
+
+      <h2>This website</h2>
+      <p>prism-helper.vercel.app is hosted by Vercel. It uses no cookies, analytics or trackers. Vercel may keep standard server logs, such as IP addresses, for security.</p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li><strong>See, download or delete everything:</strong> Prism's Settings, then <strong>Your data</strong>.</li>
+        <li><strong>Limit where Prism works:</strong> right-click the Prism button and choose "This can read and change site data".</li>
+        <li><strong>Remove Prism:</strong> uninstalling it from Chrome deletes everything it stored.</li>
+      </ul>
+
+      <h2>Permissions Prism asks for</h2>
+      <p>Chrome shows that Prism can "read and change all your data on all websites". That's because Prism tidies and explains whatever page you're on. Its code is present on each page so it's ready when you need it, but it only reads a page's content when you use Prism there, or on websites you set to tidy automatically. Prism also asks for storage (your settings), screenshots of the visible tab (only to read words inside pictures you point at), text-to-speech (Read aloud), an offscreen page (for Talk) and a right-click menu item ("Ask Prism about this").</p>
+
+      <h2>Children</h2>
+      <p>Prism isn't designed for children under 13 and doesn't knowingly collect their information.</p>
+
+      <h2>Changes</h2>
+      <p>If this policy changes, the new version will be posted here with a new date. Prism's code is open source, so anyone can check what it does on <a href="https://github.com/prammey/hackathon" rel="noopener">GitHub</a>.</p>
+
+      <h2>Contact</h2>
+      <p>Questions or concerns: open an issue on <a href="https://github.com/prammey/hackathon/issues" rel="noopener">GitHub (prammey)</a> or email <a href="mailto:prameet.guha@gmail.com">prameet.guha@gmail.com</a>.</p>
+    </article>
+    <footer class="doc-foot">
+      <span>Prism __VERSION__ · free · <a href="https://github.com/prammey/hackathon/blob/main/LICENSE" rel="noopener">MIT License</a> · <a href="privacy.html">Privacy</a> · <a href="how-its-built.html">How it's built</a></span>
+      <a class="pz-btn pz-btn--quiet pz-btn--small" href="./">← Back to Prism</a>
+    </footer>
+  </main>
+</body>
+</html>

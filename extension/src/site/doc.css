@@ -1,0 +1,59 @@
+/* Shared look for the website's reading pages (How it's built, Privacy): Prism's dark purple style. */
+.doc-page { max-width: 920px; gap: 28px; }
+.doc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.doc-top a.pz-brand { text-decoration: none; }
+.doc-top img { width: 40px; height: 40px; border-radius: 22%; }
+.doc-top .pz-wordmark { font-size: 38px; }
+.doc-top__links { display: flex; gap: 10px; align-items: center; }
+.doc-hero { padding: 36px 40px; border-radius: 28px; border: 1px solid rgba(167, 139, 250, 0.25);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(109, 74, 255, 0.28), transparent 60%), var(--pz-surface); }
+.doc-hero h1 { margin: 0 0 10px; font-family: var(--pz-display); font-style: italic; font-weight: 400; font-size: 56px; line-height: 1.02; letter-spacing: -0.02em; }
+.doc-hero h1 em { color: var(--pz-violet); }
+.doc-hero p { margin: 0; color: #D6D2E2; font-size: 18px; max-width: 62ch; }
+.doc-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.doc-toc a { padding: 7px 14px; border-radius: 999px; background: var(--pz-violet-soft); border: 1px solid rgba(167, 139, 250, 0.3);
+  color: var(--pz-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+.doc-toc a:hover, .doc-toc a:focus-visible { background: var(--pz-violet-tint); border-color: var(--pz-violet); }
+
+.doc { font-size: 17px; line-height: 1.65; min-width: 0; }
+.doc--md > h1, .doc--md > p:first-of-type { display: none; } /* the guide's own title and intro are shown in the hero instead */
+.doc h2 { margin: 56px 0 14px; padding-top: 28px; border-top: 1px solid var(--pz-line); scroll-margin-top: 24px;
+  font-family: var(--pz-display); font-style: italic; font-weight: 400; font-size: 38px; line-height: 1.1; letter-spacing: -0.01em; }
+.doc h2:first-of-type { margin-top: 8px; border-top: 0; padding-top: 0; }
+.doc h3 { margin: 32px 0 10px; font-size: 21px; }
+.doc p, .doc li { color: #E2DEEC; max-width: 72ch; }
+.doc p { margin: 0 0 14px; }
+.doc ul, .doc ol { margin: 0 0 16px; padding-left: 24px; }
+.doc li { margin: 6px 0; }
+.doc strong { color: var(--pz-text); }
+.doc a { color: var(--pz-violet); }
+.doc hr { display: none; }
+.doc blockquote { margin: 0 0 18px; padding: 18px 22px; border-radius: var(--pz-radius-sm); border: 1px solid rgba(167, 139, 250, 0.35);
+  background: var(--pz-violet-soft); }
+.doc blockquote p { margin: 0; color: var(--pz-text); font-size: 18px; }
+.doc code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; padding: 2px 6px; border-radius: 6px;
+  background: var(--pz-surface-2); border: 1px solid var(--pz-line); }
+.doc pre { margin: 0 0 18px; padding: 18px 20px; border-radius: var(--pz-radius-sm); background: var(--pz-surface);
+  border: 1px solid var(--pz-line); overflow-x: auto; }
+.doc pre code { padding: 0; border: 0; background: none; font-size: 14px; line-height: 1.55; }
+.doc .table-wrap { margin: 0 0 20px; overflow-x: auto; border-radius: var(--pz-radius-sm); border: 1px solid var(--pz-line); background: var(--pz-surface); }
+.doc table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.doc th, .doc td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--pz-line); vertical-align: top; }
+.doc tr:last-child td { border-bottom: 0; }
+.doc th { color: var(--pz-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; background: var(--pz-surface-2); }
+.doc td { color: #E2DEEC; }
+.doc .diagram { margin: 0 0 22px; padding: 22px; border-radius: var(--pz-radius); background: var(--pz-surface);
+  border: 1px solid rgba(167, 139, 250, 0.22); overflow-x: auto; text-align: center; }
+.doc .diagram svg { max-width: 100%; height: auto; }
+.doc-loading { color: var(--pz-muted); }
+.doc-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-top: 24px; border-top: 1px solid var(--pz-line); color: var(--pz-muted); font-size: 15px; }
+@media (max-width: 760px) {
+  .doc-page { padding: 24px 16px 64px; }
+  .doc-hero { padding: 24px 20px; }
+  .doc-hero h1 { font-size: 40px; }
+  .doc h2 { font-size: 30px; }
+  .doc { font-size: 16px; }
+}
+.doc-meta { color: var(--pz-muted); font-size: 15px; margin-top: 12px; }
+.doc-foot a { color: var(--pz-violet); }
