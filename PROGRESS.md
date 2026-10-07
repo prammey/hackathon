@@ -93,3 +93,10 @@ failure was the public-site test's paragraph picker (an animated Wikipedia eleme
   time (11 steps, stops at Confirm); MS Medicaid into the application form (12 steps); usa.gov in Spanish;
   weather.com from a blank tab (done); Amazon scarf into the basket (done). Full suite 76 tests (one flaky
   settings test fixed); Vitest 25/25; pytest 10/10.
+- 2026-10-07 — v1.1.0 + three rounds of simulated usability sessions (tools/persona-browser.mjs; AI personas
+  are a bug hunt, not user research: their scores aren't evidence). Fixed: saved "People you help" used by
+  Fill out and Chat; Guide me click-through dim, hidden-target and no-effect detection, spotlight follows
+  scroll, glow clicks, pop-up warning, raced backup model (slow steps were 12 s server errors); light touch
+  honours Text size and finds long "Apply…" links; click-to-point; Read aloud in your language; Text size
+  for Prism's own pages; install steps with pictures. Still needed: sessions with real people, and the
+  Chrome Web Store listing (the install steps remain the biggest barrier).
