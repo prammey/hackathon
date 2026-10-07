@@ -353,6 +353,7 @@ export function observePage(): string {
     // two labels run together): guides must name what's on screen.
     const shown = clean((el as HTMLElement).innerText ?? "", 60);
     if (shown && item.name && !item.name.toLowerCase().includes(shown.toLowerCase())) line += ` (on screen: “${shown}”)`;
+    else if (!shown && item.name && el.matches("a,button,[role=button],[role=link],input[type=submit],input[type=image]")) line += " (an icon with no words on screen)";
     if (item.text) line += `: ${item.text}`;
     if (item.field) {
       const sensitive = isSensitiveField(el);

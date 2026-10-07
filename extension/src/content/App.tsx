@@ -56,6 +56,16 @@ export function App({ engine, selection, bus, setHidden }: Props) {
   const [chat, setChat] = useState<PublicChat | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [toast, setToast] = useState<{ text: string; tone?: "error" | "info"; reading?: number } | null>(null);
+  // While Guide me is pointing somewhere, Tidy's own "next step" stays out of the way (they'd disagree).
+  const [guiding, setGuiding] = useState(false);
+  useEffect(() => {
+    const onMsg = (msg: { type?: string; state?: { status?: string } }) => {
+      if (msg?.type === "guide:update") setGuiding(!!msg.state && !["stopped", "done", "stuck"].includes(msg.state.status ?? ""));
+    };
+    chrome.runtime.onMessage.addListener(onMsg);
+    send<{ status?: string } | null>({ type: "guide:state" }).then((s) => setGuiding(!!s && !["stopped", "done", "stuck"].includes(s.status ?? ""))).catch(() => {});
+    return () => chrome.runtime.onMessage.removeListener(onMsg);
+  }, []);
   // The reading toast goes away when the voice finishes.
   useEffect(() => {
     const onMsg = (msg: { type?: string; id?: number }) => { if (msg?.type === "tts:ended") setToast((cur) => (cur?.reading === msg.id ? null : cur)); };
@@ -240,7 +250,7 @@ export function App({ engine, selection, bus, setHidden }: Props) {
       {settings?.dictation && sel.phase === "idle" && <PageTalk />}
       {showTab && !panelOpen && (
         // One compact control, bottom-left: the Prism button, then the next step when the page is tidied.
-        <NextDock tidy={tidy} engine={engine} showNext={tidyOn && !menuRect && !card && sel.phase === "idle"}
+        <NextDock tidy={tidy} engine={engine} showNext={tidyOn && !guiding && !menuRect && !card && sel.phase === "idle"}
           tab={(
             <button class="tab" type="button" aria-label={t("Prism: {status}. Open Prism panel", { status: tidy.message || t("page tidied") })} onClick={() => setPanelOpen(true)}
               data-testid="prism-tab" title={!tidyOn ? t("Original") : busy ? t("Tidying…") : t("Tidied")}>
@@ -556,7 +566,7 @@ function AnswerCard(props: {
         {card.status === "error" && <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry()}>{t("Try again")}</button>}
         {card.status === "ready" && card.kind === "define" && (
           <>
-            <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ question: "Explain this even more simply, in very short sentences." })}>{t("Explain more simply")}</button>
+            <button class="pz-btn pz-btn--small" type="button" onClick={() => props.onRetry({ question: "Explain this again much more simply: one short sentence for the summary, at most two short sentences of explanation in everyday words, no list of terms, and say what to do here." })}>{t("Explain more simply")}</button>
             <SpeakButton text={[card.data.summary, card.data.explanation, card.data.whatToDoHere].filter(Boolean).join(" ")} />
           </>
         )}
@@ -675,13 +685,13 @@ function DefineView({ data }: { data: DefineAnswer }) {
   return (
     <>
       <p class="lead"><Rich text={data.summary} /></p>
+      {data.whatToDoHere && <div class="todo"><strong>{t("What you can do here:")} </strong><Rich text={data.whatToDoHere} /></div>}
       {data.explanation && <p><Rich text={data.explanation} /></p>}
       {data.terms.length > 0 && (
         <dl class="terms">
           {data.terms.map((t) => <div><dt>{t.term}</dt><dd>{t.meaning}</dd></div>)}
         </dl>
       )}
-      {data.whatToDoHere && <div class="todo"><strong>{t("What you can do here:")} </strong><Rich text={data.whatToDoHere} /></div>}
       {data.uncertain.length > 0 && <p class="pz-muted">{t("Unclear: {items}", { items: data.uncertain.join("; ") })}</p>}
     </>
   );

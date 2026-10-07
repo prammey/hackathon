@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "Inihahanda ang pahina para basahin…",
   "Prism couldn't translate this page right now, so it's read as written.": "Hindi maisalin ng Prism ang pahinang ito ngayon, kaya babasahin ito kung paano ito nakasulat.",
   "Reading this page aloud.": "Binabasa nang malakas ang pahinang ito.",
-  "Still to fill in yourself:": "Kailangan mo pang punan:"
+  "Still to fill in yourself:": "Kailangan mo pang punan:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "I-click ang {loadUnpacked}, buksan ang folder na {prism} sa Downloads, at piliin ang folder na {folder} sa loob nito.",
+  "Downloads": "Downloads",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "Mapupunta ito sa iyong {downloads} folder. I-double-click ito roon para i-unzip: magkakaroon ka ng folder na {folder}.",
+  "It's further down the page.": "Nasa ibaba pa ito ng pahina.",
+  "It's further up the page.": "Nasa itaas pa ito ng pahina.",
+  "Something on the page is covering it. Close that pop-up or message first.": "May tumatakip dito sa pahina. Isara muna ang pop-up o mensaheng iyon.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Ang switch na Developer mode, naka-on, sa kanang itaas ng pahina ng Extensions ng Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Ang button na Load unpacked sa kaliwang itaas ng pahina ng Extensions ng Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "Karaniwang switch ito ng Chrome at ligtas ito: hinahayaan lang nito ang Chrome na idagdag ang Prism mula sa iyong download."
 }

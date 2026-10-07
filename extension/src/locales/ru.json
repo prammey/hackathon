@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "Готовлю страницу к чтению…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism сейчас не смог перевести эту страницу, поэтому она читается как написано.",
   "Reading this page aloud.": "Читаю эту страницу вслух.",
-  "Still to fill in yourself:": "Осталось заполнить вам самим:"
+  "Still to fill in yourself:": "Осталось заполнить вам самим:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "Нажмите {loadUnpacked}, откройте папку {prism} в «Загрузках» и выберите папку {folder} внутри неё.",
+  "Downloads": "Загрузки",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "Файл сохранится в папке {downloads}. Дважды щёлкните его там, чтобы распаковать: появится папка {folder}.",
+  "It's further down the page.": "Это ниже на странице.",
+  "It's further up the page.": "Это выше на странице.",
+  "Something on the page is covering it. Close that pop-up or message first.": "Что-то на странице закрывает это. Сначала закройте это окно или сообщение.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Переключатель «Режим разработчика», включённый, в правом верхнем углу страницы расширений Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Кнопка «Загрузить распакованное расширение» в левом верхнем углу страницы расширений Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "Это обычный переключатель Chrome, и он безопасен: он лишь позволяет Chrome добавить Prism из вашей загрузки."
 }

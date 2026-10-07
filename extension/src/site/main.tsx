@@ -15,15 +15,18 @@ function InstallSteps() {
       <ol class="steps-big install-steps">
         <li class="step-card"><span class="step-num">1</span><b>{t("Download Prism")}</b>
           <a class="pz-btn pz-btn--primary" href="Prism.zip" download data-testid="download"><Icon name="download" /> {t("Download")}</a>
-          <span class="pz-hint">{tj("Double-click the file to unzip it. You'll get a folder called {folder}.", { folder: <strong>Prism</strong> })}</span></li>
+          <span>{tj("It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.", { downloads: <strong>{t("Downloads")}</strong>, folder: <strong>Prism</strong> })}</span></li>
         <li class="step-card"><span class="step-num">2</span><b>{t("Open Chrome's extensions page")}</b>
           <span class="copy-url"><code>chrome://extensions</code>
             <button class="pz-btn pz-btn--small" type="button" onClick={async () => { await navigator.clipboard.writeText("chrome://extensions"); setCopied(true); }}>{copied ? t("Copied") : t("Copy")}</button></span>
           <span class="pz-hint">{t("Paste it into the address bar and press Enter.")}</span></li>
         <li class="step-card"><span class="step-num">3</span><b>{t("Turn on Developer mode")}</b>
-          <span>{tj("Switch it on in the {corner} of that page.", { corner: <strong>{t("top-right corner")}</strong> })}</span></li>
+          <span>{tj("Switch it on in the {corner} of that page.", { corner: <strong>{t("top-right corner")}</strong> })}</span>
+          <img class="install-shot" src="install/developer-mode.png" alt={t("The Developer mode switch at the top right of Chrome's Extensions page, turned on.")} />
+          <span>{t("This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.")}</span></li>
         <li class="step-card"><span class="step-num">4</span><b>{t("Add Prism to Chrome")}</b>
-          <span>{tj("Click {loadUnpacked} and choose the {folder} folder inside it.", { loadUnpacked: <strong>{t("Load unpacked")}</strong>, folder: <strong>prism-extension</strong> })}</span>
+          <span>{tj("Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.", { loadUnpacked: <strong>{t("Load unpacked")}</strong>, prism: <strong>Prism</strong>, folder: <strong>prism-extension</strong> })}</span>
+          <img class="install-shot" src="install/load-unpacked.png" alt={t("The Load unpacked button at the top left of Chrome's Extensions page.")} />
           <span class="pz-hint">{t("Then click the puzzle-piece icon at the top right of Chrome, then the pin next to Prism.")}</span></li>
       </ol>
       <div class="install-reassure">

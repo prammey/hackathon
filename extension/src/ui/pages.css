@@ -157,6 +157,8 @@ pre, code { color: var(--pz-text); }
 .install-top { font-size: 16px; padding: 12px 22px; }
 .hero-actions { display: grid; gap: 10px; }
 .hero-end { display: contents; }
+.install-shot { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--pz-line); background: #fff; }
+.install-steps .step-card > span:not(.step-num):not(.pz-hint) { color: #D6D2E2; font-size: 15px; }
 .install-reassure { display: grid; gap: 8px; padding: 16px 20px; border-radius: var(--pz-radius-sm); border: 1px solid var(--pz-line); background: var(--pz-surface); }
 .install-reassure p { margin: 0; color: #D6D2E2; max-width: 72ch; }
 .site-foot { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-top: 24px; border-top: 1px solid var(--pz-line); font-size: 15px; }
@@ -171,7 +173,7 @@ pre, code { color: var(--pz-text); }
 .gh-btn:hover { color: var(--pz-text); }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-.install-steps { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.install-steps { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); } /* two across, so the pictures are big enough to follow */
 .install-steps .pz-btn { justify-self: start; }
 .copy-url { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .copy-url code { padding: 6px 10px; border-radius: 10px; background: var(--pz-surface-3); color: var(--pz-text); font-size: 14px; }

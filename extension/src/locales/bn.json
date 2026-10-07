@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "পাতাটি পড়ার জন্য তৈরি করা হচ্ছে…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism এখন এই পাতাটি অনুবাদ করতে পারেনি, তাই যেমন লেখা আছে তেমনই পড়া হচ্ছে।",
   "Reading this page aloud.": "এই পাতাটি পড়ে শোনানো হচ্ছে।",
-  "Still to fill in yourself:": "এখনও আপনাকে নিজে পূরণ করতে হবে:"
+  "Still to fill in yourself:": "এখনও আপনাকে নিজে পূরণ করতে হবে:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "{loadUnpacked}-এ ক্লিক করুন, ডাউনলোডে {prism} ফোল্ডারটি খুলুন, এবং তার ভেতরের {folder} ফোল্ডারটি বেছে নিন।",
+  "Downloads": "ডাউনলোড",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "এটি আপনার {downloads} ফোল্ডারে যায়। সেখানে ডাবল-ক্লিক করে আনজিপ করুন: আপনি {folder} নামে একটি ফোল্ডার পাবেন।",
+  "It's further down the page.": "এটি পাতার আরও নিচে আছে।",
+  "It's further up the page.": "এটি পাতার আরও উপরে আছে।",
+  "Something on the page is covering it. Close that pop-up or message first.": "পাতার কিছু একটা এটিকে ঢেকে রেখেছে। আগে সেই পপ-আপ বা বার্তাটি বন্ধ করুন।",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Chrome-এর এক্সটেনশন পাতার উপরের ডানদিকে ডেভেলপার মোড (Developer mode) সুইচ, চালু অবস্থায়।",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Chrome-এর এক্সটেনশন পাতার উপরের বাঁদিকে আনপ্যাক করা এক্সটেনশন লোড করুন (Load unpacked) বোতাম।",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "এটি Chrome-এর একটি সাধারণ সুইচ এবং নিরাপদ: এটি শুধু Chrome-কে আপনার ডাউনলোড থেকে Prism যোগ করতে দেয়।"
 }

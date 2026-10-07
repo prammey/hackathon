@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "Preparando a página para ler…",
   "Prism couldn't translate this page right now, so it's read as written.": "O Prism não conseguiu traduzir esta página agora, então ela é lida como está escrita.",
   "Reading this page aloud.": "Lendo esta página em voz alta.",
-  "Still to fill in yourself:": "Ainda para você preencher:"
+  "Still to fill in yourself:": "Ainda para você preencher:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "Clique em {loadUnpacked}, abra a pasta {prism} em Downloads e escolha a pasta {folder} que está dentro dela.",
+  "Downloads": "Downloads",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "Ele vai para a sua pasta {downloads}. Clique duas vezes nele lá para descompactar: você terá uma pasta chamada {folder}.",
+  "It's further down the page.": "Está mais abaixo na página.",
+  "It's further up the page.": "Está mais acima na página.",
+  "Something on the page is covering it. Close that pop-up or message first.": "Algo na página está cobrindo isso. Feche primeiro essa janela ou mensagem.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "O botão Modo do desenvolvedor, ligado, no canto superior direito da página Extensões do Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "O botão Carregar sem compactação no canto superior esquerdo da página Extensões do Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "É um botão normal do Chrome e é seguro: só permite que o Chrome adicione o Prism a partir do seu download."
 }

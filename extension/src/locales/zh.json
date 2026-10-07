@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "正在准备朗读此页面…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism 暂时无法翻译此页面，因此按原文朗读。",
   "Reading this page aloud.": "正在朗读此页面。",
-  "Still to fill in yourself:": "还需要您自己填写："
+  "Still to fill in yourself:": "还需要您自己填写：",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "点击 {loadUnpacked}，打开“下载”中的 {prism} 文件夹，然后选择里面的 {folder} 文件夹。",
+  "Downloads": "下载",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "它会保存到您的 {downloads} 文件夹。在那里双击即可解压，您会得到一个名为 {folder} 的文件夹。",
+  "It's further down the page.": "它在页面更下方。",
+  "It's further up the page.": "它在页面更上方。",
+  "Something on the page is covering it. Close that pop-up or message first.": "页面上有东西挡住了它。请先关闭那个弹窗或提示。",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Chrome“扩展程序”页面右上角已打开的“开发者模式”开关。",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Chrome“扩展程序”页面左上角的“加载已解压的扩展程序”按钮。",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "这是 Chrome 的普通开关，很安全：它只是让 Chrome 从您下载的文件中添加 Prism。"
 }

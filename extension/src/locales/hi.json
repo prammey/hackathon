@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "पेज पढ़ने के लिए तैयार किया जा रहा है…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism अभी इस पेज का अनुवाद नहीं कर सका, इसलिए इसे जैसा लिखा है वैसा ही पढ़ा जा रहा है।",
   "Reading this page aloud.": "यह पेज पढ़कर सुनाया जा रहा है।",
-  "Still to fill in yourself:": "अभी आपको खुद भरना है:"
+  "Still to fill in yourself:": "अभी आपको खुद भरना है:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "{loadUnpacked} पर क्लिक करें, डाउनलोड में {prism} फ़ोल्डर खोलें, और उसके अंदर का {folder} फ़ोल्डर चुनें।",
+  "Downloads": "डाउनलोड",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "यह आपके {downloads} फ़ोल्डर में जाता है। वहाँ उस पर डबल-क्लिक करके उसे अनज़िप करें: आपको {folder} नाम का फ़ोल्डर मिलेगा।",
+  "It's further down the page.": "यह पेज में और नीचे है।",
+  "It's further up the page.": "यह पेज में और ऊपर है।",
+  "Something on the page is covering it. Close that pop-up or message first.": "पेज पर कोई चीज़ इसे ढक रही है। पहले वह पॉप-अप या संदेश बंद करें।",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Chrome के एक्सटेंशन पेज के ऊपर दाईं ओर डेवलपर मोड (Developer mode) का स्विच, चालू।",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Chrome के एक्सटेंशन पेज के ऊपर बाईं ओर अनपैक किया गया लोड करें (Load unpacked) बटन।",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "यह Chrome का एक सामान्य स्विच है और सुरक्षित है: यह बस Chrome को आपके डाउनलोड से Prism जोड़ने देता है।"
 }

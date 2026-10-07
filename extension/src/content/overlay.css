@@ -178,6 +178,7 @@
 .guide-card__goal { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--pz-muted); font-weight: 600; }
 .guide-card__text { margin: 0; font-size: 21px; font-weight: 700; line-height: 1.3; color: var(--pz-text); display: flex; gap: 10px; align-items: center; }
 .guide-card__detail { margin: 0; font-size: 16px; color: var(--pz-muted); line-height: 1.45; }
+.guide-card__where { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .guide-card__caution { margin: 0; font-size: 15px; font-weight: 600; color: #FBBF24; display: flex; gap: 8px; align-items: center; }
 .guide-card__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .guide-card .pz-btn--small { min-height: 44px; }

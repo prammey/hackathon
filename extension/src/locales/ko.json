@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "읽을 준비를 하고 있어요…",
   "Prism couldn't translate this page right now, so it's read as written.": "지금은 이 페이지를 번역하지 못해서, 쓰인 그대로 읽어 드려요.",
   "Reading this page aloud.": "이 페이지를 소리 내어 읽고 있어요.",
-  "Still to fill in yourself:": "직접 채워야 할 항목:"
+  "Still to fill in yourself:": "직접 채워야 할 항목:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "{loadUnpacked}을 누르고, 다운로드에서 {prism} 폴더를 연 다음, 그 안의 {folder} 폴더를 선택하세요.",
+  "Downloads": "다운로드",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "파일은 {downloads} 폴더에 저장돼요. 거기서 두 번 클릭해 압축을 풀면 {folder} 폴더가 생겨요.",
+  "It's further down the page.": "페이지 더 아래쪽에 있어요.",
+  "It's further up the page.": "페이지 더 위쪽에 있어요.",
+  "Something on the page is covering it. Close that pop-up or message first.": "페이지의 무언가가 가리고 있어요. 먼저 그 팝업이나 메시지를 닫아 주세요.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Chrome 확장 프로그램 페이지 오른쪽 위에 켜져 있는 개발자 모드 스위치.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Chrome 확장 프로그램 페이지 왼쪽 위의 '압축해제된 확장 프로그램을 로드합니다' 버튼.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "Chrome의 일반적인 스위치이고 안전해요. 다운로드한 Prism을 Chrome에 추가할 수 있게 해 줄 뿐이에요."
 }

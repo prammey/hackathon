@@ -287,7 +287,8 @@ export class TidyEngine {
     // It gets the breathing ring and the Next step bar, but keeps its own look.
     if (!el) {
       el = [...scope.querySelectorAll("a[href]")].find((e) => visible(e) && !inNav(e) && !sideAction(e)
-        && !e.closest("nav,header,footer,[role=navigation],aside") && /^\s*(apply|start|begin|renew|register|sign up|book|claim|request|get started)\b/i.test(labelOf(e)));
+        && !e.closest("nav,header,footer,[role=navigation],aside")
+        && (/^\s*(apply|start|begin|renew|register|sign up|book|claim|request|get started)\b/i.test(labelOf(e)) || /\b(apply online|application for)\b/i.test(labelOf(e))));
     }
     if (el && isPictureOrTile(el)) el.removeAttribute("data-prism-emphasis");
     // Up to four other likely things to do: the plan's steps, other real actions, obvious buttons.

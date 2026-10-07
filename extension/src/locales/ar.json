@@ -432,7 +432,7 @@
   "page tidied": "تم ترتيب الصفحة",
   "refresh button": "زر إعادة التحميل",
   "ticked": "محدد",
-  "top-right corner": "الزاوية العلوية اليمنى",
+  "top-right corner": "الزاوية العلوية اليسرى",
   "{count} answers filled in.": "تمت تعبئة {count} من الإجابات.",
   "{description} (a different website)": "{description} (موقع آخر)",
   "{description} (opens {host})": "{description} (يفتح {host})",
@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "جارٍ تجهيز الصفحة للقراءة…",
   "Prism couldn't translate this page right now, so it's read as written.": "لم يتمكن Prism من ترجمة هذه الصفحة الآن، لذلك تُقرأ كما هي مكتوبة.",
   "Reading this page aloud.": "تتم قراءة هذه الصفحة بصوت عالٍ.",
-  "Still to fill in yourself:": "ما زال عليك ملؤه بنفسك:"
+  "Still to fill in yourself:": "ما زال عليك ملؤه بنفسك:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "انقر على {loadUnpacked}، وافتح مجلد {prism} في التنزيلات، ثم اختر مجلد {folder} الموجود بداخله.",
+  "Downloads": "التنزيلات",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "يُحفظ في مجلد {downloads}. انقر عليه نقرًا مزدوجًا هناك لفك ضغطه: ستحصل على مجلد اسمه {folder}.",
+  "It's further down the page.": "إنه في أسفل الصفحة.",
+  "It's further up the page.": "إنه في أعلى الصفحة.",
+  "Something on the page is covering it. Close that pop-up or message first.": "هناك شيء في الصفحة يغطيه. أغلق تلك النافذة أو الرسالة أولًا.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "مفتاح وضع مطوّر البرامج (Developer mode) مُشغَّلًا في أعلى صفحة الإضافات في Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "زر تحميل الإضافة غير المضغوطة (Load unpacked) في أعلى صفحة الإضافات في Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "هذا مفتاح عادي في Chrome وهو آمن: يسمح فقط لـ Chrome بإضافة Prism من الملف الذي نزّلته."
 }

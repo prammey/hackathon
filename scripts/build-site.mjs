@@ -27,6 +27,7 @@ await esbuild.build({
 fs.copyFileSync(path.join(dist, "pages.css"), path.join(out, "pages.css"));
 fs.cpSync(path.join(dist, "fonts"), path.join(out, "fonts"), { recursive: true });
 fs.cpSync(path.join(dist, "icons"), path.join(out, "icons"), { recursive: true });
+fs.cpSync(path.join(root, "extension/src/site/install"), path.join(out, "install"), { recursive: true }); // install-step pictures
 fs.copyFileSync(path.join(root, "release", `prism-extension-v${pkg.version}.zip`), path.join(out, "Prism.zip"));
 fs.writeFileSync(path.join(out, "index.html"), `<!doctype html>
 <html lang="en">

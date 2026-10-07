@@ -68,6 +68,25 @@ function keepPageFocus(e: Event) {
   e.stopPropagation();
 }
 
+/** Whether something of the page's own (a cookie banner, a chat bubble, a pop-up) sits on top of the target. */
+function useCovered(el: Element | null): boolean {
+  const [covered, setCovered] = useState(false);
+  useEffect(() => {
+    if (!el) { setCovered(false); return; }
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (r.width < 2 || y < 0 || y > innerHeight || x < 0 || x > innerWidth) { setCovered(false); return; }
+      const top = document.elementsFromPoint(x, y).find((e) => !e.closest("prism-root"));
+      setCovered(!!top && top !== el && !el.contains(top) && !top.contains(el));
+    };
+    check();
+    const timer = setInterval(check, 700);
+    return () => clearInterval(timer);
+  }, [el]);
+  return covered;
+}
+
 /** A gentle enlargement where it can't break the page's layout (buttons and links on their own line). */
 function canEnlarge(el: Element): boolean {
   if (el.closest("td,th,li a,p a,nav,[role=menubar]")) return false;
@@ -182,7 +201,20 @@ export function GuideLayer() {
     const onEngage = (e: Event) => { if ((step.kind === "choose" || step.kind === "type") && (inside(e) || inHole(e))) setEngaged(true); };
     let pressed = false;
     // Some sites act on pointerdown and redraw before a click ever arrives, so either one counts.
+    // Shaky hands: a press on the glow just around it (but not on some other control) presses it.
+    const inRing = (e: Event) => {
+      const b = boxRef.current;
+      const { clientX: x, clientY: y } = e as MouseEvent;
+      if (!b || !(x || y) || x < b.left - PAD || x > b.right + PAD || y < b.top - PAD || y > b.bottom + PAD) return false;
+      const hit = e.composedPath()[0] as Element | undefined;
+      return !hit?.closest?.("a,button,input,select,textarea,label,[role=button],[role=link],[role=option],[role=checkbox],[role=radio]");
+    };
     const onClick = (e: Event) => {
+      if (step.kind === "click" && !pressed && e.type === "click" && !inside(e) && el.isConnected && inRing(e)) {
+        e.preventDefault();
+        (el as HTMLElement).click(); // counted below when that click reaches the element
+        return;
+      }
       if (step.kind !== "click" || pressed || !(inside(e) || inHole(e))) return;
       pressed = true;
       // If the click opens a new page, that page carries the guide on; otherwise report it here. A link to
@@ -228,6 +260,7 @@ export function GuideLayer() {
 
   const box = useTargetBox(step ? view : null);
   boxRef.current = box;
+  const covered = useCovered(step ? view : null);
   if (!state) return null;
   // Prism's own rule, not only the AI's judgement: anything that submits, pays, sends or books gets the warning.
   const caution = !!step && (step.caution || (!!el && isConsequential(el)));
@@ -269,8 +302,10 @@ export function GuideLayer() {
 
   // The spotlight: a dim layer with a rounded hole (clip-path's hole also lets clicks through).
   const vw = innerWidth, vh = innerHeight;
-  const hole = box && box.width > 0
-    ? { x: Math.max(0, box.left - PAD), y: Math.max(0, box.top - PAD), w: Math.min(vw, box.width + PAD * 2), h: Math.min(vh, box.height + PAD * 2) }
+  // Fully scrolled out of view: no hole stuck at the screen edge; the card says where it went instead.
+  const away = box && box.width > 0 ? (box.bottom < 8 ? "up" : box.top > vh - 8 ? "down" : null) : null;
+  const hole = box && box.width > 0 && !away
+    ? { x: box.left - PAD, y: box.top - PAD, w: box.width + PAD * 2, h: box.height + PAD * 2 }
     : null;
   const r = 14;
   const path = hole
@@ -307,7 +342,13 @@ export function GuideLayer() {
         <p class="guide-card__text" data-testid="guide-instruction">{step.instruction}</p>
         {step.detail && <p class="guide-card__detail">{step.detail}</p>}
         {caution && <p class="guide-card__caution"><Icon name="warning" /> {t("Check everything is right before you press it.")}</p>}
-        {!hole && <p class="guide-card__detail">{t("Scroll the page until you see it.")}</p>}
+        {!hole && (
+          <p class="guide-card__detail guide-card__where">
+            {away === "up" ? t("It's further up the page.") : away === "down" ? t("It's further down the page.") : t("Scroll the page until you see it.")}
+            {away && view && <button class="pz-btn pz-btn--small" type="button" onClick={() => view.scrollIntoView({ behavior: "smooth", block: "center" })}>{t("Show me")}</button>}
+          </p>
+        )}
+        {covered && hole && <p class="guide-card__detail" data-testid="guide-covered">{t("Something on the page is covering it. Close that pop-up or message first.")}</p>}
         <div class="guide-card__row">
           {needsDone && (
             <button class="pz-btn pz-btn--primary pz-btn--small" type="button" data-typed={typed ? "" : undefined}

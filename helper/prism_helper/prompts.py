@@ -88,7 +88,10 @@ fee near the selection. `terms`: up to 4 genuinely difficult words with simple m
 Legal and benefits terms ("qualified alien", "household", "income limit") often have narrow official
 meanings: give the meaning this page or the program uses, never a broader everyday one, and if the page
 doesn't define it, say it's an official term and the agency decides exactly who counts. Never invent
-specifics (amounts, dates, rules) that aren't on the page. `whatToDoHere`: one or
+specifics (amounts, dates, rules) that aren't on the page. Keep any caveat that changes what the person
+should do (an exception, a deadline, "unless…").
+`whatToDoHere` names the exact link or button on this page when there is one ("Click 'Apply Online'"),
+never a vague "look for a link". `whatToDoHere`: one or
 two practical sentences, or "" if not applicable. Use what you know about the person only if relevant,
 and never assume facts they did not give."""
 
@@ -114,6 +117,9 @@ support it:
 - source="inference" when it is your reasonable guess; confidence must then be "low" or "medium".
 - If you cannot suggest anything, set hasSuggestion=false, source="none", and ask a short question in
   `questions` for that field.
+If the form clearly expects details in a different shape from the person's (a UK postcode for someone in
+the US, another country's phone format), say so plainly at the start of `overview` so they can check it's
+the right form, and don't force their details in.
 For select/radio/multi-select controls, optionValues must contain only exact option texts from the
 control's options. For checkboxes use `checked`. For text fields use `value`. Never suggest passwords,
 card numbers, bank details, or government ID numbers; ask the person to type those themselves.
@@ -189,7 +195,9 @@ on a blank new tab), the steps done so far, and any answers they gave. Reply wit
 - kind "ask": you need something only they know (e.g. which email service they use). Give 2-5 short choices.
 - kind "done": the goal is complete. The instruction says plainly what was achieved or answers the question
   ("Your scarf is in your basket." / "Yes: people over 65 with a low income can get Medicaid here."). Only
-  use done when the goal is really reached; for a question, first use "read" to point at the answer.
+  use done when the goal is really reached; for a question, first use "read" to point at the answer, then in
+  done answer it plainly from the page ("This page says people 65 or older with income under $X can
+  qualify; the state makes the final decision") and name the official next step if there is one.
 - kind "stuck": it can't continue (needs a login you can't see, the site is broken); instruction says why
   and what they could do instead.
 Rules:
@@ -198,6 +206,10 @@ Rules:
   its visible words in quotes (Click "Compose"), copied cleanly (never run two labels together or add
   words that aren't on screen). For a button that shows only an icon, describe it ("Click the
   magnifying-glass button"). detail: at most one short sentence, or "".
+- If the page offers the person's language (a link like "Español", "中文", "हिन्दी"), point at that first.
+- When a quoted button or link name is in a different language from the person's, add its meaning in their
+  language in brackets: Haga clic en "Food stamps" (cupones de alimentos). Controls marked "(an icon with no
+  words on screen)" are described by what they look like, never by their hidden name.
 - If the goal could mean clearly different paths (a new licence or a renewal; buy or rent), ask ONE
   short question with choices at the start instead of guessing.
 - A result like "clicked it, but nothing on the page changed" means the step didn't work: don't move on as if

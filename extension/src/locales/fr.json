@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "Préparation de la page pour la lecture…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism n’a pas pu traduire cette page pour le moment ; elle est donc lue telle qu’elle est écrite.",
   "Reading this page aloud.": "Lecture de cette page à voix haute.",
-  "Still to fill in yourself:": "À remplir vous-même :"
+  "Still to fill in yourself:": "À remplir vous-même :",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "Cliquez sur {loadUnpacked}, ouvrez le dossier {prism} dans Téléchargements, puis choisissez le dossier {folder} qui s’y trouve.",
+  "Downloads": "Téléchargements",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "Il arrive dans votre dossier {downloads}. Double-cliquez dessus pour le décompresser : vous obtiendrez un dossier nommé {folder}.",
+  "It's further down the page.": "C’est plus bas dans la page.",
+  "It's further up the page.": "C’est plus haut dans la page.",
+  "Something on the page is covering it. Close that pop-up or message first.": "Quelque chose sur la page le cache. Fermez d’abord cette fenêtre ou ce message.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Le bouton « Mode développeur », activé, en haut à droite de la page Extensions de Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Le bouton « Charger l'extension non empaquetée » en haut à gauche de la page Extensions de Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "C’est un réglage normal de Chrome, sans danger : il permet seulement à Chrome d’ajouter Prism depuis votre téléchargement."
 }

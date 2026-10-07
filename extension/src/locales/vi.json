@@ -514,5 +514,14 @@
   "Getting the page ready to read…": "Đang chuẩn bị đọc trang…",
   "Prism couldn't translate this page right now, so it's read as written.": "Prism chưa dịch được trang này lúc này, nên sẽ đọc nguyên văn.",
   "Reading this page aloud.": "Đang đọc to trang này.",
-  "Still to fill in yourself:": "Bạn vẫn cần tự điền:"
+  "Still to fill in yourself:": "Bạn vẫn cần tự điền:",
+  "Click {loadUnpacked}, open the {prism} folder in Downloads, and choose the {folder} folder inside it.": "Bấm {loadUnpacked}, mở thư mục {prism} trong Tải xuống, rồi chọn thư mục {folder} bên trong.",
+  "Downloads": "Tải xuống",
+  "It goes to your {downloads} folder. Double-click it there to unzip it: you'll get a folder called {folder}.": "Tệp sẽ nằm trong thư mục {downloads}. Bấm đúp vào đó để giải nén: bạn sẽ có một thư mục tên là {folder}.",
+  "It's further down the page.": "Nó ở phía dưới trang.",
+  "It's further up the page.": "Nó ở phía trên trang.",
+  "Something on the page is covering it. Close that pop-up or message first.": "Có thứ gì đó trên trang đang che nó. Hãy đóng cửa sổ hoặc thông báo đó trước.",
+  "The Developer mode switch at the top right of Chrome's Extensions page, turned on.": "Công tắc Chế độ dành cho nhà phát triển đã bật, ở góc trên bên phải trang Tiện ích của Chrome.",
+  "The Load unpacked button at the top left of Chrome's Extensions page.": "Nút Tải tiện ích đã giải nén ở góc trên bên trái trang Tiện ích của Chrome.",
+  "This is a normal Chrome switch and it's safe: it only lets Chrome add Prism from your download.": "Đây là công tắc bình thường của Chrome và an toàn: nó chỉ cho phép Chrome thêm Prism từ tệp bạn đã tải về."
 }
